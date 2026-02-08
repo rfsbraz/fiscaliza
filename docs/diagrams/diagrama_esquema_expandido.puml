@@ -1,0 +1,326 @@
+@startuml Esquema Expandido - Parlamento Português
+
+!define ENTITY class
+!define PK <<PK>>
+!define FK <<FK>>
+
+title Esquema Expandido da Base de Dados - Parlamento Português
+
+' ===== ENTIDADES PRINCIPAIS =====
+
+ENTITY legislaturas {
+  + id : INTEGER PK
+  --
+  numero : INTEGER
+  designacao : TEXT
+  data_inicio : DATE
+  data_fim : DATE
+  ativa : BOOLEAN
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+ENTITY partidos {
+  + id : INTEGER PK
+  --
+  sigla : TEXT
+  nome : TEXT
+  designacao_completa : TEXT
+  cor_hex : TEXT
+  ativo : BOOLEAN
+  data_fundacao : DATE
+  ideologia : TEXT
+  lider_parlamentar : TEXT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+ENTITY circulos_eleitorais {
+  + id : INTEGER PK
+  --
+  designacao : TEXT
+  codigo : TEXT
+  regiao : TEXT
+  distrito : TEXT
+  num_deputados : INTEGER
+  populacao : INTEGER
+  area_km2 : REAL
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+ENTITY deputados {
+  + id : INTEGER PK
+  --
+  id_cadastro : INTEGER
+  nome : TEXT
+  nome_completo : TEXT
+  profissao : TEXT
+  data_nascimento : DATE
+  naturalidade : TEXT
+  habilitacoes_academicas : TEXT
+  biografia : TEXT
+  foto_url : TEXT
+  email : TEXT
+  telefone : TEXT
+  gabinete : TEXT
+  ativo : BOOLEAN
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+ENTITY mandatos {
+  + id : INTEGER PK
+  --
+  deputado_id : INTEGER FK
+  partido_id : INTEGER FK
+  circulo_id : INTEGER FK
+  legislatura_id : INTEGER FK
+  data_inicio : DATE
+  data_fim : DATE
+  ativo : BOOLEAN
+  posicao_lista : INTEGER
+  votos_obtidos : INTEGER
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+' ===== ATIVIDADE PARLAMENTAR =====
+
+ENTITY sessoes_plenarias {
+  + id : INTEGER PK
+  --
+  legislatura_id : INTEGER FK
+  numero_sessao : INTEGER
+  data_sessao : DATE
+  hora_inicio : TIME
+  hora_fim : TIME
+  tipo_sessao : TEXT
+  estado : TEXT
+  ordem_trabalhos : TEXT
+  resumo : TEXT
+  presidente_sessao : TEXT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+ENTITY atividades_parlamentares {
+  + id : INTEGER PK
+  --
+  id_externo : INTEGER
+  legislatura_id : INTEGER FK
+  sessao_plenaria_id : INTEGER FK
+  tipo_atividade : TEXT
+  titulo : TEXT
+  descricao : TEXT
+  data_atividade : DATE
+  hora_inicio : TIME
+  hora_fim : TIME
+  fase_sessao : TEXT
+  estado : TEXT
+  resultado : TEXT
+  observacoes : TEXT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+ENTITY intervencoes {
+  + id : INTEGER PK
+  --
+  id_externo : INTEGER
+  deputado_id : INTEGER FK
+  atividade_id : INTEGER FK
+  sessao_plenaria_id : INTEGER FK
+  legislatura_id : INTEGER FK
+  tipo_intervencao : TEXT
+  data_intervencao : DATE
+  qualidade : TEXT
+  sumario : TEXT
+  resumo : TEXT
+  fase_sessao : TEXT
+  duracao_segundos : INTEGER
+  url_video : TEXT
+  url_diario : TEXT
+  pagina_diario : TEXT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+ENTITY iniciativas_legislativas {
+  + id : INTEGER PK
+  --
+  id_externo : INTEGER
+  numero : INTEGER
+  tipo : TEXT
+  tipo_descricao : TEXT
+  legislatura_id : INTEGER FK
+  sessao : INTEGER
+  titulo : TEXT
+  data_apresentacao : DATE
+  texto_substituto : BOOLEAN
+  url_texto : TEXT
+  estado : TEXT
+  resultado : TEXT
+  observacoes : TEXT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+ENTITY autores_iniciativas {
+  + id : INTEGER PK
+  --
+  iniciativa_id : INTEGER FK
+  deputado_id : INTEGER FK
+  partido_id : INTEGER FK
+  tipo_autor : TEXT
+  ordem : INTEGER
+  created_at : TIMESTAMP
+}
+
+' ===== AGENDA E EVENTOS =====
+
+ENTITY agenda_parlamentar {
+  + id : INTEGER PK
+  --
+  id_externo : INTEGER
+  legislatura_id : INTEGER FK
+  secao_id : INTEGER
+  secao_nome : TEXT
+  tema_id : INTEGER
+  tema_nome : TEXT
+  grupo_parlamentar : TEXT
+  data_evento : DATE
+  hora_inicio : TIME
+  hora_fim : TIME
+  evento_dia_inteiro : BOOLEAN
+  titulo : TEXT
+  subtitulo : TEXT
+  descricao : TEXT
+  local_evento : TEXT
+  link_externo : TEXT
+  pos_plenario : BOOLEAN
+  estado : TEXT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+ENTITY eventos_iniciativas {
+  + id : INTEGER PK
+  --
+  iniciativa_id : INTEGER FK
+  data_evento : DATE
+  tipo_evento : TEXT
+  descricao_evento : TEXT
+  fase : TEXT
+  resultado : TEXT
+  observacoes : TEXT
+  created_at : TIMESTAMP
+}
+
+' ===== VOTAÇÕES =====
+
+ENTITY votacoes {
+  + id : INTEGER PK
+  --
+  iniciativa_id : INTEGER FK
+  atividade_id : INTEGER FK
+  sessao_plenaria_id : INTEGER FK
+  legislatura_id : INTEGER FK
+  numero_votacao : INTEGER
+  data_votacao : DATE
+  hora_votacao : TIME
+  tipo_votacao : TEXT
+  objeto_votacao : TEXT
+  resultado : TEXT
+  votos_favor : INTEGER
+  votos_contra : INTEGER
+  abstencoes : INTEGER
+  ausencias : INTEGER
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+ENTITY votos_individuais {
+  + id : INTEGER PK
+  --
+  votacao_id : INTEGER FK
+  deputado_id : INTEGER FK
+  voto : TEXT
+  justificacao : TEXT
+  created_at : TIMESTAMP
+}
+
+' ===== MÉTRICAS =====
+
+ENTITY metricas_deputados {
+  + id : INTEGER PK
+  --
+  deputado_id : INTEGER FK
+  legislatura_id : INTEGER FK
+  periodo_inicio : DATE
+  periodo_fim : DATE
+  total_intervencoes : INTEGER
+  total_iniciativas : INTEGER
+  total_votacoes_participadas : INTEGER
+  taxa_assiduidade : REAL
+  tempo_total_intervencoes : INTEGER
+  ultima_atualizacao : TIMESTAMP
+}
+
+' ===== RELACIONAMENTOS =====
+
+' Relacionamentos principais
+legislaturas ||--o{ mandatos : "tem"
+partidos ||--o{ mandatos : "tem"
+circulos_eleitorais ||--o{ mandatos : "tem"
+deputados ||--o{ mandatos : "tem"
+
+' Atividade parlamentar
+legislaturas ||--o{ sessoes_plenarias : "tem"
+legislaturas ||--o{ atividades_parlamentares : "tem"
+sessoes_plenarias ||--o{ atividades_parlamentares : "tem"
+atividades_parlamentares ||--o{ intervencoes : "tem"
+
+' Intervenções
+deputados ||--o{ intervencoes : "faz"
+legislaturas ||--o{ intervencoes : "tem"
+sessoes_plenarias ||--o{ intervencoes : "tem"
+
+' Iniciativas
+legislaturas ||--o{ iniciativas_legislativas : "tem"
+iniciativas_legislativas ||--o{ autores_iniciativas : "tem"
+deputados ||--o{ autores_iniciativas : "autor"
+partidos ||--o{ autores_iniciativas : "autor"
+iniciativas_legislativas ||--o{ eventos_iniciativas : "tem"
+
+' Agenda
+legislaturas ||--o{ agenda_parlamentar : "tem"
+
+' Votações
+iniciativas_legislativas ||--o{ votacoes : "tem"
+atividades_parlamentares ||--o{ votacoes : "tem"
+sessoes_plenarias ||--o{ votacoes : "tem"
+legislaturas ||--o{ votacoes : "tem"
+votacoes ||--o{ votos_individuais : "tem"
+deputados ||--o{ votos_individuais : "vota"
+
+' Métricas
+deputados ||--o{ metricas_deputados : "tem"
+legislaturas ||--o{ metricas_deputados : "tem"
+
+' ===== NOTAS =====
+
+note top of legislaturas : Períodos legislativos\n(XVII Legislatura atual)
+
+note top of mandatos : Relação N:N entre\nDeputados, Partidos\ne Círculos por Legislatura
+
+note right of intervencoes : Todas as participações\ndos deputados em\nsessões plenárias
+
+note right of agenda_parlamentar : Agenda diária com\nordens de trabalho\ne eventos
+
+note bottom of votacoes : Sistema de votações\n(preparação futura)
+
+note bottom of metricas_deputados : Métricas calculadas\npara análise de\nperformance
+
+@enduml
+

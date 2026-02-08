@@ -1,0 +1,90 @@
+@startuml Esquema Base de Dados Parlamentares
+
+!define TABLE(name,desc) class name as "desc" << (T,#FFAAAA) >>
+!define PK(x) <u>x</u>
+!define FK(x) <i>x</i>
+
+' Tabelas de Referência Base
+TABLE(legislaturas, "legislaturas\n--\nPK(id): INTEGER\nnumero: VARCHAR(10)\ndesignacao: VARCHAR(100)\ndata_inicio: DATE\ndata_fim: DATE\nativa: BOOLEAN")
+
+TABLE(partidos, "partidos\n--\nPK(id): INTEGER\nsigla: VARCHAR(20)\ndesignacao_completa: VARCHAR(200)\ndata_constituicao: DATE\ncor_representativa: VARCHAR(7)\nideologia: VARCHAR(50)\nativo: BOOLEAN")
+
+TABLE(circulos_eleitorais, "circulos_eleitorais\n--\nPK(id): INTEGER\ndesignacao: VARCHAR(100)\ntipo: VARCHAR(30)\nnumero_mandatos: INTEGER\nregiao: VARCHAR(50)\nativo: BOOLEAN")
+
+TABLE(comissoes, "comissoes\n--\nPK(id): INTEGER\nsigla: VARCHAR(20)\ndesignacao: VARCHAR(200)\ntipo: VARCHAR(30)\narea_competencia: TEXT\ndata_criacao: DATE\ndata_extincao: DATE\nativa: BOOLEAN\nFK(legislatura_id): INTEGER")
+
+' Tabelas de Pessoas
+TABLE(deputados, "deputados\n--\nPK(id): INTEGER\nnome_completo: VARCHAR(200)\nnome_parlamentar: VARCHAR(200)\ndata_nascimento: DATE\nsexo: CHAR(1)\nprofissao: VARCHAR(100)\nhabilitacoes_literarias: VARCHAR(100)\nnaturalidade: VARCHAR(100)\nfoto_url: VARCHAR(500)\nbiografia: TEXT\nativo: BOOLEAN")
+
+TABLE(mandatos, "mandatos\n--\nPK(id): INTEGER\nFK(deputado_id): INTEGER\nFK(partido_id): INTEGER\nFK(circulo_eleitoral_id): INTEGER\nFK(legislatura_id): INTEGER\ndata_inicio: DATE\ndata_fim: DATE\nmotivo_fim: VARCHAR(50)\nnumero_votos: INTEGER\nposicao_lista: INTEGER\nativo: BOOLEAN")
+
+' Tabelas de Atividade Legislativa
+TABLE(tipos_iniciativa, "tipos_iniciativa\n--\nPK(id): INTEGER\ncodigo: VARCHAR(10)\ndesignacao: VARCHAR(100)\ndescricao: TEXT\nativo: BOOLEAN")
+
+TABLE(iniciativas_legislativas, "iniciativas_legislativas\n--\nPK(id): INTEGER\nnumero: INTEGER\nFK(tipo_iniciativa_id): INTEGER\nFK(legislatura_id): INTEGER\nsessao_legislativa: INTEGER\ntitulo: TEXT\nsumario: TEXT\ndata_entrada: DATE\ndata_publicacao: DATE\nestado: VARCHAR(50)\ntem_texto_substituto: BOOLEAN\nlink_texto_original: VARCHAR(500)\nlink_texto_final: VARCHAR(500)\nFK(comissao_id): INTEGER")
+
+TABLE(autores_iniciativas, "autores_iniciativas\n--\nPK(id): INTEGER\nFK(iniciativa_id): INTEGER\ntipo_autor: VARCHAR(20)\nFK(deputado_id): INTEGER\nFK(partido_id): INTEGER\nentidade_externa: VARCHAR(200)\npapel: VARCHAR(30)\nordem: INTEGER")
+
+' Tabelas de Votações
+TABLE(sessoes_votacao, "sessoes_votacao\n--\nPK(id): INTEGER\nnumero_reuniao: INTEGER\ntipo_reuniao: VARCHAR(50)\ndata_sessao: DATE\nhora_inicio: TIME\nhora_fim: TIME\nFK(legislatura_id): INTEGER\nsessao_legislativa: INTEGER\nFK(comissao_id): INTEGER\nFK(presidente_sessao_id): INTEGER")
+
+TABLE(votacoes, "votacoes\n--\nPK(id): INTEGER\nFK(iniciativa_id): INTEGER\nFK(sessao_votacao_id): INTEGER\nnumero_votacao: INTEGER\nobjeto_votacao: TEXT\nresultado: VARCHAR(20)\ntipo_votacao: VARCHAR(30)\nfoi_unanime: BOOLEAN\ntotal_votos_favor: INTEGER\ntotal_votos_contra: INTEGER\ntotal_abstencoes: INTEGER\ntotal_ausencias: INTEGER\ndata_votacao: TIMESTAMP")
+
+TABLE(votos_individuais, "votos_individuais\n--\nPK(id): INTEGER\nFK(votacao_id): INTEGER\nFK(deputado_id): INTEGER\ntipo_voto: VARCHAR(20)\njustificacao: TEXT\nvoto_partido: VARCHAR(20)\ndisciplina_partidaria: BOOLEAN")
+
+' Tabelas de Agenda
+TABLE(tipos_evento, "tipos_evento\n--\nPK(id): INTEGER\ncodigo: VARCHAR(20)\ndesignacao: VARCHAR(100)\ndescricao: TEXT\ncor_representativa: VARCHAR(7)\nativo: BOOLEAN")
+
+TABLE(eventos_agenda, "eventos_agenda\n--\nPK(id): INTEGER\ntitulo: VARCHAR(500)\nsubtitulo: VARCHAR(500)\nFK(tipo_evento_id): INTEGER\ndata_inicio: DATE\nhora_inicio: TIME\ndata_fim: DATE\nhora_fim: TIME\ntodo_o_dia: BOOLEAN\nlocal: VARCHAR(200)\ndescricao_html: TEXT\nlink_relacionado: VARCHAR(500)\nFK(legislatura_id): INTEGER\nFK(comissao_id): INTEGER\nestado: VARCHAR(30)")
+
+TABLE(participantes_eventos, "participantes_eventos\n--\nPK(id): INTEGER\nFK(evento_id): INTEGER\nFK(deputado_id): INTEGER\nFK(partido_id): INTEGER\nentidade_externa: VARCHAR(200)\ntipo_participacao: VARCHAR(50)\nconfirmado: BOOLEAN")
+
+' Tabelas de Petições
+TABLE(peticoes, "peticoes\n--\nPK(id): INTEGER\nnumero: INTEGER\nFK(legislatura_id): INTEGER\nsessao_legislativa: INTEGER\nassunto: TEXT\nresumo: TEXT\ndata_entrada: DATE\ndata_admissao: DATE\nestado: VARCHAR(50)\nnumero_subscritores: INTEGER\ntipo_peticao: VARCHAR(50)\nFK(comissao_id): INTEGER\nlink_documento: VARCHAR(500)")
+
+TABLE(peticoes_iniciativas, "peticoes_iniciativas\n--\nPK(id): INTEGER\nFK(peticao_id): INTEGER\nFK(iniciativa_id): INTEGER\ntipo_relacao: VARCHAR(50)\ndescricao_relacao: TEXT\ndata_relacao: DATE")
+
+TABLE(intervencoes, "intervencoes\n--\nPK(id): INTEGER\nFK(deputado_id): INTEGER\nnome_interveniente: VARCHAR(200)\ncargo_interveniente: VARCHAR(100)\nFK(sessao_votacao_id): INTEGER\nFK(evento_agenda_id): INTEGER\ndata_intervencao: TIMESTAMP\ntipo_intervencao: VARCHAR(50)\ntema: VARCHAR(500)\nconteudo_texto: TEXT\nduracao_segundos: INTEGER\nlink_video: VARCHAR(500)\nlink_audio: VARCHAR(500)")
+
+' Relacionamentos
+legislaturas ||--o{ mandatos
+legislaturas ||--o{ comissoes
+legislaturas ||--o{ iniciativas_legislativas
+legislaturas ||--o{ sessoes_votacao
+legislaturas ||--o{ eventos_agenda
+legislaturas ||--o{ peticoes
+
+partidos ||--o{ mandatos
+partidos ||--o{ autores_iniciativas
+partidos ||--o{ participantes_eventos
+
+circulos_eleitorais ||--o{ mandatos
+
+deputados ||--o{ mandatos
+deputados ||--o{ autores_iniciativas
+deputados ||--o{ votos_individuais
+deputados ||--o{ participantes_eventos
+deputados ||--o{ intervencoes
+deputados ||--o{ sessoes_votacao
+
+comissoes ||--o{ iniciativas_legislativas
+comissoes ||--o{ sessoes_votacao
+comissoes ||--o{ eventos_agenda
+comissoes ||--o{ peticoes
+
+tipos_iniciativa ||--o{ iniciativas_legislativas
+iniciativas_legislativas ||--o{ autores_iniciativas
+iniciativas_legislativas ||--o{ votacoes
+iniciativas_legislativas ||--o{ peticoes_iniciativas
+
+sessoes_votacao ||--o{ votacoes
+votacoes ||--o{ votos_individuais
+
+tipos_evento ||--o{ eventos_agenda
+eventos_agenda ||--o{ participantes_eventos
+eventos_agenda ||--o{ intervencoes
+
+peticoes ||--o{ peticoes_iniciativas
+
+@enduml
+
