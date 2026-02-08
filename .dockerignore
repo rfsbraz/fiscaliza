@@ -1,0 +1,94 @@
+# Exclude large download folders - CRITICAL for image size
+scripts/data_processing/data/downloads/
+scripts/data_download/downloads/
+**/downloads/
+**/data/downloads/
+
+# Exclude database files
+*.db
+database/*.db
+parlamento.db
+**/*.db
+
+# Exclude logs and large log files
+logs/
+**/*.log
+*.log
+scripts/analytics/logs/
+
+# Exclude git and version control
+.git/
+**/.git/
+
+# Exclude node modules and build artifacts
+node_modules/
+frontend/node_modules/
+frontend/dist/
+app/static/build/
+dist/
+
+# Exclude Python cache and virtual environments
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+venv/
+env/
+.venv/
+
+# Exclude tests and development files
+tests/
+test_*.py
+.pytest_cache/
+pytest.ini
+.coverage
+**/test_*.py
+
+# Exclude documentation
+docs/
+*.md
+README*
+
+# Exclude environment and config files (sensitive)
+.env*
+
+# Exclude backup files
+*_backup*
+backup_*
+
+# Exclude temporary files
+tmp/
+temp/
+**/.DS_Store
+**/Thumbs.db
+
+# Exclude IDE files
+.vscode/
+.idea/
+**/*.swp
+**/*.swo
+
+# Exclude Terraform and infrastructure
+terraform/
+*.tf
+*.tfvars
+*.tfstate*
+
+# Exclude large XML files and imports
+*.xml
+imports/
+data_imports/
+
+# Exclude development and deployment scripts not needed in Lambda
+deploy-docker.sh
+deploy-docker.bat
+start_app.bat
+docker-compose.yml
+.gitignore
+
+# Exclude example and test data
+examples/
+test_*.db
+**/test_data/
+
+# Exclude analytics logs directory
+scripts/analytics/logs/

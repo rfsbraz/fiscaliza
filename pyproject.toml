@@ -1,0 +1,42 @@
+[project]
+name = "fiscaliza"
+version = "1.0.0"
+description = "Portuguese Parliament open data analysis platform"
+requires-python = ">=3.11"
+license = "AGPL-3.0-or-later"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "S",    # flake8-bandit (security)
+    "UP",   # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "S101",   # use of assert (ok in tests)
+    "B008",   # function call in default argument (common in Flask)
+    "S110",   # try-except-pass (used intentionally in importers)
+    "S603",   # subprocess call (used in ops scripts)
+    "S607",   # partial executable path (used in ops scripts)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+"scripts/*" = ["S603", "S607"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
