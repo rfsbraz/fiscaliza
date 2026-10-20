@@ -19,7 +19,8 @@ renders as text) and `any`. A key is `nullable` when the component guards it (`?
 ## Tests
 
 - `test_endpoint_matches_contract`: one test per endpoint. It calls the service function
-  registered in `services.py` with the fixture data source and checks the payload. Until
+  registered in `services.py` with the fixture data source (a small synthetic release in
+  `tests/site_data.py`, synced into a DuckDB file) and checks the payload. Until
   an endpoint is ported to the new data layer it has no service and the test is an
   expected failure.
 - The other tests check the contracts themselves: every `read_at` line really reads that

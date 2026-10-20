@@ -58,14 +58,18 @@ jobs:
   contract-tests:
     name: Contract Tests
     # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    # No database: the contracts are checked against service functions and fixtures.
+    # No database server: the contracts are checked against service functions reading a
+    # DuckDB file built from synthetic fixture Parquet (tests/site_data.py).
     runs-on: [self-hosted, homeberry]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install pytest
+      # The data layer's pins from requirements.txt, without the old stack's packages.
+      - run: |
+          grep -E '^(duckdb|requests)==' requirements.txt > "$RUNNER_TEMP/data-requirements.txt"
+          pip install pytest -r "$RUNNER_TEMP/data-requirements.txt"
       - run: pytest tests/contracts -v
 
   frontend-build:

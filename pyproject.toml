@@ -42,11 +42,8 @@ ignore = [
 "analyze_deputy_issue.py" = ["F541", "I001", "W291", "W292", "W293"]
 "app/database/aurora_connection.py" = ["E722", "F401", "I001", "UP006", "UP035", "W291", "W292", "W293"]
 "app/main.py" = ["E402", "E722", "F401", "I001", "S104", "S201", "W291", "W293"]
-"app/routes/admin.py" = ["E402", "E741", "F401", "I001"]
 "app/routes/agenda.py" = ["E402", "F401", "I001", "UP034", "W291", "W293"]
-"app/routes/health.py" = ["E402", "E722", "I001", "W292", "W293"]
 "app/routes/parlamento.py" = ["B007", "E712", "E722", "F401", "F841", "I001", "W291", "W292", "W293"]
-"app/routes/transparency.py" = ["E402", "F401", "F841", "I001", "W291", "W292", "W293"]
 "app/utils/__init__.py" = ["I001", "W291", "W292"]
 "app/utils/attribution.py" = ["I001", "UP006", "UP035", "UP045"]
 "app/utils/deputy_linking.py" = ["W291", "W292", "W293"]
@@ -191,11 +188,8 @@ exclude = [
     "analyze_deputy_issue.py",
     "app/database/aurora_connection.py",
     "app/main.py",
-    "app/routes/admin.py",
     "app/routes/agenda.py",
-    "app/routes/health.py",
     "app/routes/parlamento.py",
-    "app/routes/transparency.py",
     "app/utils/__init__.py",
     "app/utils/attribution.py",
     "app/utils/deputy_linking.py",

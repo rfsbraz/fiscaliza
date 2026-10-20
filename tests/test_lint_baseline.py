@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -75,6 +76,15 @@ def test_new_file_with_lint_violation_fails(filename):
 def test_new_file_with_format_violation_fails(filename):
     result = ruff("format", "--check", "--stdin-filename", filename, "-", stdin=FORMAT_VIOLATION)
     assert result.returncode == 1
+
+
+def test_baseline_only_lists_files_that_exist():
+    # A deleted or rewritten legacy file leaves the baseline in the same PR.
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    ignores = config["tool"]["ruff"]["lint"]["per-file-ignores"]
+    excludes = config["tool"]["ruff"]["format"]["exclude"]
+    listed = [p for p in ignores if "*" not in p] + list(excludes)
+    assert sorted(p for p in listed if not (ROOT / p).exists()) == []
 
 
 def test_ruff_is_pinned_to_one_version_in_ci():
