@@ -1,0 +1,100 @@
+{
+  "endpoint": "deputados/{id}/conflitos-interesse",
+  "route": "/api/deputados/<int:cad_id>/conflitos-interesse",
+  "keys": [
+    {
+      "path": "declaration_url",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3742"
+    },
+    {
+      "path": "full_name",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3885"
+    },
+    {
+      "path": "has_conflict_potential",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3739"
+    },
+    {
+      "path": "last_updated",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3741"
+    },
+    {
+      "path": "professional_activities",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3787"
+    },
+    {
+      "path": "professional_activities[].entity_name",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3791"
+    },
+    {
+      "path": "professional_activities[].function_type",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3791"
+    },
+    {
+      "path": "regulated_sector_count",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3740"
+    },
+    {
+      "path": "shareholdings",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3800"
+    },
+    {
+      "path": "shareholdings[].entity_name",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3804"
+    },
+    {
+      "path": "shareholdings[].share_percentage",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3805"
+    },
+    {
+      "path": "total_sectors",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3775"
+    }
+  ],
+  "dropped": [
+    {
+      "path": "spouse_name",
+      "reason": "F15: family data about third parties (spouse, marital status, matrimonial regime, DGF number). Dropped for good (D2)."
+    },
+    {
+      "path": "spouse_deputy",
+      "reason": "F15: family data about third parties (spouse, marital status, matrimonial regime, DGF number). Dropped for good (D2)."
+    },
+    {
+      "path": "marital_status",
+      "reason": "F15: family data about third parties (spouse, marital status, matrimonial regime, DGF number). Dropped for good (D2)."
+    },
+    {
+      "path": "matrimonial_regime",
+      "reason": "F15: family data about third parties (spouse, marital status, matrimonial regime, DGF number). Dropped for good (D2)."
+    },
+    {
+      "path": "dgf_number",
+      "reason": "F15: family data about third parties (spouse, marital status, matrimonial regime, DGF number). Dropped for good (D2)."
+    }
+  ]
+}

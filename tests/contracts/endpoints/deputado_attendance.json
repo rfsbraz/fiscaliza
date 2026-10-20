@@ -1,0 +1,97 @@
+{
+  "endpoint": "deputados/{id}/attendance",
+  "route": "/api/deputados/<int:cad_id>/attendance",
+  "keys": [
+    {
+      "path": "codes_legend",
+      "type": "mapping",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4579"
+    },
+    {
+      "path": "summary",
+      "type": "object",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4142"
+    },
+    {
+      "path": "summary.institutional_absence",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4204"
+    },
+    {
+      "path": "summary.justified_absence",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4230"
+    },
+    {
+      "path": "summary.present",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4143"
+    },
+    {
+      "path": "summary.total_sessions",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4142"
+    },
+    {
+      "path": "summary.unjustified_absence",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4256"
+    },
+    {
+      "path": "timeline",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4431"
+    },
+    {
+      "path": "timeline[].attendance_description",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4498"
+    },
+    {
+      "path": "timeline[].date",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4485"
+    },
+    {
+      "path": "timeline[].justification",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4521"
+    },
+    {
+      "path": "timeline[].observations",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4532"
+    },
+    {
+      "path": "timeline[].reason",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4510"
+    },
+    {
+      "path": "timeline[].session_type",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4506"
+    },
+    {
+      "path": "timeline[].status",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4452"
+    }
+  ],
+  "dropped": []
+}

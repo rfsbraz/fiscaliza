@@ -1,0 +1,43 @@
+{
+  "endpoint": "coligacoes/{sigla}/deputados",
+  "route": "/api/coligacoes/<path:coligacao_sigla>/deputados",
+  "keys": [
+    {
+      "path": "deputados",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:173"
+    },
+    {
+      "path": "deputados[].circulo",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:626"
+    },
+    {
+      "path": "deputados[].id",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:591"
+    },
+    {
+      "path": "deputados[].id_cadastro",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:606"
+    },
+    {
+      "path": "deputados[].nome",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:620"
+    },
+    {
+      "path": "deputados[].partido_sigla",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:623"
+    }
+  ],
+  "dropped": []
+}

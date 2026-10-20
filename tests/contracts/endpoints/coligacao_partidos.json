@@ -1,0 +1,37 @@
+{
+  "endpoint": "coligacoes/{sigla}/partidos",
+  "route": "/api/coligacoes/<path:coligacao_sigla>/partidos",
+  "keys": [
+    {
+      "path": "partidos",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:328"
+    },
+    {
+      "path": "partidos[].data_adesao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:568"
+    },
+    {
+      "path": "partidos[].nome",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:548"
+    },
+    {
+      "path": "partidos[].papel_coligacao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:550"
+    },
+    {
+      "path": "partidos[].sigla",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:512"
+    }
+  ],
+  "dropped": []
+}

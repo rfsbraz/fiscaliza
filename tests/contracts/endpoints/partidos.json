@@ -1,0 +1,37 @@
+{
+  "endpoint": "partidos",
+  "route": "/api/partidos",
+  "keys": [
+    {
+      "path": "partidos",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidosPage.jsx:91"
+    },
+    {
+      "path": "partidos[].id",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidosPage.jsx:301"
+    },
+    {
+      "path": "partidos[].nome",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidosPage.jsx:345"
+    },
+    {
+      "path": "partidos[].num_deputados",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidosPage.jsx:357"
+    },
+    {
+      "path": "partidos[].sigla",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidosPage.jsx:298"
+    }
+  ],
+  "dropped": []
+}

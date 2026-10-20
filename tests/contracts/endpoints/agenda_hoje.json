@@ -1,0 +1,91 @@
+{
+  "endpoint": "agenda/hoje",
+  "route": "/api/agenda/hoje",
+  "keys": [
+    {
+      "path": "data",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:264"
+    },
+    {
+      "path": "eventos",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:273"
+    },
+    {
+      "path": "eventos[].descricao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:305"
+    },
+    {
+      "path": "eventos[].estado",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:277"
+    },
+    {
+      "path": "eventos[].hora_fim",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:335"
+    },
+    {
+      "path": "eventos[].hora_inicio",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:334"
+    },
+    {
+      "path": "eventos[].id",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:280"
+    },
+    {
+      "path": "eventos[].local",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:338"
+    },
+    {
+      "path": "eventos[].tipo",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:276"
+    },
+    {
+      "path": "eventos[].titulo",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:303"
+    },
+    {
+      "path": "resumo",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:391"
+    },
+    {
+      "path": "resumo.outros_eventos",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:468"
+    },
+    {
+      "path": "resumo.reunioes_comissao",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:446"
+    },
+    {
+      "path": "resumo.sessoes_plenarias",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:424"
+    }
+  ],
+  "dropped": []
+}

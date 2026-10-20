@@ -1,0 +1,103 @@
+{
+  "endpoint": "estatisticas",
+  "route": "/api/estatisticas",
+  "keys": [
+    {
+      "path": "distribuicao_circulos",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:18"
+    },
+    {
+      "path": "distribuicao_circulos[].circulo",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dashboard.jsx:437"
+    },
+    {
+      "path": "distribuicao_circulos[].deputados",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dashboard.jsx:461"
+    },
+    {
+      "path": "distribuicao_partidos",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:18"
+    },
+    {
+      "path": "distribuicao_partidos[].deputados",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dashboard.jsx:28"
+    },
+    {
+      "path": "distribuicao_partidos[].id",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dashboard.jsx:586"
+    },
+    {
+      "path": "distribuicao_partidos[].nome",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dashboard.jsx:614"
+    },
+    {
+      "path": "distribuicao_partidos[].sigla",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dashboard.jsx:27"
+    },
+    {
+      "path": "legislatura",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:18"
+    },
+    {
+      "path": "legislatura.numero",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:50"
+    },
+    {
+      "path": "totais",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:18"
+    },
+    {
+      "path": "totais.deputados",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:21"
+    },
+    {
+      "path": "totais.deputados_eleitos",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:22"
+    },
+    {
+      "path": "totais.deputados_em_exercicio",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:21"
+    },
+    {
+      "path": "totais.partidos",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:135"
+    },
+    {
+      "path": "totais.seated_deputies",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:21"
+    }
+  ],
+  "dropped": []
+}

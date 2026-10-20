@@ -55,6 +55,19 @@ jobs:
           PG_PASSWORD: test
           PG_DATABASE: parliament_test
 
+  contract-tests:
+    name: Contract Tests
+    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
+    # No database: the contracts are checked against service functions and fixtures.
+    runs-on: [self-hosted, homeberry]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pytest
+      - run: pytest tests/contracts -v
+
   frontend-build:
     name: Frontend Build
     # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
