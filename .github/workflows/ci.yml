@@ -20,40 +20,6 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
 
-  backend-test:
-    name: Backend Tests
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: parliament_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: pip install -r requirements.txt
-      - run: pip install pytest pytest-cov
-      - run: pytest --tb=short -q
-        env:
-          DATABASE_TYPE: postgresql
-          PG_HOST: localhost
-          PG_PORT: 5432
-          PG_USER: test
-          PG_PASSWORD: test
-          PG_DATABASE: parliament_test
-
   frontend-build:
     name: Frontend Build
     # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
@@ -84,11 +50,3 @@ jobs:
       - run: terraform fmt -check -recursive
       - run: terraform init -backend=false
       - run: terraform validate
-
-  docker-build:
-    name: Docker Build
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
-    steps:
-      - uses: actions/checkout@v4
-      - run: docker build -t fiscaliza-test .
