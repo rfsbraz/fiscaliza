@@ -19,8 +19,6 @@ from database.models import db
 from app.routes.parlamento import parlamento_bp
 from app.routes.agenda import agenda_bp
 from app.routes.health import health_bp
-from app.routes.transparency import transparency_bp
-from app.routes.admin import admin_bp
 
 # Configure logging with more detailed formatting for debugging
 log_dir = os.path.join(parent_dir, 'logs')
@@ -91,8 +89,6 @@ CORS(app)
 app.register_blueprint(parlamento_bp, url_prefix='/api')
 app.register_blueprint(agenda_bp, url_prefix='/api')
 app.register_blueprint(health_bp, url_prefix='/api')
-app.register_blueprint(transparency_bp, url_prefix='/api')
-app.register_blueprint(admin_bp, url_prefix='/api')
 
 # Initialize database - defer actual connection until first use
 try:
@@ -258,8 +254,7 @@ def api_root():
             "health": "/api/health",
             "deputies": "/api/deputies",
             "parties": "/api/parties", 
-            "agenda": "/api/agenda",
-            "transparency": "/api/transparency"
+            "agenda": "/api/agenda"
         },
         "frontend": "https://fiscaliza.pt"
     })
