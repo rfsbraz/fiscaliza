@@ -16,4 +16,4 @@ aiohttp>=3.9.0
 aiofiles>=23.2.0
 rich>=13.0.0
 # CLI tools
-click>=8.1.0
+click>=8.1.0duckdb==1.5.6
