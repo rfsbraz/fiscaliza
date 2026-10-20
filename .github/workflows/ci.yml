@@ -9,7 +9,8 @@ on:
 jobs:
   backend-lint:
     name: Backend Lint
-    runs-on: ubuntu-latest
+    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
+    runs-on: [self-hosted, homeberry]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -21,7 +22,8 @@ jobs:
 
   backend-test:
     name: Backend Tests
-    runs-on: ubuntu-latest
+    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
+    runs-on: [self-hosted, homeberry]
     services:
       postgres:
         image: postgres:16
@@ -54,7 +56,8 @@ jobs:
 
   frontend-build:
     name: Frontend Build
-    runs-on: ubuntu-latest
+    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
+    runs-on: [self-hosted, homeberry]
     defaults:
       run:
         working-directory: frontend
@@ -70,7 +73,8 @@ jobs:
 
   terraform-validate:
     name: Terraform Validate
-    runs-on: ubuntu-latest
+    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
+    runs-on: [self-hosted, homeberry]
     defaults:
       run:
         working-directory: terraform
@@ -83,7 +87,8 @@ jobs:
 
   docker-build:
     name: Docker Build
-    runs-on: ubuntu-latest
+    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
+    runs-on: [self-hosted, homeberry]
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t fiscaliza-test .
