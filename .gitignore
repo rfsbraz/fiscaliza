@@ -122,3 +122,9 @@ parliament_deploy_key
 # Windows artifacts
 nul
 terraform/tfplan
+
+# Site data files built by `python -m fiscaliza_data sync`
+data/*.duckdb
+data/*.duckdb.wal
+data/.staging-*
+data/.*.building
