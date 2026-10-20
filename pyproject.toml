@@ -8,6 +8,10 @@ license = "AGPL-3.0-or-later"
 [tool.ruff]
 target-version = "py312"
 line-length = 120
+# Explicit paths (editors, pre-commit) respect the excludes below, the same as `ruff check .`.
+force-exclude = true
+# Legacy script that doesn't parse, so a per-file ignore can't baseline it.
+extend-exclude = ["test_analytics_system.py"]
 
 [tool.ruff.lint]
 select = [
@@ -31,9 +35,300 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
 "scripts/*" = ["S603", "S607"]
+# Legacy baseline. Each legacy file ignores only the rule codes it already broke when the
+# baseline was taken (ruff 0.17.1), so new files get every rule. The migration to
+# parlamento-aberto rewrites or deletes these files: drop a line when its file is fixed or gone,
+# and never add one for new code.
+"analyze_deputy_issue.py" = ["F541", "I001", "W291", "W292", "W293"]
+"app/database/aurora_connection.py" = ["E722", "F401", "I001", "UP006", "UP035", "W291", "W292", "W293"]
+"app/main.py" = ["E402", "E722", "F401", "I001", "S104", "S201", "W291", "W293"]
+"app/routes/admin.py" = ["E402", "E741", "F401", "I001"]
+"app/routes/agenda.py" = ["E402", "F401", "I001", "UP034", "W291", "W293"]
+"app/routes/health.py" = ["E402", "E722", "I001", "W292", "W293"]
+"app/routes/parlamento.py" = ["B007", "E712", "E722", "F401", "F841", "I001", "W291", "W292", "W293"]
+"app/routes/transparency.py" = ["E402", "F401", "F841", "I001", "W291", "W292", "W293"]
+"app/utils/__init__.py" = ["I001", "W291", "W292"]
+"app/utils/attribution.py" = ["I001", "UP006", "UP035", "UP045"]
+"app/utils/deputy_linking.py" = ["W291", "W292", "W293"]
+"app/utils/deputy_status.py" = ["I001", "UP045"]
+"config/settings.py" = ["F401", "I001", "W293"]
+"database/connection.py" = ["B904", "F401", "F541", "F811", "I001", "UP045", "W291", "W292", "W293"]
+"database/migrations/env.py" = ["I001", "W293"]
+"database/migrations/versions/071faf27c613_change_atividade_parlamentar_unique_.py" = ["I001", "UP007", "UP035"]
+"database/migrations/versions/1a8d029ebd54_add_peticao_fields_to_eventos_peticoes_.py" = ["I001", "UP007", "UP035"]
+"database/migrations/versions/1aafdff28c90_initial_schema_with_uuid_primary_keys.py" = ["I001", "UP007", "UP035", "W291"]
+"database/migrations/versions/2af80e87132d_add_xml_source_id_to_deputados.py" = ["I001", "UP007", "UP035"]
+"database/migrations/versions/3ec4be30216e_add_voting_count_fields_to_.py" = ["I001", "UP007", "UP035"]
+"database/migrations/versions/7932db127bd9_add_descricao_to_audiencia.py" = ["I001", "UP007", "UP035"]
+"database/migrations/versions/a1b2c3d4e5f6_add_unique_constraint_coligacao_partidos.py" = ["F401", "I001", "UP007", "UP035"]
+"database/migrations/versions/b5c6d7e8f9a0_add_import_status_id_to_all_models.py" = ["I001", "UP007", "UP035"]
+"database/migrations/versions/c08492a8616f_add_fase_evento_id_to_iniciativas_anexos.py" = ["I001", "UP007", "UP035"]
+"database/migrations/versions/d46268eb0d79_add_descricao_and_doc_link_fields.py" = ["I001", "UP007", "UP035"]
+"database/migrations/versions/de9c20bb935d_add_missing_fields_to_.py" = ["I001", "UP007", "UP035"]
+"database/migrations/versions/e4430eef9468_add_unique_constraints_for_oe_upsert.py" = ["F401", "I001", "UP007", "UP035"]
+"database/mixins.py" = ["F401"]
+"database/models.py" = ["I001", "W291", "W293"]
+"database/translators/__init__.py" = ["I001", "W291", "W292"]
+"database/translators/agenda_parlamentar.py" = ["I001", "UP045", "W292", "W293"]
+"database/translators/common_enums.py" = ["W292", "W293"]
+"database/translators/delegacao_eventual.py" = ["F401", "I001", "UP045", "W292", "W293"]
+"database/translators/delegacoes_permanentes.py" = ["I001", "UP045", "W292", "W293"]
+"database/translators/deputy_activities.py" = ["UP045"]
+"database/translators/diplomas_aprovados.py" = ["F401", "I001", "UP035", "UP045", "W291", "W292", "W293"]
+"database/translators/general_activities.py" = ["E741", "UP045"]
+"database/translators/initiatives.py" = ["E741", "UP045", "W291", "W293"]
+"database/translators/intervencoes.py" = ["UP045", "W291", "W292", "W293"]
+"database/translators/parliamentary_interventions.py" = ["UP045"]
+"database/translators/publications.py" = ["E741", "UP045"]
+"database/translators/registo_biografico.py" = ["UP045", "W291", "W292", "W293"]
+"database/translators/reunioes_visitas.py" = ["UP045", "W291", "W292", "W293"]
+"database/types.py" = ["F401"]
+"examples/field_translation_usage.py" = ["I001", "W291", "W292", "W293"]
+"examples/thematic_translation_usage.py" = ["I001", "W291", "W292", "W293"]
+"investigate_data_quality.py" = ["F541", "I001", "W291", "W292", "W293"]
+"investigate_deputy_count.py" = ["F401", "F541", "I001", "W291", "W292", "W293"]
+"lambda-functions/cloudflare-dns-updater/lambda_function.py" = ["I001", "S310"]
+"lambda-functions/spot-launcher/lambda_function.py" = ["B007", "E722", "I001", "S608", "W291", "W292", "W293"]
+"main.py" = ["E402", "S104", "W292"]
+"ops.py" = ["E402", "I001"]
+"ops/config.py" = ["F401", "I001", "UP045"]
+"ops/database.py" = ["B904", "E402", "F541", "I001", "S608"]
+"ops/deploy.py" = ["F401", "I001", "UP045"]
+"ops/logs.py" = ["F401", "I001", "S112", "UP045"]
+"ops/pipeline.py" = ["B904", "F401", "F541", "I001", "S112", "S310"]
+"run_tests.py" = ["I001", "W292", "W293"]
+"scripts/analysis/agenda.py" = ["F541", "F841", "I001", "W291", "W293"]
+"scripts/analysis/analisar_depgp.py" = ["F541", "I001", "S314", "W293"]
+"scripts/analysis/analisar_estrutura_dados.py" = ["B007", "F401", "F541", "F841", "I001", "S314", "W293"]
+"scripts/analysis/analisar_relacionamentos_xml.py" = ["I001", "S314", "W291", "W292", "W293"]
+"scripts/analysis/analisar_schema.py" = ["F401", "I001", "S608", "W291", "W292", "W293"]
+"scripts/analysis/analisar_schemas_completo.py" = ["F541", "I001", "S314", "W291", "W293"]
+"scripts/analysis/analisar_xml_real.py" = ["B007", "F841", "I001", "S112", "S314", "W293"]
+"scripts/analysis/analyze_conflicts.py" = ["F401", "I001", "W291", "W292", "W293"]
+"scripts/analysis/navegacao_relacional.py" = ["F401", "I001", "W291", "W293"]
+"scripts/analysis/parlamento.py" = ["I001", "W293"]
+"scripts/analysis/verificar_dados.py" = ["I001", "W291", "W293"]
+"scripts/analysis/verificar_relacionamentos_implementados.py" = ["F401", "F541", "I001", "S608", "W291", "W292", "W293"]
+"scripts/analytics/__init__.py" = ["W292"]
+"scripts/analytics/batch_analytics_processor.py" = ["F401", "I001", "S608", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/analytics/calculate_analytics.py" = ["F401", "F541", "I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/analytics/quick_update_analytics.py" = ["F401", "I001", "S608", "UP035", "UP045", "W292", "W293"]
+"scripts/analytics/run_analytics.py" = ["I001", "W292", "W293"]
+"scripts/create_database.py" = ["F401", "I001", "W292", "W293"]
+"scripts/data_processing/async_download_manager.py" = ["F401", "I001", "S324", "UP006", "UP035", "UP045"]
+"scripts/data_processing/async_http_client.py" = ["S311", "UP006", "UP035", "UP045"]
+"scripts/data_processing/async_pipeline_orchestrator.py" = ["B007", "B904", "E402", "F401", "F541", "I001", "UP006", "UP035", "UP041", "UP045"]
+"scripts/data_processing/clean_database.py" = ["I001", "S608"]
+"scripts/data_processing/cleanup_duplicate_imports.py" = ["I001"]
+"scripts/data_processing/database_driven_importer.py" = ["B007", "B904", "E722", "F401", "F541", "F841", "I001", "S311", "S314", "S324", "S608", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/debug_legislature.py" = ["E401", "I001", "W291", "W292"]
+"scripts/data_processing/discovery_service.py" = ["B007", "E722", "F401", "F541", "I001", "UP006", "UP035", "UP045", "W291", "W293"]
+"scripts/data_processing/file_type_resolver.py" = ["UP045", "W292", "W293"]
+"scripts/data_processing/generate_iniciativas_fields.py" = ["B007", "I001", "S314", "UP006", "UP035", "W292", "W293"]
+"scripts/data_processing/http_retry_utils.py" = ["S311", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/__init__.py" = ["I001", "W291", "W292"]
+"scripts/data_processing/mappers/agenda_parlamentar.py" = ["B904", "E722", "F401", "I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/atividade_deputados.py" = ["B904", "F401", "F841", "I001", "UP006", "UP035", "UP045", "W291", "W293"]
+"scripts/data_processing/mappers/atividades.py" = ["B033", "B904", "F401", "F541", "F841", "I001", "S324", "UP006", "UP035", "UP045"]
+"scripts/data_processing/mappers/coalition_detector.py" = ["F401", "F541", "I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/common_utilities.py" = ["I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/composicao_orgaos.py" = ["B007", "B033", "B904", "F401", "F541", "F821", "F841", "UP006", "UP035", "UP045"]
+"scripts/data_processing/mappers/cooperacao.py" = ["F401", "I001", "UP006", "UP035", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/delegacao_eventual.py" = ["B904", "F401", "F841", "I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/delegacao_permanente.py" = ["B904", "F401", "F841", "I001", "UP006", "UP035", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/diplomas_aprovados.py" = ["B904", "F401", "F841", "I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/enhanced_base_mapper.py" = ["B007", "B904", "I001", "UP006", "UP035", "UP037", "UP045", "W291", "W293"]
+"scripts/data_processing/mappers/grupos_amizade.py" = ["B904", "F401", "F541", "I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/informacao_base_mapper.py" = ["F401", "F841", "I001", "UP006", "UP035", "UP045", "W293"]
+"scripts/data_processing/mappers/iniciativas.py" = ["B904", "E402", "F401", "F841", "I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/intervencoes.py" = ["B904", "F401", "F811", "F841", "I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/orcamento_estado_mapper.py" = ["F401", "I001", "UP006", "UP035", "UP045", "W291"]
+"scripts/data_processing/mappers/perguntas_requerimentos.py" = ["B904", "F401", "I001", "UP006", "UP035", "UP045", "W293"]
+"scripts/data_processing/mappers/peticoes.py" = ["B033", "B904", "E402", "F401", "I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/political_entity_queries.py" = ["F401", "F841", "I001", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/mappers/registo_biografico.py" = ["E722", "F401", "F541", "UP006", "UP035", "W293"]
+"scripts/data_processing/mappers/registo_interesses.py" = ["B033", "F401", "F841", "I001", "UP006", "UP035", "UP045"]
+"scripts/data_processing/mappers/reunioes_nacionais.py" = ["B904", "F401", "F841", "I001", "S314", "UP006", "UP035", "W291", "W292", "W293"]
+"scripts/data_processing/migrate_coalition_data.py" = ["B007", "F401", "I001", "UP006", "UP035", "W292", "W293"]
+"scripts/data_processing/parallel_import_processor.py" = ["F401", "I001", "UP006", "UP035", "UP045"]
+"scripts/data_processing/pipeline_logging.py" = ["F401", "I001", "UP006", "UP035", "UP045"]
+"scripts/data_processing/pipeline_orchestrator.py" = ["F401", "F841", "I001", "S324", "UP006", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/data_processing/pipeline_runner.py" = ["B007", "E402", "F401", "F541", "I001", "UP006", "UP015", "UP035", "UP041", "UP045"]
+"scripts/data_processing/reset_database_schema.py" = ["I001"]
+"scripts/data_processing/test_pipeline.py" = ["F541", "W291", "W292", "W293"]
+"scripts/data_processing/utils/__init__.py" = ["I001", "W291", "W292"]
+"scripts/data_processing/utils/unicode_safe_logging.py" = ["E722", "F401", "W291", "W292", "W293"]
+"scripts/database/adicionar_tabelas_especializadas.py" = ["F401", "F541", "I001", "W291", "W292", "W293"]
+"scripts/database/correcao_final_legislaturas.py" = ["F541", "I001", "S314", "W291", "W292", "W293"]
+"scripts/database/corrigir_dados_finais_xml.py" = ["F401", "F541", "F841", "I001", "S112", "S314", "S608", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/database/corrigir_todos_dados_restantes.py" = ["E722", "F401", "F541", "F841", "I001", "S314", "S608", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/database/create_sample_data.py" = ["F401", "F541", "I001", "W291", "W292", "W293"]
+"scripts/database/implementar_relacionamentos_completos.py" = ["F401", "I001", "S314", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/database/implementar_schema_expandido.py" = ["F541", "I001", "S608", "W291", "W292", "W293"]
+"scripts/database/implementar_votacoes_sessoes.py" = ["B007", "F401", "F541", "F841", "I001", "S112", "S314", "UP035", "UP045", "W291", "W292", "W293"]
+"scripts/migrate-to-aurora.py" = ["F401", "F541", "F841", "I001", "S324", "S608", "UP006", "UP035", "W291", "W292", "W293"]
+"scripts/sqlite-to-sql-dump.py" = ["F541", "I001", "S608", "W292", "W293"]
+"scripts/utilities/check_corrupted_files.py" = ["I001", "W292", "W293"]
+"scripts/utilities/test_single_file.py" = ["I001", "W292", "W293"]
+"scripts/utilities/test_video_data.py" = ["I001", "W291", "W292", "W293"]
+"test_comprehensive_mappers.py" = ["E402", "I001", "S314", "S608", "UP015", "W291", "W292", "W293"]
+"tests/__init__.py" = ["W292"]
+"tests/conftest.py" = ["I001"]
+"tests/test_base_mapper_utils.py" = ["F401", "I001", "W291", "W292", "W293"]
+"tests/test_boolean_value_mapper.py" = ["F401", "F841", "I001", "W291", "W292", "W293"]
+"tests/test_data_validation_utils.py" = ["B905", "I001", "W292", "W293"]
+"tests/test_date_parsing.py" = ["I001", "W291", "W292", "W293"]
+"tests/test_gp_id_conversion_bug_fix.py" = ["B905", "F401", "I001", "W291", "W292", "W293"]
+"tests/test_integration_boolean_refactor.py" = ["B009", "I001", "W292", "W293"]
+"tests/test_legislature_bug_fix.py" = ["I001", "S314", "W291", "W292", "W293"]
+"tests/test_legislature_extraction.py" = ["F401", "I001", "S314", "W291", "W292", "W293"]
 
 [tool.ruff.format]
 quote-style = "double"
+# Legacy baseline: files that weren't ruff-formatted when the baseline was taken. Same rule as
+# above: drop a line when its file is formatted or deleted, and never add one for new code.
+exclude = [
+    "analyze_deputy_issue.py",
+    "app/database/aurora_connection.py",
+    "app/main.py",
+    "app/routes/admin.py",
+    "app/routes/agenda.py",
+    "app/routes/health.py",
+    "app/routes/parlamento.py",
+    "app/routes/transparency.py",
+    "app/utils/__init__.py",
+    "app/utils/attribution.py",
+    "app/utils/deputy_linking.py",
+    "app/utils/deputy_status.py",
+    "config/settings.py",
+    "database/connection.py",
+    "database/migrations/env.py",
+    "database/migrations/versions/071faf27c613_change_atividade_parlamentar_unique_.py",
+    "database/migrations/versions/1a8d029ebd54_add_peticao_fields_to_eventos_peticoes_.py",
+    "database/migrations/versions/1aafdff28c90_initial_schema_with_uuid_primary_keys.py",
+    "database/migrations/versions/2af80e87132d_add_xml_source_id_to_deputados.py",
+    "database/migrations/versions/3ec4be30216e_add_voting_count_fields_to_.py",
+    "database/migrations/versions/7932db127bd9_add_descricao_to_audiencia.py",
+    "database/migrations/versions/a1b2c3d4e5f6_add_unique_constraint_coligacao_partidos.py",
+    "database/migrations/versions/b5c6d7e8f9a0_add_import_status_id_to_all_models.py",
+    "database/migrations/versions/c08492a8616f_add_fase_evento_id_to_iniciativas_anexos.py",
+    "database/migrations/versions/d46268eb0d79_add_descricao_and_doc_link_fields.py",
+    "database/migrations/versions/de9c20bb935d_add_missing_fields_to_.py",
+    "database/migrations/versions/e4430eef9468_add_unique_constraints_for_oe_upsert.py",
+    "database/mixins.py",
+    "database/models.py",
+    "database/translators/README.md",
+    "database/translators/__init__.py",
+    "database/translators/agenda_parlamentar.py",
+    "database/translators/common_enums.py",
+    "database/translators/delegacao_eventual.py",
+    "database/translators/delegacoes_permanentes.py",
+    "database/translators/diplomas_aprovados.py",
+    "database/translators/initiatives.py",
+    "database/translators/intervencoes.py",
+    "database/translators/publications.py",
+    "database/translators/registo_biografico.py",
+    "database/translators/reunioes_visitas.py",
+    "examples/field_translation_usage.py",
+    "examples/thematic_translation_usage.py",
+    "investigate_data_quality.py",
+    "investigate_deputy_count.py",
+    "lambda-functions/cloudflare-dns-updater/lambda_function.py",
+    "lambda-functions/spot-launcher/lambda_function.py",
+    "main.py",
+    "ops/config.py",
+    "ops/database.py",
+    "ops/deploy.py",
+    "ops/logs.py",
+    "ops/pipeline.py",
+    "run_tests.py",
+    "scripts/analysis/agenda.py",
+    "scripts/analysis/analisar_depgp.py",
+    "scripts/analysis/analisar_estrutura_dados.py",
+    "scripts/analysis/analisar_relacionamentos_xml.py",
+    "scripts/analysis/analisar_schema.py",
+    "scripts/analysis/analisar_schemas_completo.py",
+    "scripts/analysis/analisar_xml_real.py",
+    "scripts/analysis/analyze_conflicts.py",
+    "scripts/analysis/navegacao_relacional.py",
+    "scripts/analysis/parlamento.py",
+    "scripts/analysis/verificar_dados.py",
+    "scripts/analysis/verificar_relacionamentos_implementados.py",
+    "scripts/analytics/README.md",
+    "scripts/analytics/__init__.py",
+    "scripts/analytics/batch_analytics_processor.py",
+    "scripts/analytics/calculate_analytics.py",
+    "scripts/analytics/quick_update_analytics.py",
+    "scripts/analytics/run_analytics.py",
+    "scripts/create_database.py",
+    "scripts/data_processing/async_download_manager.py",
+    "scripts/data_processing/async_http_client.py",
+    "scripts/data_processing/async_pipeline_orchestrator.py",
+    "scripts/data_processing/clean_database.py",
+    "scripts/data_processing/cleanup_duplicate_imports.py",
+    "scripts/data_processing/database_driven_importer.py",
+    "scripts/data_processing/debug_legislature.py",
+    "scripts/data_processing/discovery_service.py",
+    "scripts/data_processing/file_type_resolver.py",
+    "scripts/data_processing/generate_iniciativas_fields.py",
+    "scripts/data_processing/http_retry_utils.py",
+    "scripts/data_processing/mappers/__init__.py",
+    "scripts/data_processing/mappers/agenda_parlamentar.py",
+    "scripts/data_processing/mappers/atividade_deputados.py",
+    "scripts/data_processing/mappers/atividades.py",
+    "scripts/data_processing/mappers/coalition_detector.py",
+    "scripts/data_processing/mappers/common_utilities.py",
+    "scripts/data_processing/mappers/composicao_orgaos.py",
+    "scripts/data_processing/mappers/cooperacao.py",
+    "scripts/data_processing/mappers/delegacao_eventual.py",
+    "scripts/data_processing/mappers/delegacao_permanente.py",
+    "scripts/data_processing/mappers/diplomas_aprovados.py",
+    "scripts/data_processing/mappers/enhanced_base_mapper.py",
+    "scripts/data_processing/mappers/grupos_amizade.py",
+    "scripts/data_processing/mappers/informacao_base_mapper.py",
+    "scripts/data_processing/mappers/iniciativas.py",
+    "scripts/data_processing/mappers/intervencoes.py",
+    "scripts/data_processing/mappers/orcamento_estado_mapper.py",
+    "scripts/data_processing/mappers/perguntas_requerimentos.py",
+    "scripts/data_processing/mappers/peticoes.py",
+    "scripts/data_processing/mappers/political_entity_queries.py",
+    "scripts/data_processing/mappers/registo_biografico.py",
+    "scripts/data_processing/mappers/registo_interesses.py",
+    "scripts/data_processing/mappers/reunioes_nacionais.py",
+    "scripts/data_processing/migrate_coalition_data.py",
+    "scripts/data_processing/parallel_import_processor.py",
+    "scripts/data_processing/pipeline_logging.py",
+    "scripts/data_processing/pipeline_orchestrator.py",
+    "scripts/data_processing/pipeline_runner.py",
+    "scripts/data_processing/reset_database_schema.py",
+    "scripts/data_processing/test_pipeline.py",
+    "scripts/data_processing/utils/__init__.py",
+    "scripts/data_processing/utils/unicode_safe_logging.py",
+    "scripts/database/adicionar_tabelas_especializadas.py",
+    "scripts/database/correcao_final_legislaturas.py",
+    "scripts/database/corrigir_dados_finais_xml.py",
+    "scripts/database/corrigir_todos_dados_restantes.py",
+    "scripts/database/create_sample_data.py",
+    "scripts/database/implementar_relacionamentos_completos.py",
+    "scripts/database/implementar_schema_expandido.py",
+    "scripts/database/implementar_votacoes_sessoes.py",
+    "scripts/migrate-to-aurora.py",
+    "scripts/sqlite-to-sql-dump.py",
+    "scripts/utilities/check_corrupted_files.py",
+    "scripts/utilities/test_single_file.py",
+    "scripts/utilities/test_video_data.py",
+    "test_comprehensive_mappers.py",
+    "tests/__init__.py",
+    "tests/conftest.py",
+    "tests/test_base_mapper_utils.py",
+    "tests/test_boolean_value_mapper.py",
+    "tests/test_data_validation_utils.py",
+    "tests/test_date_parsing.py",
+    "tests/test_gp_id_conversion_bug_fix.py",
+    "tests/test_integration_boolean_refactor.py",
+    "tests/test_legislature_bug_fix.py",
+    "tests/test_legislature_extraction.py",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -16,7 +16,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install ruff
+      # Pinned: the legacy baseline in pyproject.toml was taken with this version.
+      - run: pip install ruff==0.17.1
       - run: ruff check .
       - run: ruff format --check .
 
@@ -44,7 +45,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt
-      - run: pip install pytest pytest-cov
+      - run: pip install pytest pytest-cov ruff==0.17.1
       - run: pytest --tb=short -q
         env:
           DATABASE_TYPE: postgresql

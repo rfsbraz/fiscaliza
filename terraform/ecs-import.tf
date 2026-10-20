@@ -10,8 +10,8 @@ resource "aws_ecs_task_definition" "import_discovery" {
   family                   = "${local.name_prefix}-import-discovery"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 1024  # 1 vCPU - more than backend for import processing
-  memory                   = 2048  # 2 GB RAM
+  cpu                      = 1024 # 1 vCPU - more than backend for import processing
+  memory                   = 2048 # 2 GB RAM
   execution_role_arn       = aws_iam_role.ecs_execution.arn
   task_role_arn            = aws_iam_role.ecs_import_task.arn
 
@@ -77,8 +77,8 @@ resource "aws_ecs_task_definition" "import_importer" {
   family                   = "${local.name_prefix}-import-importer"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 2048  # 2 vCPU - heavy processing
-  memory                   = 4096  # 4 GB RAM
+  cpu                      = 2048 # 2 vCPU - heavy processing
+  memory                   = 4096 # 4 GB RAM
   execution_role_arn       = aws_iam_role.ecs_execution.arn
   task_role_arn            = aws_iam_role.ecs_import_task.arn
 
@@ -145,7 +145,7 @@ resource "aws_ecs_task_definition" "import_importer" {
 
 resource "aws_cloudwatch_log_group" "ecs_import" {
   name              = "/ecs/${local.name_prefix}/import"
-  retention_in_days = 14  # Keep import logs longer for debugging
+  retention_in_days = 14 # Keep import logs longer for debugging
 
   tags = merge(local.monitoring_tags, {
     Name          = "${local.name_prefix}-ecs-import-logs"
