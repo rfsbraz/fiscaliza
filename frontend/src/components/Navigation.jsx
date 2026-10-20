@@ -17,7 +17,6 @@ const Navigation = () => {
     { path: '/deputados', label: 'Deputados' },
     { path: '/partidos', label: 'Partidos' },
     { path: '/agenda', label: 'Agenda' },
-    { path: '/transparencia', label: 'Transparência' },
   ];
 
   const isActive = (path) => location.pathname === path;

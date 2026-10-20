@@ -1,9 +1,8 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ExternalLink, AlertTriangle, X, Shield } from 'lucide-react'
+import { ExternalLink, AlertTriangle, X } from 'lucide-react'
 import Navigation from './components/Navigation'
-import { Database, AlertTriangle as AlertIcon, Activity, Layers, HardDrive, FileText, Cpu, Settings } from 'lucide-react'
 
 const Dashboard = lazy(() => import('./components/Dashboard'))
 const DeputadosPage = lazy(() => import('./components/DeputadosPage'))
@@ -12,64 +11,8 @@ const PartidosPage = lazy(() => import('./components/PartidosPage'))
 const PartidoDetalhes = lazy(() => import('./components/PartidoDetalhes'))
 const ColigacaoDetalhes = lazy(() => import('./components/ColigacaoDetalhes'))
 const AgendaPage = lazy(() => import('./components/AgendaPage'))
-const TransparenciaPage = lazy(() => import('./components/TransparenciaPage'))
-const AdminLayout = lazy(() => import('./components/admin').then(m => ({ default: m.AdminLayout })))
-const AdminDashboard = lazy(() => import('./components/admin').then(m => ({ default: m.AdminDashboard })))
-const AdminPlaceholder = lazy(() => import('./components/admin').then(m => ({ default: m.AdminPlaceholder })))
 import { apiFetch } from './config/api'
 import './App.css'
-
-// Localhost-only wrapper for admin routes
-const LocalhostOnly = ({ children }) => {
-  const isLocalhost = window.location.hostname === 'localhost' ||
-                      window.location.hostname === '127.0.0.1' ||
-                      window.location.hostname === '::1'
-
-  if (!isLocalhost) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{
-          backgroundColor: '#030708',
-          fontFamily: "'IBM Plex Mono', monospace"
-        }}
-      >
-        <div className="text-center p-8">
-          <div
-            className="w-20 h-20 rounded-lg mx-auto mb-6 flex items-center justify-center"
-            style={{
-              backgroundColor: 'rgba(255, 51, 102, 0.1)',
-              border: '1px solid rgba(255, 51, 102, 0.3)'
-            }}
-          >
-            <Shield className="h-10 w-10" style={{ color: '#ff3366' }} />
-          </div>
-          <h1
-            className="text-xl font-medium mb-2"
-            style={{ color: '#e0f0e8' }}
-          >
-            ACCESS_DENIED
-          </h1>
-          <p
-            className="text-sm max-w-sm"
-            style={{ color: '#4a5f55' }}
-          >
-            Admin interface restricted to localhost connections only.
-            Connect from 127.0.0.1 to access.
-          </p>
-          <div
-            className="mt-6 text-xs"
-            style={{ color: '#7a8f85' }}
-          >
-            Remote IP detected: {window.location.hostname}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return children
-}
 
 const AppContent = () => {
   const [stats, setStats] = useState(null)
@@ -257,7 +200,6 @@ const AppContent = () => {
             <Route path="/partidos/:partidoId" element={<PartidoDetalhes />} />
             <Route path="/coligacoes/:coligacaoId" element={<ColigacaoDetalhes />} />
             <Route path="/agenda" element={<AgendaPage />} />
-            <Route path="/transparencia" element={<TransparenciaPage />} />
           </Routes>
         </Suspense>
       </main>
@@ -395,73 +337,6 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Admin routes - completely separate layout, localhost only */}
-        <Route path="/admin" element={
-          <LocalhostOnly>
-            <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>}>
-              <AdminLayout />
-            </Suspense>
-          </LocalhostOnly>
-        }>
-          <Route index element={<AdminDashboard />} />
-          <Route path="imports" element={
-            <AdminPlaceholder
-              title="Import Manager"
-              description="Detailed view of all imports with filtering, bulk actions, and manual retry capabilities."
-              icon={Database}
-            />
-          } />
-          <Route path="errors" element={
-            <AdminPlaceholder
-              title="Error Analytics"
-              description="Deep dive into import errors with pattern detection, categorization, and resolution tracking."
-              icon={AlertIcon}
-            />
-          } />
-          <Route path="pipeline" element={
-            <AdminPlaceholder
-              title="Pipeline Control"
-              description="Start, stop, and monitor the data import pipeline with real-time progress tracking."
-              icon={Activity}
-            />
-          } />
-          <Route path="queue" element={
-            <AdminPlaceholder
-              title="Queue Manager"
-              description="View and manage the import queue with priority adjustment and scheduling options."
-              icon={Layers}
-            />
-          } />
-          <Route path="database" element={
-            <AdminPlaceholder
-              title="Database Stats"
-              description="Database health metrics, table sizes, query performance, and connection pool status."
-              icon={HardDrive}
-            />
-          } />
-          <Route path="logs" element={
-            <AdminPlaceholder
-              title="Log Viewer"
-              description="Real-time log streaming with filtering, search, and export capabilities."
-              icon={FileText}
-            />
-          } />
-          <Route path="performance" element={
-            <AdminPlaceholder
-              title="Performance Monitor"
-              description="System resource usage, API response times, and performance bottleneck analysis."
-              icon={Cpu}
-            />
-          } />
-          <Route path="settings" element={
-            <AdminPlaceholder
-              title="Admin Settings"
-              description="Configure import parameters, notification preferences, and system behavior."
-              icon={Settings}
-            />
-          } />
-        </Route>
-
         {/* Main site routes */}
         <Route path="/*" element={<AppContent />} />
       </Routes>
