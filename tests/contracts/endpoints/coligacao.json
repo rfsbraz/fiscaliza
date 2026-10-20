@@ -1,0 +1,61 @@
+{
+  "endpoint": "coligacoes/{sigla}",
+  "route": "/api/coligacoes/<path:coligacao_sigla>",
+  "keys": [
+    {
+      "path": "ativa",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:255"
+    },
+    {
+      "path": "data_dissolucao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:162"
+    },
+    {
+      "path": "data_formacao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:156"
+    },
+    {
+      "path": "deputy_count",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:323"
+    },
+    {
+      "path": "espectro_politico",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:250"
+    },
+    {
+      "path": "nome",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:159"
+    },
+    {
+      "path": "observacoes",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:334"
+    },
+    {
+      "path": "sigla",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:240"
+    },
+    {
+      "path": "tipo_coligacao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:306"
+    }
+  ],
+  "dropped": []
+}

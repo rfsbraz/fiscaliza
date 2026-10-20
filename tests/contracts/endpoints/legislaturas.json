@@ -1,0 +1,31 @@
+{
+  "endpoint": "legislaturas",
+  "route": "/api/legislaturas",
+  "keys": [
+    {
+      "path": "legislaturas",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/PartidosPage.jsx:38"
+    },
+    {
+      "path": "legislaturas[].data_fim",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/PartidosPage.jsx:38"
+    },
+    {
+      "path": "legislaturas[].data_inicio",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/LegislatureDropdown.jsx:198"
+    },
+    {
+      "path": "legislaturas[].numero",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/LegislatureDropdown.jsx:119"
+    }
+  ],
+  "dropped": []
+}

@@ -1,0 +1,73 @@
+{
+  "endpoint": "coligacoes",
+  "route": "/api/coligacoes",
+  "keys": [
+    {
+      "path": "coligacoes",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidosPage.jsx:92"
+    },
+    {
+      "path": "coligacoes[].ativa",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/PartidosPage.jsx:505"
+    },
+    {
+      "path": "coligacoes[].component_parties",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/PartidosPage.jsx:579"
+    },
+    {
+      "path": "coligacoes[].component_parties[].sigla",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidosPage.jsx:596"
+    },
+    {
+      "path": "coligacoes[].data_dissolucao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/PartidosPage.jsx:629"
+    },
+    {
+      "path": "coligacoes[].data_formacao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/PartidosPage.jsx:629"
+    },
+    {
+      "path": "coligacoes[].deputy_count",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/PartidosPage.jsx:562"
+    },
+    {
+      "path": "coligacoes[].espectro_politico",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/PartidosPage.jsx:468"
+    },
+    {
+      "path": "coligacoes[].id",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidosPage.jsx:471"
+    },
+    {
+      "path": "coligacoes[].nome",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidosPage.jsx:534"
+    },
+    {
+      "path": "coligacoes[].sigla",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidosPage.jsx:502"
+    }
+  ],
+  "dropped": []
+}

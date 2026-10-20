@@ -1,0 +1,91 @@
+{
+  "endpoint": "votacoes/recentes",
+  "route": "/api/votacoes/recentes",
+  "keys": [
+    {
+      "path": "resumo",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:706"
+    },
+    {
+      "path": "resumo.aprovadas",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:906"
+    },
+    {
+      "path": "resumo.periodo",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:706"
+    },
+    {
+      "path": "resumo.rejeitadas",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:928"
+    },
+    {
+      "path": "votacoes",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:711"
+    },
+    {
+      "path": "votacoes[].abstencoes",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:832"
+    },
+    {
+      "path": "votacoes[].ausencias",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:854"
+    },
+    {
+      "path": "votacoes[].data",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:759"
+    },
+    {
+      "path": "votacoes[].descricao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:733"
+    },
+    {
+      "path": "votacoes[].id",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:713"
+    },
+    {
+      "path": "votacoes[].resultado",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:770"
+    },
+    {
+      "path": "votacoes[].titulo",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:731"
+    },
+    {
+      "path": "votacoes[].votos_contra",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:810"
+    },
+    {
+      "path": "votacoes[].votos_favor",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:788"
+    }
+  ],
+  "dropped": []
+}

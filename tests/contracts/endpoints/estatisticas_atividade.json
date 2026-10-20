@@ -1,0 +1,67 @@
+{
+  "endpoint": "estatisticas/atividade",
+  "route": "/api/estatisticas/atividade",
+  "keys": [
+    {
+      "path": "estatisticas",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:127"
+    },
+    {
+      "path": "estatisticas.assiduidade",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:142"
+    },
+    {
+      "path": "estatisticas.assiduidade.media_presencas",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:142"
+    },
+    {
+      "path": "estatisticas.iniciativas",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:141"
+    },
+    {
+      "path": "estatisticas.iniciativas.apresentadas",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:141"
+    },
+    {
+      "path": "estatisticas.sessoes_plenarias",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:139"
+    },
+    {
+      "path": "estatisticas.sessoes_plenarias.total_ano",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:139"
+    },
+    {
+      "path": "estatisticas.votacoes",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:140"
+    },
+    {
+      "path": "estatisticas.votacoes.taxa_aprovacao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:140"
+    },
+    {
+      "path": "estatisticas.votacoes.total_ano",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:140"
+    }
+  ],
+  "dropped": []
+}
