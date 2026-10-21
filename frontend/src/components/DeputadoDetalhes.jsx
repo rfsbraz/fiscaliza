@@ -414,6 +414,8 @@ const MandateTimeline = ({ mandatos, currentLegislature }) => {
   });
 
   const maxMandates = sortedMandatos.length;
+  // Legislatures with a seated period count as mandates; the rest were elected only (#107).
+  const servedMandates = sortedMandatos.filter(m => m.em_exercicio !== false).length;
 
   return (
     <section style={{
@@ -497,7 +499,11 @@ const MandateTimeline = ({ mandatos, currentLegislature }) => {
         fontSize: '0.8125rem',
         color: tokens.colors.textSecondary,
       }}>
-        <span style={{ fontWeight: 500 }}>{maxMandates} mandato{maxMandates > 1 ? 's' : ''}</span>
+        <span style={{ fontWeight: 500 }}>
+          {servedMandates === maxMandates
+            ? `${maxMandates} mandato${maxMandates > 1 ? 's' : ''}`
+            : `${servedMandates} ${servedMandates === 1 ? 'mandato em exercício' : 'mandatos em exercício'} · eleito em ${maxMandates} legislaturas`}
+        </span>
         {sortedMandatos.length > 1 && (
           <span> · {[...new Set(sortedMandatos.map(m => m.partido_sigla))].join(', ')}</span>
         )}
@@ -1631,16 +1637,18 @@ const DeputadoDetalhes = () => {
                 }}>
                   <Award style={{ width: '20px', height: '20px', color: '#FFFFFF' }} />
                 </div>
-                <span style={{
-                  padding: '4px 10px',
-                  backgroundColor: '#F3E8FF',
-                  borderRadius: '12px',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: '#7C3AED',
-                }}>
-                  {deputado.estatisticas.nivel_experiencia}
-                </span>
+                {deputado.estatisticas.nivel_experiencia && (
+                  <span style={{
+                    padding: '4px 10px',
+                    backgroundColor: '#F3E8FF',
+                    borderRadius: '12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: '#7C3AED',
+                  }}>
+                    {deputado.estatisticas.nivel_experiencia}
+                  </span>
+                )}
               </header>
 
               <h4 style={{
