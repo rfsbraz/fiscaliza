@@ -509,3 +509,26 @@ def test_deputy_modules_have_no_sqlalchemy_or_old_database_import(path):
     names = [a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names]
     names += [n.module or "" for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)]
     assert [n for n in names if n.split(".")[0] in {"sqlalchemy", "flask_sqlalchemy", "database"}] == []
+
+
+# Evolution chart and attendance
+
+
+def test_evolution_bars_are_scaled_to_their_values():
+    # A percentage height inside a column with no height of its own resolves to auto, so every
+    # bar fell back to the same minimum. The bars get a pixel height out of a fixed track.
+    source = COMPONENT.read_text()
+    assert "height: `${Math.max(height, 8)}%`" not in source
+    assert "const EVOLUTION_TRACK_PX = " in source
+    assert "Math.round((total / maxValue) * EVOLUTION_TRACK_PX)" in source
+    assert "height: `${barHeight}px`" in source
+
+
+def test_attendance_tab_is_hidden_until_its_mart_lands():
+    # Attendance still runs on the old code (S11 brings it back on the plenary attendance mart), so
+    # the page neither calls it nor offers the tab.
+    source = COMPONENT.read_text()
+    assert "const ATTENDANCE_AVAILABLE = false;" in source
+    assert "ATTENDANCE_AVAILABLE ? apiFetch(`deputados/${cadId}/attendance`)" in source
+    assert "...(ATTENDANCE_AVAILABLE ? [{ id: 'attendance', label: 'Presenças', icon: Activity }] : [])" in source
+    assert "{ATTENDANCE_AVAILABLE && activeTab === 'attendance' && (" in source
