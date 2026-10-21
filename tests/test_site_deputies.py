@@ -260,7 +260,8 @@ def test_intervention_comparison_only_for_a_closed_legislature(con):
 
 def test_open_legislature_says_the_interventions_are_incomplete(con):
     note = deputies.atividades(con, 1)["nota_intervencoes"]
-    assert "XVII" in note and "4 intervenções" in note
+    # 4 from the deputy activity and 4 from the agenda page (tests/site_agenda.py).
+    assert "XVII" in note and "8 intervenções" in note
     assert deputies.atividades(con, 1, legislatura="XVI")["nota_intervencoes"] is None
 
 

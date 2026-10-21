@@ -6,6 +6,7 @@ with the known split, a mid-term replacement and a substitute who never sat.
 
 import ast
 import os
+import re
 from pathlib import Path
 
 import duckdb
@@ -253,6 +254,20 @@ def test_estatisticas_route_serves_the_service_payload(site_app, con):
     assert response.get_json() == core.estatisticas(con)
 
 
+def test_estatisticas_route_names_every_party(site_app):
+    parties = site_app.test_client().get("/api/estatisticas").get_json()["distribuicao_partidos"]
+    assert {p["sigla"]: p["nome"] for p in parties} == {g: f"Grupo {g}" for g in KNOWN_SPLIT}
+
+
+def test_home_donut_labels_its_slices_with_the_party_acronym():
+    # Without nameKey, recharts reads a "name" field the payload does not have and the
+    # legend falls back to the slice index (0 to 9).
+    dashboard = (ROOT / "frontend" / "src" / "components" / "Dashboard.jsx").read_text()
+    pie = re.search(r"<Pie\b(.*?)>", dashboard, re.S).group(1)
+    assert re.search(r'\bdataKey="deputados"', pie)
+    assert re.search(r'\bnameKey="sigla"', pie)
+
+
 def test_deputados_route_reads_the_frontend_query(site_app):
     response = site_app.test_client().get("/api/deputados?page=1&per_page=20&active_only=false&search=deputado%20300")
     assert [d["id_cadastro"] for d in response.get_json()["deputados"]] == [300]
@@ -297,6 +312,7 @@ def test_ported_routes_are_served_by_the_new_blueprint(app):
     "path",
     [
         "app/routes/core.py",
+        "app/routes/activity.py",
         "app/routes/health.py",
         *sorted(str(p.relative_to(ROOT)) for p in (ROOT / "app" / "data").glob("*.py")),
         *sorted(str(p.relative_to(ROOT)) for p in (ROOT / "app" / "services").glob("*.py")),

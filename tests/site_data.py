@@ -16,6 +16,11 @@ The three PCP deputies (222 to 224) sign 12 initiatives as a whole group and 222
 on their own, and person 227 (BE, one seat) one. Person 1 has two interest declarations from XV,
 an older and a newer one; person 2 has one that lists only the mandate and leaves exclusivity
 blank; person 301 has one from XVI.
+
+Votes, initiatives and interventions for the agenda page are in tests/site_agenda.py and go into
+the same tables (TABLES below). They use their own initiative ids and deputies, so they do not
+change the deputy figures; the deputy activity above adds 4 XVII interventions on 3 days of 2026
+to the agenda stats.
 """
 
 import hashlib
@@ -25,6 +30,7 @@ from pathlib import Path
 import duckdb
 
 from fiscaliza_data import sync
+from tests.site_agenda import agenda_tables
 
 TAG = "data-2026-10-20"
 EXTRACT = "2026-10-19"
@@ -159,9 +165,9 @@ def _activity():
         *[(200 + n, n, "XVII", "plenary", "Votação final global") for n in range(30, 43)],
     ]
     votes = [
-        # vote_id, legislature, date, body, result
+        # vote_id, legislature, date, body, result (unanimous and description added below)
         (101, "XVII", "2025-07-10", "plenary", "Aprovado"),
-        (102, "XVII", "2025-12-10", "plenary", "Aprovado"),
+        (102, "XVII", "2025-12-05", "plenary", "Aprovado"),
         (103, "XVII", "2025-08-10", "plenary", "Rejeitado"),
         (104, "XVII", "2025-10-10", "plenary", "Aprovado"),
         (105, "XVI", "2024-07-10", "plenary", "Aprovado"),
@@ -171,11 +177,13 @@ def _activity():
         (109, "XVII", "2025-11-21", "plenary", "Aprovado"),
         (110, "XVII", "2025-11-22", "plenary", "Rejeitado"),
         (111, "XVII", "2025-09-10", "plenary", "Rejeitado"),
-        (112, "XVII", "2026-01-15", "plenary", "Aprovado"),
+        (112, "XVII", "2025-11-30", "plenary", "Aprovado"),
         (113, "XVII", "2025-11-23", "plenary", "Aprovado"),
         # PCP: 30 to 36 passed, 37 to 42 failed.
         *[(200 + n, "XVII", "2025-12-01", "plenary", "Aprovado" if n < 37 else "Rejeitado") for n in range(30, 43)],
     ]
+    # All before the agenda page's votes (from 2025-12-10), so its recent votes stay its own.
+    votes = [(*v, False, None) for v in votes]
     interventions = []
     for i, (leg, cad, day, kind) in enumerate(
         [
@@ -249,7 +257,11 @@ def _activity():
             "vote_id bigint, initiative_id bigint, initiative_legislature varchar, body varchar, phase varchar",
             initiative_votes,
         ),
-        "votes": ("vote_id bigint, legislature varchar, date date, body varchar, result varchar", votes),
+        "votes": (
+            "vote_id bigint, legislature varchar, date date, body varchar, result varchar, unanimous boolean, "
+            "description varchar",
+            votes,
+        ),
         "interventions": (
             "legislature varchar, intervention_id bigint, session_number integer, meeting_date date, "
             "intervention_type varchar, session_phase varchar, debate varchar, summary varchar, abstract varchar, "
@@ -272,6 +284,20 @@ def _activity():
 
 
 ACTIVITY = _activity()
+
+
+def _tables():
+    """ACTIVITY with the agenda page's rows added; a table in both must have the same columns."""
+    tables = dict(ACTIVITY)
+    for table, (columns, rows) in agenda_tables().items():
+        if table in tables:
+            assert columns == tables[table][0], f"{table}: agenda columns differ from ACTIVITY"
+            rows = tables[table][1] + rows
+        tables[table] = (columns, rows)
+    return tables
+
+
+TABLES = _tables()
 
 
 def build_release(root):
@@ -319,7 +345,7 @@ def build_release(root):
         "election_url varchar, note varchar)"
     )
     con.executemany("insert into coalitions values (?, ?, ?, ?, ?, ?, ?, ?, ?)", coalitions)
-    for table, (columns, rows) in ACTIVITY.items():
+    for table, (columns, rows) in TABLES.items():
         con.execute(f"create table {table} ({columns})")
         con.executemany(f"insert into {table} values ({', '.join('?' * len(rows[0]))})", rows)  # noqa: S608
     marts = {}
@@ -331,7 +357,7 @@ def build_release(root):
         "electoral_circles",
         "parliamentary_groups",
         "coalitions",
-        *ACTIVITY,
+        *TABLES,
     ):
         path = out / f"{mart}.parquet"
         con.execute(f"copy {mart} to '{path}' (format parquet)")
