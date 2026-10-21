@@ -116,7 +116,7 @@ def deputado_voting_analytics(con, cadastro_id, legislatura=None):
             {
                 "date": _iso(day),
                 "total_votes": d["total"],
-                "participated": d["total"] - (d["total"] - d["favour"] - d["against"] - d["abstention"]),
+                "participated": d["favour"] + d["against"] + d["abstention"],
                 "participation_rate": _rate(d["favour"] + d["against"] + d["abstention"], d["total"]),
                 "favor_votes": d["favour"],
                 "contra_votes": d["against"],

@@ -3,6 +3,10 @@ import { Calendar, TrendingUp, Users, Target, Scale, PieChart, Activity, Shield,
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 
+const ABSENCE_NOTE =
+  'O registo das votações só indica ausências quando as nomeia, por isso a maioria das faltas não aparece aqui. ' +
+  'A presença em plenário está no separador de presenças.';
+
 const VotingAnalytics = ({ deputadoId, legislatura }) => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -140,7 +144,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
       { key: 'favor', label: 'A Favor', color: 'bg-green-500', textColor: 'text-green-800' },
       { key: 'contra', label: 'Contra', color: 'bg-red-500', textColor: 'text-red-800' },
       { key: 'abstencao', label: 'Abstenção', color: 'bg-yellow-500', textColor: 'text-yellow-800' },
-      { key: 'ausente', label: 'Ausente', color: 'bg-gray-400', textColor: 'text-gray-800' }
+      { key: 'ausente', label: 'Ausência registada', color: 'bg-gray-400', textColor: 'text-gray-800' }
     ];
 
     return (
@@ -303,7 +307,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
     favor: 'A Favor',
     contra: 'Contra',
     abstencao: 'Abstenção',
-    ausente: 'Ausente'
+    ausente: 'Ausência registada'
   };
 
   const voteColors = {
@@ -461,9 +465,10 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Activity className="h-5 w-5 text-green-600 mr-2" />
-            Participação
+            Votações por Dia
           </h4>
           <ParticipationTimelineChart />
+          <p className="text-xs text-gray-500 mt-3">{ABSENCE_NOTE}</p>
         </div>
       </div>
     );
@@ -608,6 +613,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
                   <strong>Fontes:</strong> {analytics.data_sources.votes_counted} votações em plenário com sentido de
                   voto conhecido, dados abertos da Assembleia da República
                 </p>
+                <p className="text-xs text-blue-500 mt-1 italic">{ABSENCE_NOTE}</p>
                 {analytics.data_sources.note && (
                   <p className="text-xs text-blue-500 mt-1 italic">
                     {analytics.data_sources.note}
