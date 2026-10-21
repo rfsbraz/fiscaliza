@@ -542,6 +542,381 @@ def group_activity(con, legislature, group_acronym):
 
 
 # Agenda page (S8)
+# Deputy page (S5)
+
+
+def deputy(con, cadastro_id):
+    return _one(con, "select * from deputies where cadastro_id = ?", [cadastro_id])
+
+
+def is_seated(con, cadastro_id):
+    return con.execute("select count(*) from deputy_current where cadastro_id = ?", [cadastro_id]).fetchone()[0] > 0
+
+
+def seat_periods(con, cadastro_id):
+    """Per legislature the person held a seat in, oldest first: the first day and the last day
+    of their effective mandates (null while still seated in an open legislature) and the days
+    seated, counted up to the legislature's reference day."""
+    return _rows(
+        con,
+        """
+        select
+            m.legislature,
+            min(m.start_date) as seat_start,
+            case when l.is_open and bool_or(m.end_date is null) then null
+                 else max(least(coalesce(m.end_date, l.ref_day), l.ref_day)) end as seat_end,
+            sum(greatest(date_diff('day', m.start_date, least(coalesce(m.end_date, l.ref_day), l.ref_day)), 0))
+                as days
+        from mandates m
+        join legislature_days l on l.legislature = m.legislature
+        where m.cadastro_id = ? and m.is_effective
+        group by m.legislature, l.is_open, l.start_date
+        order by l.start_date
+        """,
+        [cadastro_id],
+    )
+
+
+def group_names(con, legislatures):
+    """{(legislature, group acronym): name} for the groups of the given legislatures."""
+    rows = _rows(
+        con,
+        "select legislature, group_acronym, name from parliamentary_groups where list_contains(?, legislature)",
+        [list(legislatures)],
+    )
+    return {(r["legislature"], r["group_acronym"]): r["name"] for r in rows}
+
+
+def deputy_activity_by_legislature(con, cadastro_id):
+    """Per legislature: initiatives the person signed and their plenary interventions."""
+    return _rows(
+        con,
+        """
+        with ini as (
+            select legislature, count(*) as initiatives
+            from deputy_initiatives
+            where cadastro_id = $cad
+            group by legislature
+        ),
+        itv as (
+            select legislature, count(*) as interventions
+            from interventions
+            where cadastro_id = $cad
+            group by legislature
+        )
+        select
+            coalesce(ini.legislature, itv.legislature) as legislature,
+            coalesce(ini.initiatives, 0) as initiatives,
+            coalesce(itv.interventions, 0) as interventions
+        from ini
+        full join itv on itv.legislature = ini.legislature
+        """,
+        {"cad": cadastro_id},
+    )
+
+
+# Projetos de lei, de resolução and de deliberação: the initiatives with an approval rate and a
+# signing pattern. The other types are counted only.
+RATED_TYPES = ("J", "R", "D")
+
+
+def deputy_outcomes(con, cadastro_id, legislature=None):
+    """Per legislature (oldest first) and type of projeto the person signed: how many, how many
+    passed (and of those, partly), and how many failed, per initiative_outcome."""
+    return _rows(
+        con,
+        """
+        select
+            di.legislature,
+            i.type_code,
+            any_value(i.type) as type,
+            count(*) as total,
+            count(*) filter (o.result = 'Aprovado') as approved,
+            count(*) filter (o.partly_approved) as partly_approved,
+            count(*) filter (o.result = 'Rejeitado') as rejected
+        from deputy_initiatives di
+        join initiatives i on i.legislature = di.legislature and i.initiative_id = di.initiative_id
+        join legislature_days l on l.legislature = di.legislature
+        left join initiative_outcome o on o.legislature = di.legislature and o.initiative_id = di.initiative_id
+        where di.cadastro_id = $cad
+          and list_contains($types, i.type_code)
+          and ($leg is null or di.legislature = $leg)
+        group by di.legislature, l.start_date, i.type_code
+        order by l.start_date, list_position($types, i.type_code)
+        """,
+        {"cad": cadastro_id, "leg": legislature, "types": list(RATED_TYPES)},
+    )
+
+
+def deputy_signing(con, cadastro_id, legislature=None):
+    """Per legislature (oldest first): the projetos the person signed, by initiative_signing kind."""
+    return _rows(
+        con,
+        """
+        select
+            di.legislature,
+            count(*) filter (s.kind = 'grupo_parlamentar') as grupo_parlamentar,
+            count(*) filter (s.kind = 'subscricao_restrita') as subscricao_restrita,
+            count(*) filter (s.kind = 'outros_grupos') as outros_grupos
+        from deputy_initiatives di
+        join initiative_signing s on s.legislature = di.legislature and s.initiative_id = di.initiative_id
+        join legislature_days l on l.legislature = di.legislature
+        where di.cadastro_id = $cad and ($leg is null or di.legislature = $leg)
+        group by di.legislature, l.start_date
+        order by l.start_date
+        """,
+        {"cad": cadastro_id, "leg": legislature},
+    )
+
+
+def deputy_initiative_types(con, cadastro_id):
+    """Initiatives the person signed, per type, most first."""
+    return _rows(
+        con,
+        """
+        select i.type_code, any_value(i.type) as type, count(*) as total
+        from deputy_initiatives di
+        join initiatives i on i.legislature = di.legislature and i.initiative_id = di.initiative_id
+        where di.cadastro_id = ?
+        group by i.type_code
+        order by total desc, i.type_code
+        """,
+        [cadastro_id],
+    )
+
+
+# Per seat-year figures: a count over the days seated, times 365.25.
+_MEASURES = {
+    "restricted_initiatives": """
+        select di.cadastro_id, count(*) as n
+        from deputy_initiatives di
+        join initiative_signing s on s.legislature = di.legislature and s.initiative_id = di.initiative_id
+        where di.legislature = $leg and s.kind = 'subscricao_restrita'
+        group by di.cadastro_id
+    """,
+    "interventions": """
+        select cadastro_id, count(*) as n from interventions where legislature = $leg group by cadastro_id
+    """,
+}
+
+
+def group_comparison(con, cadastro_id, legislature, measure):
+    """The person against their group in one legislature, per seat-year of ``measure`` (a key of
+    _MEASURES). The comparison population is the group's people seated at least half of the
+    legislature's days. Returns the group, whether the person is in that population
+    (``eligible``), how many others are (``peers``), the person's figure and the population's
+    average, or None when the person held no seat in it."""
+    return _one(
+        con,
+        f"""
+        with counts as ({_MEASURES[measure]}),
+        me as (
+            select group_acronym, days from deputy_seat_days where legislature = $leg and cadastro_id = $cad
+        ),
+        per as (
+            select
+                d.cadastro_id,
+                coalesce(c.n, 0) * 365.25 / d.days as per_year
+            from deputy_seat_days d
+            left join counts c on c.cadastro_id = d.cadastro_id
+            where d.legislature = $leg
+              and d.group_acronym is not distinct from (select group_acronym from me)
+              and d.days > 0 and d.days >= 0.5 * d.legislature_days
+        )
+        select
+            me.group_acronym,
+            me.days > 0 and me.days >= 0.5 * (
+                select legislature_days from deputy_seat_days where legislature = $leg and cadastro_id = $cad
+            ) as eligible,
+            (select count(*) from per where cadastro_id <> $cad) as peers,
+            coalesce((select n from counts where cadastro_id = $cad), 0) * 365.25 / nullif(me.days, 0) as per_year,
+            (select avg(per_year) from per) as group_per_year
+        from me
+        """,  # noqa: S608 - the measure query comes from the fixed table above
+        {"leg": legislature, "cad": cadastro_id},
+    )
+
+
+_INTERVENTION_ORDER = {
+    "newest": "meeting_date desc nulls last, intervention_id desc",
+    "oldest": "meeting_date asc nulls last, intervention_id asc",
+    "type": "intervention_type asc nulls last, meeting_date desc nulls last, intervention_id desc",
+}
+
+
+def interventions_page(con, cadastro_id, legislature, kind=None, order="newest", limit=50, offset=0):
+    """The person's plenary interventions in a legislature, one page, each row carrying
+    ``total`` (interventions matched). ``kind`` matches part of the intervention type."""
+    order_by = _INTERVENTION_ORDER.get(order, _INTERVENTION_ORDER["newest"])
+    return _rows(
+        con,
+        f"""
+        select *, count(*) over () as total
+        from interventions
+        where cadastro_id = $cad and legislature = $leg
+          and ($kind is null or contains(lower(intervention_type), lower($kind)))
+        order by {order_by}
+        limit $limit offset $offset
+        """,  # noqa: S608 - order_by comes from the fixed table above
+        {"cad": cadastro_id, "leg": legislature, "kind": kind or None, "limit": limit, "offset": offset},
+    )
+
+
+def interventions_count(con, cadastro_id, legislature, kind=None):
+    return con.execute(
+        """
+        select count(*) from interventions
+        where cadastro_id = $cad and legislature = $leg
+          and ($kind is null or contains(lower(intervention_type), lower($kind)))
+        """,
+        {"cad": cadastro_id, "leg": legislature, "kind": kind or None},
+    ).fetchone()[0]
+
+
+def legislature_interventions(con, legislature):
+    """Interventions published for a legislature, all speakers."""
+    return con.execute("select count(*) from interventions where legislature = ?", [legislature]).fetchone()[0]
+
+
+def deputy_initiatives_in(con, cadastro_id, legislature, limit=100):
+    """Initiatives the person signed in a legislature, newest first, with their outcome, how
+    they were signed (initiative_signing) and the deputies who signed them."""
+    return _rows(
+        con,
+        """
+        with mine as (
+            select initiative_id from deputy_initiatives where cadastro_id = $cad and legislature = $leg
+        ),
+        signed as (
+            select a.initiative_id,
+                   list(distinct a.name order by a.name) as authors,
+                   count(distinct a.cadastro_id) as signatories
+            from initiative_authors a
+            join mine using (initiative_id)
+            where a.legislature = $leg and a.author_type = 'deputy'
+            group by a.initiative_id
+        )
+        select i.*, o.result, coalesce(o.partly_approved, false) as partly_approved,
+               s.authors, s.signatories, g.kind as signing, count(*) over () as total
+        from initiatives i
+        join mine using (initiative_id)
+        left join initiative_outcome o on o.legislature = i.legislature and o.initiative_id = i.initiative_id
+        left join initiative_signing g on g.legislature = i.legislature and g.initiative_id = i.initiative_id
+        left join signed s on s.initiative_id = i.initiative_id
+        where i.legislature = $leg
+        order by i.first_event_date desc nulls last, i.initiative_id desc
+        limit $limit
+        """,
+        {"cad": cadastro_id, "leg": legislature, "limit": limit},
+    )
+
+
+def latest_declaration(con, cadastro_id):
+    """The person's latest interest declaration in the AR open data: latest legislature first,
+    then the latest version within it."""
+    return _one(
+        con,
+        """
+        select d.*
+        from interest_declarations d
+        left join legislatures l on l.legislature = d.legislature
+        where d.cadastro_id = ?
+        order by l.start_date desc nulls last, d.version_date desc nulls last, d.declaration_id desc nulls last
+        limit 1
+        """,
+        [cadastro_id],
+    )
+
+
+def declaration_items(con, legislature, declaration_key, categories):
+    """Items of one declaration in the given categories, in their published order. Items the
+    declaration repeats word for word (same post, place and period) come back once; the same
+    post for another period is its own item."""
+    return _rows(
+        con,
+        """
+        select category, description, entity, share, location, start_date_raw, end_date_raw
+        from interests
+        where legislature = ? and declaration_key = ? and list_contains(?, category)
+        qualify row_number() over (
+            partition by category, description, entity, share, location, start_date_raw, end_date_raw
+            order by item_number
+        ) = 1
+        order by item_number
+        """,
+        [legislature, declaration_key, list(categories)],
+    )
+
+
+def declaration_flags(con, legislature, declaration_key):
+    """Whether a declaration lists an activity other than the deputy mandate itself (an item
+    described as 'Deputado...' or held at the Assembleia da República), and any shareholding."""
+    return _one(
+        con,
+        """
+        select
+            coalesce(bool_or(
+                category = 'activity'
+                and not (lower(coalesce(description, '')) like 'deputad%'
+                         or lower(coalesce(entity, '')) like '%assembleia da república%')
+            ), false) as other_activities,
+            coalesce(bool_or(category = 'society'), false) as shareholdings
+        from interests
+        where legislature = ? and declaration_key = ?
+        """,
+        [legislature, declaration_key],
+    )
+
+
+def declaration_coverage(con):
+    """Over the legislatures with AR open data declarations (first and last): the people seated
+    in each, counted once per legislature, and how many of those have a declaration in it."""
+    return _one(
+        con,
+        """
+        with legs as (
+            select distinct d.legislature, l.start_date
+            from interest_declarations d
+            join legislatures l on l.legislature = d.legislature
+            where d.source = 'ar_open_data'
+        ),
+        seated as (
+            select distinct m.legislature, m.cadastro_id
+            from mandates m
+            join legs using (legislature)
+            where m.is_effective
+        ),
+        declared as (
+            select distinct legislature, cadastro_id from interest_declarations where source = 'ar_open_data'
+        )
+        select
+            (select arg_min(legislature, start_date) from legs) as first_legislature,
+            (select arg_max(legislature, start_date) from legs) as last_legislature,
+            count(*) as seated,
+            count(d.cadastro_id) as declared
+        from seated s
+        left join declared d on d.legislature = s.legislature and d.cadastro_id = s.cadastro_id
+        """,
+    )
+
+
+def seated_since(con, cadastro_id, legislature):
+    """Legislatures from ``legislature`` on in which the person held a seat, oldest first."""
+    return [
+        r[0]
+        for r in con.execute(
+            """
+            select dl.legislature
+            from deputy_legislatures dl
+            where dl.cadastro_id = ?
+              and dl.legislature_start >= (select start_date from legislatures where legislature = ?)
+            order by dl.legislature_start
+            """,
+            [cadastro_id, legislature],
+        ).fetchall()
+    ]
+
+
 def recent_plenary_votes(con, legislature, limit):
     """The latest plenary votes of a legislature, newest first, with the initiatives they
     decided (lowest id first) and the phase."""

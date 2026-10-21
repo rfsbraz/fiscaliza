@@ -80,15 +80,16 @@ def _votes():
 
 
 def _initiatives():
-    """XVII: votes 2, 4, 6 and 8 decide projetos de lei by PSD, votes 1 and 3 projetos de
-    resolução by PS deputies. XVI: PSD has 12 projetos de lei (7 approved, 3 rejected on the
+    """XVII: votes 2, 4, 6 and 8 decide projetos de lei 62, 64, 66 and 68 by PSD, votes 1 and 3
+    projetos de resolução 61 and 63 by PS deputies. The ids stay clear of the deputy and agenda
+    sets in tests/site_data.py. XVI: PSD has 12 projetos de lei (7 approved, 3 rejected on the
     generality, 1 never voted, 1 voted point by point with one point approved and one
     rejected), one of them with PS, and 2 projetos de resolução (one approved, one rejected)."""
     initiatives, authors, links, votes = [], [], [], []
 
     def initiative(leg, ini, type_code, day, authored_by):
         kind = {"J": "Projeto de Lei", "R": "Projeto de Resolução"}[type_code]
-        initiatives.append((leg, ini, ini, type_code, kind, f"Iniciativa {ini}", day))
+        initiatives.append((leg, ini, ini, type_code, kind, f"Iniciativa {ini}", day, None))
         for author in authored_by:
             if isinstance(author, str):
                 authors.append((leg, ini, "group", None, author, author))
@@ -97,14 +98,14 @@ def _initiatives():
                 authors.append((leg, ini, "deputy", cad, group, f"Deputado {cad}"))
 
     for ini, vote, phase in [
-        (2, 2, "Votação na generalidade"),
-        (4, 4, "Votação final global"),
-        (6, 6, "Votação na generalidade"),
-        (8, 8, "Votação final global"),
+        (62, 2, "Votação na generalidade"),
+        (64, 4, "Votação final global"),
+        (66, 6, "Votação na generalidade"),
+        (68, 8, "Votação final global"),
     ]:
         initiative("XVII", ini, "J", "2025-07-01", ["PSD", (1, "PSD")])
         links.append((vote, ini, "XVII", "plenary", phase))
-    for ini, vote in [(1, 1), (3, 3)]:
+    for ini, vote in [(61, 1), (63, 3)]:
         initiative("XVII", ini, "R", "2025-07-01", [(150, "PS")])
         links.append((vote, ini, "XVII", "plenary", "Votação Deliberação"))
 
@@ -138,7 +139,29 @@ def _interventions():
         ("XVII", 2, "2026-09-17", 2, "PSD"),
         ("XVII", 3, "2026-09-17", 150, "PS"),
     ]
-    return [(leg, 5000 + i, day, "Intervenção", "deputy", cad, group) for leg, i, day, cad, group in rows]
+    return [
+        (
+            leg,
+            5000 + i,
+            1,
+            day,
+            "Intervenção",
+            None,
+            None,
+            None,
+            None,
+            "deputy",
+            cad,
+            group,
+            "Deputado",
+            None,
+            None,
+            None,
+            [],
+            None,
+        )
+        for leg, i, day, cad, group in rows
+    ]
 
 
 def voting_tables():
@@ -163,7 +186,7 @@ def voting_tables():
         ),
         "initiatives": (
             "legislature varchar, initiative_id bigint, number integer, type_code varchar, type varchar, "
-            "title varchar, first_event_date date",
+            "title varchar, first_event_date date, text_url varchar",
             initiatives,
         ),
         "initiative_authors": (
@@ -176,8 +199,11 @@ def voting_tables():
             links,
         ),
         "interventions": (
-            "legislature varchar, intervention_id bigint, meeting_date date, intervention_type varchar, "
-            "speaker_kind varchar, cadastro_id bigint, group_acronym varchar",
+            "legislature varchar, intervention_id bigint, session_number integer, meeting_date date, "
+            "intervention_type varchar, session_phase varchar, debate varchar, summary varchar, abstract varchar, "
+            "speaker_kind varchar, cadastro_id bigint, group_acronym varchar, speaker_role varchar, "
+            "publication_type varchar, publication_number integer, publication_date date, pages varchar[], "
+            "diary_url varchar",
             _interventions(),
         ),
     }

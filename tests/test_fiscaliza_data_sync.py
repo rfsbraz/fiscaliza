@@ -49,7 +49,19 @@ def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema
     )
     con.execute("create table electoral_circles (legislature varchar, circle_id integer, name varchar)")
     con.execute("create table parliamentary_groups (legislature varchar, group_acronym varchar, name varchar)")
-    con.execute("create table votes (vote_id bigint, legislature varchar, date date, body varchar)")
+    con.execute(
+        "create table initiative_authors (legislature varchar, initiative_id bigint, author_type varchar, "
+        "cadastro_id bigint, group_code varchar, name varchar)"
+    )
+    con.execute(
+        "create table initiative_votes (vote_id bigint, initiative_id bigint, initiative_legislature varchar, "
+        "body varchar, phase varchar)"
+    )
+    con.execute("create table votes (vote_id bigint, legislature varchar, date date, body varchar, result varchar)")
+    con.execute(
+        "create table initiatives (legislature varchar, initiative_id bigint, type_code varchar, type varchar, "
+        "first_event_date date)"
+    )
     con.execute(
         "create table vote_group_positions (vote_id bigint, legislature varchar, body varchar, "
         "group_code varchar, position varchar, deputies integer)"
@@ -66,7 +78,10 @@ def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema
         "group_memberships",
         "electoral_circles",
         "parliamentary_groups",
+        "initiative_authors",
+        "initiative_votes",
         "votes",
+        "initiatives",
         "vote_group_positions",
         "vote_deputy_dissents",
     ):

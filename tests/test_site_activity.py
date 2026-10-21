@@ -1,6 +1,7 @@
 """S8: the agenda page's recent votes and activity stats (F33, F34) on the DuckDB data layer.
 
-Values are checked against the votes, initiatives and interventions in tests/site_agenda.py.
+Values are checked against the votes, initiatives and interventions in tests/site_agenda.py,
+plus the deputy activity in tests/site_data.py where it falls in 2026.
 """
 
 from pathlib import Path
@@ -14,7 +15,7 @@ from tests.site_data import build_site_data
 
 @pytest.fixture(scope="module")
 def data_dir(tmp_path_factory):
-    return build_site_data(tmp_path_factory.mktemp("site"), sets=("agenda",))
+    return build_site_data(tmp_path_factory.mktemp("site"), sets=("deputies", "agenda"))
 
 
 @pytest.fixture
@@ -35,17 +36,18 @@ def test_recent_plenary_votes_newest_first_without_committee_votes(con):
 
 def test_limite_and_legislatura(con):
     assert [v["id"] for v in activity.votacoes_recentes(con, limite=2)["votacoes"]] == [306, 304]
-    assert [v["id"] for v in activity.votacoes_recentes(con, legislatura="XVI")["votacoes"]] == [308]
+    # XVI: the agenda's 308 and the deputy activity's 105 (tests/site_data.py).
+    assert [v["id"] for v in activity.votacoes_recentes(con, legislatura="XVI")["votacoes"]] == [308, 105]
 
 
 def test_vote_shows_the_initiative_phase_and_result(con):
     votes = {v["id"]: v for v in activity.votacoes_recentes(con)["votacoes"]}
-    assert votes[306]["titulo"] == "Iniciativa 33"
+    assert votes[306]["titulo"] == "Iniciativa 53"
     assert votes[306]["descricao"] == "Votação na generalidade"
     assert votes[306]["data"] == "2026-06-10"
     assert votes[306]["resultado"] == "Aprovado"
     # Voted together on two initiatives.
-    assert votes[303]["titulo"] == "Iniciativa 33 (e mais 1)"
+    assert votes[303]["titulo"] == "Iniciativa 53 (e mais 1)"
     # No initiative: the vote's own description is the title.
     assert votes[304]["titulo"] == "Voto de pesar 1" and votes[304]["descricao"] is None
     assert votes[304]["unanime"] is True and votes[303]["unanime"] is False
@@ -85,11 +87,13 @@ def test_activity_counts_the_year_of_the_reference_day(con):
     stats = body["estatisticas"]
     assert body["periodo"] == "2026"
     assert body["ultima_atualizacao"] == "2026-10-20"
-    # Plenary days with a vote or an intervention: 01-15, 02-05, 03-20, 05-05, 06-10.
-    assert stats["sessoes_plenarias"] == {"total_ano": 5}
+    # Plenary days with a vote or an intervention: 01-15, 02-05, 03-20, 05-05, 06-10, and the
+    # deputy activity's 09-16, 09-17 and 09-18 (tests/site_data.py).
+    assert stats["sessoes_plenarias"] == {"total_ano": 8}
     assert stats["votacoes"] == {"total_ano": 4, "aprovadas": 3, "rejeitadas": 1, "taxa_aprovacao": 75.0}
     assert stats["iniciativas"] == {"apresentadas": 3}
-    assert stats["intervencoes"] == {"total": 3}
+    # 3 agenda interventions and 4 from the deputy activity.
+    assert stats["intervencoes"] == {"total": 7}
 
 
 def test_figures_without_a_source_are_left_out_not_zero(con):

@@ -44,6 +44,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      # The static export contract runs the browser code with node (tests/test_static_export.py).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - run: pip install -r requirements.txt
       - run: pip install pytest pytest-cov ruff==0.17.1
       - run: pytest --tb=short -q
@@ -87,6 +91,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm test
       - run: npm run build
 
   terraform-validate:
