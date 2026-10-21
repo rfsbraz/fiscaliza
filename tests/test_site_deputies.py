@@ -87,7 +87,6 @@ def test_unknown_or_never_seated_person_is_not_found(con):
 
 def test_counts_across_the_career(con):
     s = deputies.detalhes(con, 1)["estatisticas"]
-    assert s["iniciativas_propostas"] == 5
     assert s["intervencoes_parlamentares"] == 8
     assert s["total_mandatos"] == 2
     assert s["legislaturas_servidas"] == "XVI, XVII"
@@ -95,35 +94,125 @@ def test_counts_across_the_career(con):
     days = (date(2025, 6, 2) - date(2024, 3, 26)).days + (date.fromisoformat(EXTRACT) - date(2025, 6, 3)).days
     assert s["tempo_servico_anos"] == round(days / 365.25, 1)
     assert s["iniciativas_por_tipo"] == [
-        {"codigo": "J", "descricao": "Projeto de Lei", "total": 4},
-        {"codigo": "R", "descricao": "Projeto de Resolução", "total": 1},
+        {"codigo": "J", "descricao": "Projeto de Lei", "total": 7},
+        {"codigo": "R", "descricao": "Projeto de Resolução", "total": 2},
+        {"codigo": "A", "descricao": "Apreciação Parlamentar", "total": 1},
     ]
     assert s["evolucao_legislaturas"] == [
-        {"legislatura": "XVII", "iniciativas": 4, "intervencoes": 3},
+        {"legislatura": "XVII", "iniciativas": 9, "intervencoes": 3},
         {"legislatura": "XVI", "iniciativas": 1, "intervencoes": 5},
     ]
 
 
-def test_approved_means_the_latest_decisive_plenary_vote_passed(con):
-    # 1 passed its final global vote and 5 passed in XVI. 2 lost its deliberation vote, 3 was
-    # never voted and 4 only passed on the generality, which does not decide it.
+def test_no_career_total_rate_or_ranking(con):
     s = deputies.detalhes(con, 1)["estatisticas"]
-    assert s["iniciativas_aprovadas"] == 2
-    assert s["taxa_aprovacao"] == 40.0
+    for key in (
+        "iniciativas_propostas",
+        "iniciativas_aprovadas",
+        "taxa_aprovacao",
+        "percentil_nacional",
+        "media_partido_iniciativas",
+        "media_partido_intervencoes",
+        "iniciativas_legislatura",
+        "intervencoes_legislatura",
+    ):
+        assert key not in s, key
+
+
+def _row(codigo, descricao, aprovadas, parcialmente, rejeitadas, sem_votacao, taxa=None):
+    return {
+        "codigo": codigo,
+        "descricao": descricao,
+        "aprovadas": aprovadas,
+        "aprovadas_parcialmente": parcialmente,
+        "rejeitadas": rejeitadas,
+        "votadas": aprovadas + rejeitadas,
+        "taxa_aprovacao": taxa,
+        "sem_votacao": sem_votacao,
+    }
+
+
+def test_approval_per_legislature_and_type_over_decided_initiatives(con):
+    # XVII, projetos de lei: 1 passed its final global vote, 7 passed one point of two on the
+    # same day, 10 failed the generality and passed a later final global vote, 9 failed the
+    # generality. 3 was never voted and 4 only passed the generality: not decided, so outside
+    # the rate. Projetos de resolução: 2 lost its deliberation vote, 8 passed a 'Votação final'.
+    # The apreciação parlamentar (11) has no rate. Under 10 decided initiatives there is no rate.
+    rows = deputies.detalhes(con, 1)["estatisticas"]["iniciativas_legislaturas"]
+    assert [(r["legislatura"], r["aberta"]) for r in rows] == [("XVII", True), ("XVI", False)]
+    assert rows[0]["aprovacao"] == [
+        _row("J", "Projeto de Lei", 3, 1, 1, 2),
+        _row("R", "Projeto de Resolução", 1, 0, 1, 0),
+    ]
+    assert rows[1]["aprovacao"] == [_row("J", "Projeto de Lei", 1, 0, 0, 0)]
+
+
+def test_approval_rate_needs_ten_decided_initiatives(con):
+    # PCP signs 30 to 41 as a group (7 passed, 5 failed); 222 and 223 also signed 42, which failed.
+    (row,) = deputies.detalhes(con, 222)["estatisticas"]["iniciativas_legislaturas"]
+    assert row["aprovacao"] == [_row("J", "Projeto de Lei", 7, 0, 6, 0, round(7 / 13 * 100, 1))]
+    (row,) = deputies.detalhes(con, 224)["estatisticas"]["iniciativas_legislaturas"]
+    assert row["aprovacao"][0]["taxa_aprovacao"] == round(7 / 12 * 100, 1)
 
 
 def test_a_committee_vote_does_not_count_as_approval(con):
-    s = deputies.detalhes(con, 2)["estatisticas"]
-    assert (s["iniciativas_propostas"], s["iniciativas_aprovadas"], s["taxa_aprovacao"]) == (1, 0, 0.0)
+    (row,) = deputies.detalhes(con, 2)["estatisticas"]["iniciativas_legislaturas"]
+    assert row["aprovacao"] == [_row("J", "Projeto de Lei", 0, 0, 0, 1)]
 
 
-def test_party_average_and_national_percentile_in_the_latest_legislature(con):
-    s = deputies.detalhes(con, 1)["estatisticas"]
-    # 89 people sat for PSD in XVII: person 1 has 4 initiatives and 3 interventions, person 2 one initiative.
-    assert s["iniciativas_legislatura"] == 4 and s["intervencoes_legislatura"] == 3
-    assert s["media_partido_iniciativas"] == round(5 / 89, 2)
-    assert s["media_partido_intervencoes"] == round(3 / 89, 2)
-    assert s["percentil_nacional"] == 100
+def test_initiatives_split_by_how_they_were_signed(con):
+    # Person 1 signs alone for PSD (89 seats): restricted list. 4 is signed with a CH deputy.
+    rows = deputies.detalhes(con, 1)["estatisticas"]["iniciativas_legislaturas"]
+    assert [r["assinatura"] for r in rows] == [
+        {"grupo_parlamentar": 0, "subscricao_restrita": 7, "outros_grupos": 1},
+        {"grupo_parlamentar": 0, "subscricao_restrita": 1, "outros_grupos": 0},
+    ]
+    # The three PCP deputies sign 12 as a whole group; 42 lists two of the three.
+    (row,) = deputies.detalhes(con, 222)["estatisticas"]["iniciativas_legislaturas"]
+    assert row["assinatura"] == {"grupo_parlamentar": 12, "subscricao_restrita": 1, "outros_grupos": 0}
+    # A group with one seat signs as a whole group.
+    (row,) = deputies.detalhes(con, 227)["estatisticas"]["iniciativas_legislaturas"]
+    assert row["assinatura"] == {"grupo_parlamentar": 1, "subscricao_restrita": 0, "outros_grupos": 0}
+    assert row["aprovacao"] == [_row("J", "Projeto de Lei", 0, 0, 0, 1)]
+
+
+def test_comparison_within_the_group_per_seat_year(con):
+    c = deputies.detalhes(con, 1)["estatisticas"]["comparacao"]
+    # XVII, PSD: 89 deputies seated the whole legislature (503 days to the extract date).
+    # Restricted lists: person 1 signed 7 and person 2 one.
+    assert c["iniciativas_subscricao_restrita"] == {
+        "legislatura": "XVII",
+        "grupo": "PSD",
+        "deputado_por_ano": round(7 * 365.25 / 503, 2),
+        "media_grupo_por_ano": round(8 * 365.25 / 503 / 89, 2),
+        "pares": 88,
+        "nota": None,
+    }
+    # Interventions only for a closed legislature: XVI, PS, 27 deputies seated all 433 days.
+    assert c["intervencoes"] == {
+        "legislatura": "XVI",
+        "grupo": "PS",
+        "deputado_por_ano": round(5 * 365.25 / 433, 2),
+        "media_grupo_por_ano": round(5 * 365.25 / 433 / 27, 2),
+        "pares": 26,
+        "nota": None,
+    }
+
+
+def test_no_comparison_for_a_small_group(con):
+    c = deputies.detalhes(con, 222)["estatisticas"]["comparacao"]["iniciativas_subscricao_restrita"]
+    assert c["pares"] == 2 and c["media_grupo_por_ano"] is None
+    assert c["nota"] == "Grupo demasiado pequeno para comparação"
+
+
+def test_no_comparison_for_a_short_mandate(con):
+    # 231 sat 211 of XVII's 503 days, under half.
+    c = deputies.detalhes(con, 231)["estatisticas"]["comparacao"]
+    assert c["iniciativas_subscricao_restrita"]["media_grupo_por_ano"] is None
+    assert c["iniciativas_subscricao_restrita"]["nota"] == "Mandato curto nesta legislatura; sem comparação"
+    # 231 never sat in a closed legislature, so there is nothing to compare interventions with.
+    assert c["intervencoes"]["legislatura"] is None and c["intervencoes"]["media_grupo_por_ano"] is None
+    assert c["intervencoes"]["nota"] == "Sem legislatura concluída para comparar intervenções"
 
 
 def test_dropped_and_unavailable_fields(con):
@@ -151,11 +240,22 @@ def test_interventions_of_the_latest_legislature_newest_first(con):
     assert a["intervention_metadata"] == {"total": 3, "page": 1, "per_page": 50, "pages": 1}
 
 
-def test_intervention_averages_of_the_legislature(con):
-    # XVI: person 1 has all 5 interventions; 230 people held a seat, 27 of them for PS.
-    medias = deputies.atividades(con, 1, "XVI")["medias_intervencoes"]
-    assert medias == {"partido": round(5 / 27, 2), "parlamento": round(5 / 230, 2)}
-    assert deputies.atividades(con, 300, "XVII")["medias_intervencoes"] == {"partido": None, "parlamento": None}
+def test_intervention_comparison_only_for_a_closed_legislature(con):
+    # XVI: person 1 has all 5 interventions; 27 PS deputies seated all 433 days.
+    a = deputies.atividades(con, 1, "XVI")
+    assert "medias_intervencoes" not in a
+    assert a["comparacao_intervencoes"] == {
+        "legislatura": "XVI",
+        "grupo": "PS",
+        "deputado_por_ano": round(5 * 365.25 / 433, 2),
+        "media_grupo_por_ano": round(5 * 365.25 / 433 / 27, 2),
+        "pares": 26,
+        "nota": None,
+    }
+    open_leg = deputies.atividades(con, 1)["comparacao_intervencoes"]
+    assert open_leg["media_grupo_por_ano"] is None
+    assert open_leg["nota"] == "A XVII Legislatura ainda está em curso; sem comparação de intervenções"
+    assert deputies.atividades(con, 300, "XVII")["comparacao_intervencoes"] is None
 
 
 def test_open_legislature_says_the_interventions_are_incomplete(con):
@@ -176,13 +276,26 @@ def test_interventions_filter_sort_and_paging(con):
 
 
 def test_initiatives_of_the_legislature_with_their_outcome(con):
-    found = {i["id"]: i for i in deputies.atividades(con, 1)["iniciativas"]}
-    assert list(found) == [4, 3, 2, 1]
+    a = deputies.atividades(con, 1)
+    found = {i["id"]: i for i in a["iniciativas"]}
+    assert list(found) == [4, 3, 11, 2, 10, 9, 8, 7, 1]
     assert (found[1]["estado"], found[1]["resultado"], found[1]["aprovada"]) == ("Aprovado", "Aprovado", True)
     assert (found[2]["estado"], found[2]["aprovada"]) == ("Rejeitado", False)
     assert found[3]["estado"] is None and found[3]["resultado"] is None
-    assert found[4]["autores"] == ["Deputado 1", "Deputado 90"] and found[4]["is_cross_party"] is True
-    assert found[1]["autores"] == ["Deputado 1"] and found[1]["is_cross_party"] is False
+    assert found[4]["estado"] is None  # passed the generality only
+    assert (found[7]["estado"], found[7]["aprovada_parcialmente"]) == ("Aprovado", True)
+    assert found[1]["aprovada_parcialmente"] is False
+    assert (found[8]["estado"], found[9]["estado"], found[10]["estado"]) == ("Aprovado", "Rejeitado", "Aprovado")
+    assert found[4]["autores"] == ["Deputado 1", "Deputado 90"] and found[4]["subscricao"] == "outros_grupos"
+    assert found[1]["autores"] == ["Deputado 1"] and found[1]["subscricao"] == "subscricao_restrita"
+    assert found[1]["subscritores"] == 1 and found[4]["subscritores"] == 2
+    assert found[11]["subscricao"] is None  # only projetos de lei, resolução and deliberação
+    assert "is_cross_party" not in found[1]
+    assert a["assinatura"] == {"grupo_parlamentar": 0, "subscricao_restrita": 7, "outros_grupos": 1}
+    assert a["aprovacao"] == [
+        _row("J", "Projeto de Lei", 3, 1, 1, 2),
+        _row("R", "Projeto de Resolução", 1, 0, 1, 0),
+    ]
     assert found[1]["urls"]["documento"] == "https://example.org/1.pdf"
     assert found[1]["urls"]["oficial"].endswith("BID=1")
     assert (found[1]["tipo"], found[1]["tipo_descricao"], found[1]["data"]) == ("J", "Projeto de Lei", "2025-07-01")
@@ -208,11 +321,59 @@ def test_latest_declaration_with_activities_and_shareholdings(con):
     c = deputies.conflitos_interesse(con, 1)
     assert c["tem_declaracao"] is True
     assert (c["full_name"], c["legislatura"]) == ("Nome Completo 1", "XV")
-    assert c["professional_activities"] == [{"entity_name": "Empresa Exemplo", "function_type": "Consultor"}]
+    assert c["professional_activities"] == [
+        {"entity_name": "Empresa Exemplo", "function_type": "Consultor"},
+        {"entity_name": "Assembleia da República", "function_type": "Deputado"},
+    ]
     assert c["shareholdings"] == [{"entity_name": "Sociedade Exemplo", "share_percentage": "10"}]
-    assert c["is_exclusive"] is False and c["has_conflict_potential"] is True
+    assert c["is_exclusive"] is False
+    assert (c["declara_outras_atividades"], c["declara_participacoes"]) == (True, True)
+    assert "has_conflict_potential" not in c
     # No sector or legislation matching in the release: the page must not claim any overlap.
     assert c["regulated_sector_count"] is None
+
+
+def test_the_mandate_itself_is_not_another_activity_and_blank_exclusivity_stays_blank(con):
+    c = deputies.conflitos_interesse(con, 2)
+    assert (c["declara_outras_atividades"], c["declara_participacoes"]) == (False, False)
+    assert c["is_exclusive"] is None
+
+
+def test_coverage_of_the_ar_declarations(con):
+    # The synthetic release has AR declarations for XV and XVI but only XVI as a legislature; of
+    # the 230 people seated in XVI only 301 has a declaration.
+    for cad in (1, 300):
+        assert deputies.conflitos_interesse(con, cad)["cobertura"] == {
+            "de": "XVI",
+            "ate": "XVI",
+            "com_declaracao": 1,
+            "total": 230,
+        }
+
+
+def test_component_uses_the_neutral_interest_labels():
+    source = COMPONENT.read_text()
+    assert "has_conflict_potential" not in source
+    assert "Conflitos de Interesse" not in source
+    assert "label: 'Registo de Interesses'" in source
+    assert "conflitosInteresse.declara_outras_atividades" in source
+    assert "conflitosInteresse?.cobertura" in source
+    assert "\u2014" not in source and "—" not in source
+    badge = (ROOT / "frontend" / "src" / "components" / "deputy" / "InterestStatusCard.jsx").read_text()
+    for copy in (
+        "Declara outras atividades ou participações",
+        "Não declara outras atividades nem participações",
+        "Não indicado na declaração",
+    ):
+        assert copy in badge or copy in source, copy
+
+
+def test_component_reads_the_new_initiative_keys():
+    source = COMPONENT.read_text()
+    for key in ("percentil_nacional", "iniciativas_propostas", "media_partido_intervencoes", "is_cross_party"):
+        assert key not in source, key
+    for key in ("iniciativas_legislaturas", "comparacao_intervencoes", "atividades.assinatura"):
+        assert key in source, key
 
 
 def test_xvi_and_xvii_wait_for_the_ept(con):
