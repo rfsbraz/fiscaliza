@@ -1,14 +1,12 @@
 """Endpoints whose mart is not released yet answer 503 with a reason, never a crash.
 
-Attendance (F12) waits on the plenary attendance mart (S11) and the agenda for today and
-the week (F32) on the agenda mart (S13). The frontend reads a non-2xx answer as "not
-available" and shows its notice. These routes must not need a data file at all.
+The agenda for today and the week (F32) waits on the agenda mart (S13). The frontend reads
+a non-2xx answer as "not available" and shows its notice. These routes must not need a data file at all.
 """
 
 import pytest
 
 PENDING = {
-    "/api/deputados/123/attendance": "S11",
     "/api/agenda/hoje": "S13",
     "/api/agenda/semana": "S13",
 }

@@ -98,7 +98,6 @@ def test_activity_counts_the_year_of_the_reference_day(con):
 
 def test_figures_without_a_source_are_left_out_not_zero(con):
     stats = activity.estatisticas_atividade(con)["estatisticas"]
-    assert "assiduidade" not in stats
     assert "comissoes" not in stats
 
 

@@ -4,7 +4,8 @@
    (the folder, its manifest.json, or a .tar.gz, .tgz or .zip of the folder).
 2. Stop if that tag is already live.
 3. Get manifest.json and every Parquet file it lists; check each SHA-256.
-4. Refuse a schema_version whose major the site does not support.
+4. Refuse a schema_version whose major the site does not support, or a release without the
+   marts the site needs (REQUIRED_MARTS).
 5. Load the Parquet files as tables into a new fiscaliza-<tag>.duckdb, with the seating
    macros (seating.sql), the site views (views.sql) and a _meta table.
 6. Smoke checks: the current legislature has 230 seated deputies at its extract date, and
@@ -44,6 +45,8 @@ SEATING_SQL = Path(__file__).with_name("seating.sql")
 VIEWS_SQL = Path(__file__).with_name("views.sql")
 _TAG = re.compile(r"^[A-Za-z0-9._-]+$")
 _MART = re.compile(r"^[a-z][a-z0-9_]*$")
+# Marts the site reads that older releases may not have (plenary attendance, schema 1.2.0).
+REQUIRED_MARTS = ("plenary_attendance",)
 
 
 class SyncError(Exception):
@@ -132,6 +135,9 @@ def _parquet_files(manifest):
         if name != f"{mart}.parquet" or not sha:
             raise SyncError(f"manifest.json has no Parquet file and hash for {mart}")
         out[mart] = (name, sha)
+    missing = [m for m in REQUIRED_MARTS if m not in out]
+    if missing:
+        raise SyncError(f"manifest.json lists no {', '.join(missing)}; the site needs it")
     return out
 
 

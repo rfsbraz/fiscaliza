@@ -19,11 +19,11 @@ with people, not people times legislatures: about 3,400 files on the full releas
 fails before swapping if it reaches MAX_FILES files or any file reaches MAX_FILE_BYTES, limits
 that fit the common static hosts.
 
-Not rendered yet: attendance (S11) and the agenda for today and this week (S13). The browser
-answers them "not available" until their marts land. Attendance then is one more entry in
-DEPUTY_SECTIONS below (and one in staticApi.js); the agenda gets its files in _site_files.
-The deputy and party endpoints of S5, S6 and S7 render once their services are on master
-(app.services.deputies, voting and parties); until then their files are left out.
+Not rendered yet: the agenda for today and this week (S13). The browser answers it "not
+available" until its mart lands; it then gets its files in _site_files. Attendance (S11) is
+the ``attendance`` field of each deputy's file. The deputy and party endpoints of S6 and S7
+render once their services are on master (app.services.voting and parties); until then their
+files are left out.
 """
 
 import argparse
@@ -273,8 +273,8 @@ def _voting(voting, con, cadastro_id, legislatures):
     return fields
 
 
-# Every endpoint of the deputy page. A new one (attendance in S11) is one more entry here and
-# one in DEPUTY_SECTIONS in staticApi.js.
+# Every endpoint of the deputy page. A new one is one more entry here and one in
+# DEPUTY_SECTIONS in staticApi.js.
 DEPUTY_SECTIONS = (
     DeputySection("detalhes", "app.services.deputies", lambda s, con, cad, legs: {"detalhes": s.detalhes(con, cad)}),
     DeputySection(
@@ -288,6 +288,11 @@ DEPUTY_SECTIONS = (
         lambda s, con, cad, legs: {"atividades": {leg: _activities(s, con, cad, leg) for leg in legs}},
     ),
     DeputySection("voting-analytics", "app.services.voting", _voting),
+    DeputySection(
+        "attendance",
+        "app.services.attendance",
+        lambda s, con, cad, legs: {"attendance": s.deputado_attendance(con, cad)},
+    ),
 )
 
 

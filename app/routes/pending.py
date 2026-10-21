@@ -5,7 +5,6 @@ non-2xx answer as "not available" and shows its notice, so the page keeps workin
 these touch the data file.
 
 Permanent until their mart is released:
-- attendance (F12) waits on the plenary attendance mart, S11;
 - the agenda for today and this week (F32) waits on the agenda mart, S13.
 
 tests/test_pending_endpoints.py fails on a route registered twice, so a stub goes in the
@@ -19,11 +18,6 @@ pending_bp = Blueprint("pending", __name__)
 
 def _pending(reason, planned):
     return jsonify({"status": "not_available", "reason": reason, "planned": planned}), 503
-
-
-@pending_bp.route("/deputados/<int:cad_id>/attendance", methods=["GET"])
-def get_deputado_attendance(cad_id):
-    return _pending("Plenary attendance is not in the parlamento-aberto release yet.", "S11")
 
 
 @pending_bp.route("/agenda/hoje", methods=["GET"])
