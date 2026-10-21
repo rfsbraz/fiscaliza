@@ -202,6 +202,13 @@ def test_csp_allows_what_the_app_loads(headers):
             assert f"https://{host}" in policy["style-src"], host
 
 
+def test_csp_allows_the_deputy_photos_the_api_points_to(headers):
+    # picture_url in the API answers, rendered by DeputadosPage, DeputadoDetalhes and PartidoDetalhes.
+    core = (ROOT / "app" / "services" / "core.py").read_text()
+    host = re.search(r'PICTURE_URL = "https://([^/"]+)/', core).group(1)
+    assert f"https://{host}" in csp(headers)["img-src"]
+
+
 # The deploy plan
 
 

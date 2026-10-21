@@ -81,9 +81,11 @@ set on `/*`.
 
 The CSP: scripts, data and frames from the site itself only (`frame-ancestors 'none'`), styles
 from the site and Google Fonts (`'unsafe-inline'` for the style attributes Recharts and
-framer-motion set), fonts from `fonts.gstatic.com`, and images from the site, `data:` and
-`www.parlamento.pt` (deputy photos). A new external image, font or script host needs a line here,
-and `tests/test_pages_deploy.py` fails when the frontend adds an image host the CSP doesn't allow.
+framer-motion set), fonts from `fonts.gstatic.com`, and images from the site, `data:`,
+`app.parlamento.pt` (the deputy photos in `picture_url`) and `www.parlamento.pt` (the photos on the
+party demographics). A new external image, font or script host needs a line here,
+and `tests/test_pages_deploy.py` fails when the frontend or `PICTURE_URL` uses an image host the CSP
+doesn't allow.
 
 If the API files ever move to another origin (`VITE_API_BASE_URL`), add it to `connect-src`.
 
