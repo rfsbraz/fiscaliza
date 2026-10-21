@@ -169,7 +169,7 @@ const AgendaPage = () => {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <stat.icon size={24} style={{ color: stat.color }} />
+                <stat.icon size={24} style={{ color: stat.color, flexShrink: 0 }} />
                 <div>
                   <p
                     style={{
