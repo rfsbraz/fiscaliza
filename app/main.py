@@ -12,7 +12,9 @@ from werkzeug.exceptions import HTTPException
 from app.data.connection import init_app as init_data
 from app.routes.activity import activity_bp
 from app.routes.core import core_bp
+from app.routes.deputies import deputies_bp
 from app.routes.health import health_bp
+from app.routes.parties import parties_bp
 from app.routes.pending import pending_bp
 
 logging.basicConfig(
@@ -25,6 +27,8 @@ app = Flask(__name__)
 app.debug = os.getenv("FLASK_DEBUG", "false").lower() == "true"
 
 app.register_blueprint(core_bp, url_prefix="/api")
+app.register_blueprint(deputies_bp, url_prefix="/api")
+app.register_blueprint(parties_bp, url_prefix="/api")
 app.register_blueprint(activity_bp, url_prefix="/api")
 app.register_blueprint(health_bp, url_prefix="/api")
 # Last, so a real route always wins over a pending stub while they overlap.

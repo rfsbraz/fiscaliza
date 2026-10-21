@@ -1,42 +1,49 @@
 /**
  * API Configuration
- * Central configuration for API base URL
+ *
+ * The site reads the static export (python -m fiscaliza_data.export), not a live API. The
+ * export's folder is served at VITE_API_BASE_URL, set at build time (default /api on the
+ * site's own origin). apiFetch keeps the shape of a fetch to the API: it maps the endpoint to
+ * its JSON file and answers with a Response, so the pages are unchanged.
+ * See docs/STATIC_EXPORT.md.
  */
+import { createStaticApi } from './staticApi.js';
 
-// The API is served on the same origin as the site; the Vite dev server proxies /api to Flask.
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
-
 /**
- * Helper function to build API URLs
- * @param {string} endpoint - The API endpoint (without leading slash)
- * @returns {string} - Complete API URL
+ * Helper function to build URLs under the export's folder
+ * @param {string} path - A file path in the export (without leading slash)
+ * @returns {string} - Complete URL
  */
-export const buildApiUrl = (endpoint) => {
+export const buildApiUrl = (path) => {
   // Remove leading slash if present
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-  return `${API_BASE_URL}/${cleanEndpoint}`;
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  return `${API_BASE_URL}/${cleanPath}`;
 };
 
+const staticApi = createStaticApi({
+  load: async (path) => {
+    const response = await fetch(buildApiUrl(path), { headers: { Accept: 'application/json' } });
+    return { ok: response.ok, status: response.status, text: response.ok ? await response.text() : '' };
+  },
+});
+
 /**
- * Helper function for API fetch calls with error handling
- * @param {string} endpoint - The API endpoint
- * @param {object} options - Fetch options
- * @returns {Promise<Response>} - Fetch response
+ * Answer an API request from the static export, with error handling
+ * @param {string} endpoint - The API endpoint, with its query string
+ * @returns {Promise<Response>} - The endpoint's JSON as a Response
  */
-export const apiFetch = async (endpoint, options = {}) => {
-  const url = buildApiUrl(endpoint);
-  const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
+export const apiFetch = async (endpoint) => {
+  const { status, body } = await staticApi.get(endpoint);
+  const response = new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
   });
-  
+
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    throw new Error(`API request failed: ${status}`);
   }
-  
+
   return response;
 };

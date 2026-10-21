@@ -1,10 +1,22 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { copyFileSync } from 'fs'
+
+// Deep links (/deputados/123) must load the app on any static host. Most hosts serve 404.html
+// for a path with no file (GitHub Pages, Cloudflare Pages, S3 or CloudFront error document,
+// nginx error_page), so the build writes index.html again as 404.html. See docs/STATIC_EXPORT.md.
+const spaFallback = () => ({
+  name: 'spa-fallback-404',
+  apply: 'build',
+  writeBundle(options) {
+    copyFileSync(path.join(options.dir, 'index.html'), path.join(options.dir, '404.html'))
+  },
+})
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), spaFallback()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -31,12 +43,8 @@ export default defineConfig({
       '.ngrok-free.app',
       'f440ec437a42.ngrok-free.app'
     ],
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-      }
-    },
+    // No proxy: the site reads the static export. Render it into public/api (gitignored) and
+    // the dev server serves it at /api, as the static host does. See docs/STATIC_EXPORT.md.
     watch: {
       ignored: [
         '../data/**',

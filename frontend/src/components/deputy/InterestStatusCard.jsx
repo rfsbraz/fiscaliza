@@ -261,26 +261,57 @@ const InterestStatusCard = ({
   );
 };
 
+const neutral = {
+  bg: tokens.colors.statusNeutralBg,
+  border: tokens.colors.statusNeutralBorder,
+  color: tokens.colors.textSecondary,
+};
+
 /**
- * ExclusivityBadge - Shows exclusivity regime status
+ * ExclusivityBadge - Shows the exclusivity regime as the declaration states it: Sim, Não, or
+ * not stated. A missing value is never read as Não.
  */
 export const ExclusivityBadge = ({ isExclusive, showExplanation = true }) => {
-  const config = isExclusive
+  const config = isExclusive === true
     ? {
-        bg: tokens.colors.statusGreenBg,
-        border: tokens.colors.statusGreenBorder,
-        color: tokens.colors.statusGreen,
-        label: 'Regime de Exclusividade',
-        description: 'O deputado declarou dedicar-se exclusivamente ao mandato parlamentar.',
+        ...neutral,
+        label: 'Regime de exclusividade: Sim',
+        description: 'A declaração indica dedicação exclusiva ao mandato parlamentar.',
       }
-    : {
-        bg: tokens.colors.statusNeutralBg,
-        border: tokens.colors.statusNeutralBorder,
-        color: tokens.colors.textSecondary,
-        label: 'Regime Não Exclusivo',
-        description: 'O deputado exerce outras atividades profissionais paralelamente ao mandato (regime legalmente previsto).',
-      };
+    : isExclusive === false
+      ? {
+          ...neutral,
+          label: 'Regime de exclusividade: Não',
+          description: 'A declaração indica que o mandato não é exercido em exclusividade (regime legalmente previsto).',
+        }
+      : {
+          ...neutral,
+          label: 'Regime de exclusividade: Não indicado na declaração',
+          description: 'A declaração publicada não diz se o mandato é exercido em exclusividade.',
+        };
 
+  return (
+    <StatusBox config={config} showExplanation={showExplanation} />
+  );
+};
+
+/**
+ * DeclaredInterestsBadge - Whether the latest declaration lists activities other than the
+ * mandate itself, or shareholdings. A neutral fact: declaring them is a legal duty.
+ */
+export const DeclaredInterestsBadge = ({ declaresOther, declaresShareholdings }) => {
+  const declares = Boolean(declaresOther || declaresShareholdings);
+  const config = {
+    ...neutral,
+    label: declares
+      ? 'Declara outras atividades ou participações'
+      : 'Não declara outras atividades nem participações',
+    description: null,
+  };
+  return <StatusBox config={config} showExplanation={false} />;
+};
+
+const StatusBox = ({ config, showExplanation }) => {
   return (
     <div
       style={{
