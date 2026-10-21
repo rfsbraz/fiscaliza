@@ -6,91 +6,91 @@
       "path": "cobertura",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3727"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3731"
     },
     {
       "path": "cobertura.ate",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3738"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3742"
     },
     {
       "path": "cobertura.com_declaracao",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3736"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3740"
     },
     {
       "path": "cobertura.de",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3736"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3740"
     },
     {
       "path": "cobertura.total",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3737"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3741"
     },
     {
       "path": "declara_outras_atividades",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3754"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3758"
     },
     {
       "path": "declara_participacoes",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3755"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3759"
     },
     {
       "path": "ept",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3697"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3701"
     },
     {
       "path": "ept.legislaturas",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3713"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3717"
     },
     {
       "path": "ept.pendente",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3697"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3701"
     },
     {
       "path": "ept.url",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3720"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3724"
     },
     {
       "path": "full_name",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3835"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3839"
     },
     {
       "path": "is_exclusive",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3760"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3764"
     },
     {
       "path": "legislatura",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3747"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3751"
     },
     {
       "path": "professional_activities",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3781"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3785"
     },
     {
       "path": "professional_activities[].end_date",
@@ -126,7 +126,7 @@
       "path": "shareholdings",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3786"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3790"
     },
     {
       "path": "shareholdings[].entity_name",
@@ -150,7 +150,7 @@
       "path": "tem_declaracao",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3745"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3749"
     }
   ],
   "dropped": [

@@ -26,6 +26,10 @@ import InterestTable, { ACTIVITY_COLUMNS, SHAREHOLDING_COLUMNS } from './deputy/
 
 // Enhanced Statistics Components
 
+// Attendance still runs on the old database code. S11 turns this on once the
+// plenary_attendance mart is released; until then the tab is hidden and the endpoint not called.
+const ATTENDANCE_AVAILABLE = false;
+
 /**
  * Calculate trend indicator based on current vs career average
  */
@@ -1068,7 +1072,7 @@ const DeputadoDetalhes = () => {
   // Get active tab from URL hash, default to 'intervencoes'
   const getActiveTabFromUrl = () => {
     const hash = location.hash.replace('#', '');
-    const validTabs = ['intervencoes', 'iniciativas', 'votacoes', 'attendance', 'conflitos-interesse'];
+    const validTabs = ['intervencoes', 'iniciativas', 'votacoes', ...(ATTENDANCE_AVAILABLE ? ['attendance'] : []), 'conflitos-interesse'];
     // Support legacy 'biografia' hash by redirecting to main page (no tab)
     if (hash === 'biografia' || hash === 'mandatos-anteriores') {
       return 'intervencoes';
@@ -1145,7 +1149,7 @@ const DeputadoDetalhes = () => {
           apiFetch(`deputados/${cadId}/detalhes`).then(r => { if (!r.ok) throw new Error('Erro ao carregar dados do deputado'); return r.json(); }),
           apiFetch(`deputados/${cadId}/atividades?${apiParams.toString()}`).then(r => { if (!r.ok) throw new Error('Erro ao carregar atividades do deputado'); return r.json(); }),
           apiFetch(`deputados/${cadId}/conflitos-interesse`).then(r => r.ok ? r.json() : null),
-          apiFetch(`deputados/${cadId}/attendance`).then(r => r.ok ? r.json() : null),
+          ATTENDANCE_AVAILABLE ? apiFetch(`deputados/${cadId}/attendance`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
         ]);
 
         // Process required results
@@ -1234,7 +1238,7 @@ const DeputadoDetalhes = () => {
     { id: 'intervencoes', label: 'Intervenções', icon: MessageSquare },
     { id: 'iniciativas', label: 'Iniciativas', icon: FileText },
     { id: 'votacoes', label: 'Votações', icon: Vote },
-    { id: 'attendance', label: 'Presenças', icon: Activity },
+    ...(ATTENDANCE_AVAILABLE ? [{ id: 'attendance', label: 'Presenças', icon: Activity }] : []),
     { id: 'conflitos-interesse', label: 'Registo de Interesses', icon: Shield }
   ];
 
@@ -3898,7 +3902,7 @@ const DeputadoDetalhes = () => {
               </div>
             )}
 
-            {activeTab === 'attendance' && (
+            {ATTENDANCE_AVAILABLE && activeTab === 'attendance' && (
               <div>
                 {/* Tab Section Header */}
                 <div style={{

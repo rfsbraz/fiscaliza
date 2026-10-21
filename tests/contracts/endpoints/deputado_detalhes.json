@@ -6,157 +6,157 @@
       "path": "atividades_orgaos",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:780"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:784"
     },
     {
       "path": "atividades_orgaos[].cargo",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:936"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:940"
     },
     {
       "path": "atividades_orgaos[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:919"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:923"
     },
     {
       "path": "atividades_orgaos[].sigla",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:921"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:925"
     },
     {
       "path": "atividades_orgaos[].tipo_membro",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:934"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:938"
     },
     {
       "path": "atividades_orgaos[].titular",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:931"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:935"
     },
     {
       "path": "biografia",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1015"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1019"
     },
     {
       "path": "career_info",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1395"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1399"
     },
     {
       "path": "career_info.is_currently_active",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1397"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1401"
     },
     {
       "path": "career_info.is_seated",
       "type": "boolean",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1396"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1400"
     },
     {
       "path": "career_info.latest_completed_mandate",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1515"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1519"
     },
     {
       "path": "career_info.latest_completed_mandate.legislatura",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1535"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1539"
     },
     {
       "path": "career_info.latest_completed_mandate.periodo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1535"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1539"
     },
     {
       "path": "career_info.mandate_status",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1395"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1399"
     },
     {
       "path": "cargos_funcoes",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:776"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:780"
     },
     {
       "path": "cargos_funcoes[].cargo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:883"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:887"
     },
     {
       "path": "cargos_funcoes[].cargo_nome",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:883"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:887"
     },
     {
       "path": "cargos_funcoes[].data_fim",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:890"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:894"
     },
     {
       "path": "cargos_funcoes[].data_inicio",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:890"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:894"
     },
     {
       "path": "cargos_funcoes[].entidade",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:885"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:889"
     },
     {
       "path": "circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1356"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1360"
     },
     {
       "path": "condecoracoes",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:778"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:782"
     },
     {
       "path": "condecoracoes[].descricao",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:972"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:976"
     },
     {
       "path": "estatisticas",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1629"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1633"
     },
     {
       "path": "estatisticas.comparacao",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1755"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1759"
     },
     {
       "path": "estatisticas.comparacao.iniciativas_subscricao_restrita",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2057"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2061"
     },
     {
       "path": "estatisticas.comparacao.iniciativas_subscricao_restrita.deputado_por_ano",
@@ -198,7 +198,7 @@
       "path": "estatisticas.comparacao.intervencoes",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1755"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1759"
     },
     {
       "path": "estatisticas.comparacao.intervencoes.deputado_por_ano",
@@ -240,25 +240,25 @@
       "path": "estatisticas.evolucao_legislaturas",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2065"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2069"
     },
     {
       "path": "estatisticas.evolucao_legislaturas[].iniciativas",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2099"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2103"
     },
     {
       "path": "estatisticas.evolucao_legislaturas[].intervencoes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2099"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2103"
     },
     {
       "path": "estatisticas.iniciativas_legislaturas",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1679"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1683"
     },
     {
       "path": "estatisticas.iniciativas_legislaturas[].aberta",
@@ -354,253 +354,253 @@
       "path": "estatisticas.iniciativas_por_tipo",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1912"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1916"
     },
     {
       "path": "estatisticas.iniciativas_por_tipo[].codigo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1952"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1956"
     },
     {
       "path": "estatisticas.iniciativas_por_tipo[].descricao",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1971"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1975"
     },
     {
       "path": "estatisticas.iniciativas_por_tipo[].total",
       "type": "number",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1936"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1940"
     },
     {
       "path": "estatisticas.intervencoes_parlamentares",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1745"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1749"
     },
     {
       "path": "estatisticas.legislaturas_servidas",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1629"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1633"
     },
     {
       "path": "estatisticas.nivel_experiencia",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1868"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1872"
     },
     {
       "path": "estatisticas.taxa_assiduidade",
       "type": "number",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1763"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1767"
     },
     {
       "path": "estatisticas.tempo_servico_anos",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1629"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1633"
     },
     {
       "path": "estatisticas.total_mandatos",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1629"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1633"
     },
     {
       "path": "habilitacoes_academicas",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:774"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:778"
     },
     {
       "path": "id_cadastro",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1568"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1572"
     },
     {
       "path": "is_seated",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1396"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1400"
     },
     {
       "path": "legislatura",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3660"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3664"
     },
     {
       "path": "legislatura.numero",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3660"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3664"
     },
     {
       "path": "legislatura_numero",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1602"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1606"
     },
     {
       "path": "mandate_status",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1395"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1399"
     },
     {
       "path": "mandato",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1361"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1365"
     },
     {
       "path": "mandato.inicio",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1361"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1365"
     },
     {
       "path": "mandatos_historico",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1599"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1603"
     },
     {
       "path": "mandatos_historico[].circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4519"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4523"
     },
     {
       "path": "mandatos_historico[].deputado_id",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:603"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:607"
     },
     {
       "path": "mandatos_historico[].is_current",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4451"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4455"
     },
     {
       "path": "mandatos_historico[].legislatura_nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4468"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4472"
     },
     {
       "path": "mandatos_historico[].legislatura_numero",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:600"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:604"
     },
     {
       "path": "mandatos_historico[].mandato_fim",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4504"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4508"
     },
     {
       "path": "mandatos_historico[].mandato_inicio",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4503"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4507"
     },
     {
       "path": "mandatos_historico[].partido_sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4530"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4534"
     },
     {
       "path": "nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1299"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1303"
     },
     {
       "path": "obras_publicadas",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:779"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:783"
     },
     {
       "path": "obras_publicadas[].ano",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1001"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1005"
     },
     {
       "path": "obras_publicadas[].editora",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:996"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1000"
     },
     {
       "path": "obras_publicadas[].titulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:994"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:998"
     },
     {
       "path": "partido",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1366"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1370"
     },
     {
       "path": "partido.id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1368"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1372"
     },
     {
       "path": "partido.nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1385"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1389"
     },
     {
       "path": "partido.sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1385"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1389"
     },
     {
       "path": "picture_url",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1296"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1300"
     },
     {
       "path": "profissao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:817"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:821"
     },
     {
       "path": "titulos",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:777"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:781"
     },
     {
       "path": "titulos[].descricao",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:966"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:970"
     },
     {
       "path": "titulos[].titulo",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:966"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:970"
     }
   ],
   "dropped": [
