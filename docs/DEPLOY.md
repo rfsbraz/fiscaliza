@@ -77,8 +77,9 @@ Options:
 - With no source and a `tag=` in the pin, the sync downloads that release from GitHub.
 - `EXPORT_WORKERS` sets the export's processes. Without it the export uses the cgroup CPU limit
   (`/sys/fs/cgroup/cpu.max`), and without that the CPU count. Each process uses one DuckDB thread.
-  The runner has 2 CPUs and 3 GB of memory but reports the host's 8, so CI sets 2. The deploy step
-  stops after 45 minutes; a deploy takes about 5 minutes on 8 cores.
+  The runner reports the host's 8 CPUs, so CI leaves `EXPORT_WORKERS` unset and the export follows
+  the runner's `cpu.max`. The deploy step stops after 80 minutes and the job after 90; a deploy
+  takes about 5 minutes on 8 cores.
 - `--work DIR` keeps the scratch files in that folder instead of a temporary one.
 - `--dry-run` prints every command and runs nothing.
 - `WRANGLER` overrides the wrangler command. The default is `npx --yes wrangler@4.151.3`, pinned
