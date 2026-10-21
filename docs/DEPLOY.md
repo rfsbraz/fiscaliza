@@ -32,7 +32,9 @@ right away, and every later push to that PR deploys again until the label comes 
 other label starts nothing.
 
 There is one concurrency group for every trigger, with `cancel-in-progress: false`: a deploy
-waits for the one before it to finish and is never cancelled halfway through an upload.
+waits for the one before it to finish and is never cancelled halfway through an upload. The group
+is on the deploy job, so a pull request that needs no preview doesn't wait behind a running deploy
+just to skip.
 
 The workflow needs:
 
