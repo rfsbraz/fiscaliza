@@ -131,15 +131,15 @@ const AgendaPage = () => {
           transition={{ delay: 0.1 }}
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: '1rem',
           }}
         >
           {[
             { icon: Users, label: 'SESSÕES PLENÁRIAS', value: estatisticas.estatisticas.sessoes_plenarias?.total_ano || 0, sublabel: 'este ano', color: tokens.colors.primary },
-            { icon: Vote, label: 'VOTAÇÕES', value: estatisticas.estatisticas.votacoes?.total_ano || 0, sublabel: `${estatisticas.estatisticas.votacoes?.taxa_aprovacao || 0}% aprovadas`, color: tokens.colors.primary },
+            { icon: Vote, label: 'VOTAÇÕES', value: estatisticas.estatisticas.votacoes?.total_ano || 0, sublabel: estatisticas.estatisticas.votacoes?.taxa_aprovacao != null ? `${estatisticas.estatisticas.votacoes.taxa_aprovacao}% aprovadas` : 'em plenário', color: tokens.colors.primary },
             { icon: FileText, label: 'INICIATIVAS', value: estatisticas.estatisticas.iniciativas?.apresentadas || 0, sublabel: 'apresentadas', color: '#7C3AED' },
-            { icon: Activity, label: 'ASSIDUIDADE', value: `${estatisticas.estatisticas.assiduidade?.media_presencas || 0}%`, sublabel: 'média', color: '#D97706' },
+            ...(estatisticas.estatisticas.assiduidade?.media_presencas != null ? [{ icon: Activity, label: 'ASSIDUIDADE', value: `${estatisticas.estatisticas.assiduidade.media_presencas}%`, sublabel: 'média', color: '#D97706' }] : []),
           ].map((stat) => (
             <div
               key={stat.label}
@@ -757,6 +757,7 @@ const AgendaPage = () => {
                           }}
                         >
                           {new Date(votacao.data).toLocaleDateString('pt-PT')}
+                          {votacao.unanime && ' · unanimidade'}
                         </span>
                       </div>
                       <span
@@ -767,8 +768,8 @@ const AgendaPage = () => {
                           fontWeight: 600,
                           borderRadius: '2px',
                           textTransform: 'uppercase',
-                          color: votacao.resultado === 'aprovado' ? tokens.colors.primary : tokens.colors.accent,
-                          backgroundColor: votacao.resultado === 'aprovado' ? '#F0F7F4' : '#FEF2F2',
+                          color: votacao.resultado?.toLowerCase().startsWith('aprovad') ? tokens.colors.primary : tokens.colors.accent,
+                          backgroundColor: votacao.resultado?.toLowerCase().startsWith('aprovad') ? '#F0F7F4' : '#FEF2F2',
                         }}
                       >
                         {votacao.resultado}
@@ -780,12 +781,12 @@ const AgendaPage = () => {
                         <div
                           style={{
                             fontFamily: tokens.fonts.mono,
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
                             color: tokens.colors.primary,
                           }}
                         >
-                          {votacao.votos_favor}
+                          {votacao.favor.join(', ') || '-'}
                         </div>
                         <div
                           style={{
@@ -802,12 +803,12 @@ const AgendaPage = () => {
                         <div
                           style={{
                             fontFamily: tokens.fonts.mono,
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
                             color: tokens.colors.accent,
                           }}
                         >
-                          {votacao.votos_contra}
+                          {votacao.contra.join(', ') || '-'}
                         </div>
                         <div
                           style={{
@@ -824,12 +825,12 @@ const AgendaPage = () => {
                         <div
                           style={{
                             fontFamily: tokens.fonts.mono,
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
                             color: '#D97706',
                           }}
                         >
-                          {votacao.abstencoes}
+                          {votacao.abstencao.join(', ') || '-'}
                         </div>
                         <div
                           style={{
@@ -839,19 +840,19 @@ const AgendaPage = () => {
                             textTransform: 'uppercase',
                           }}
                         >
-                          Abstenções
+                          Abstenção
                         </div>
                       </div>
                       <div>
                         <div
                           style={{
                             fontFamily: tokens.fonts.mono,
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
                             color: tokens.colors.textMuted,
                           }}
                         >
-                          {votacao.ausencias}
+                          {votacao.ausentes.join(', ') || '-'}
                         </div>
                         <div
                           style={{
@@ -861,7 +862,7 @@ const AgendaPage = () => {
                             textTransform: 'uppercase',
                           }}
                         >
-                          Ausências
+                          Ausentes
                         </div>
                       </div>
                     </div>
