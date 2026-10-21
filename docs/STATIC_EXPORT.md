@@ -46,6 +46,10 @@ fails if a render reaches 20,000 files or any file reaches 25 MiB, and the expor
 to swap in such a render. Those limits fit the common static hosts (Cloudflare Pages, for one,
 allows 20,000 files per deployment and 25 MiB per file); object storage behind a CDN has none.
 
+The deputy files are rendered 50 people at a time. Each question the deputy page asks runs once
+for the whole batch (`app/data/deputy_rows.py`), not once per person and legislature, and the
+Flask routes build the same answers from the same rows for one person.
+
 Requests the frontend does not make (for example `estatisticas?legislatura=XVI`, or a
 deputy's activities in a legislature they never served in) are not rendered and answer 404.
 
