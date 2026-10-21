@@ -1,0 +1,77 @@
+name: Deploy
+
+# Fiscaliza on Cloudflare Pages, project fiscaliza (docs/DEPLOY.md). Every run builds the latest
+# parlamento-aberto main with deploy/pages.py:
+# - a push to master and the daily run deploy production (Pages branch master);
+# - a pull request from this repo deploys a preview on a Pages branch named after its head ref.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    # Daily data refresh. Cron is UTC: 06:00 Lisbon in summer time, 05:00 in winter time.
+    - cron: "0 5 * * *"
+
+permissions:
+  contents: read
+
+# One deploy at a time across every trigger, and none cancelled halfway through an upload.
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Pages Deploy
+    # A fork's pull request gets no secrets and no deploy. Neither does Dependabot's: it doesn't
+    # get the Actions secrets either, and its bumps don't need a preview each.
+    if: >-
+      github.event_name != 'pull_request' || (
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.user.login != 'dependabot[bot]')
+    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
+    runs-on: [self-hosted, homeberry]
+    timeout-minutes: 90
+    env:
+      CLOUDFLARE_ACCOUNT_ID: cda49578092f3bc8595c954e1e771ac1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # Wrangler 4 needs Node 22 or newer; the version itself is pinned in deploy/pages.py.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      # parlamento-aberto builds its release with uv.
+      - uses: astral-sh/setup-uv@v6
+      # Only the data layer's pins: sync and export need duckdb and requests.
+      - run: |
+          grep -E '^(duckdb|requests)==' requirements.txt > "$RUNNER_TEMP/data-requirements.txt"
+          pip install -r "$RUNNER_TEMP/data-requirements.txt"
+      - name: Clone parlamento-aberto
+        run: |
+          rm -rf "$RUNNER_TEMP/parlamento-aberto" "$RUNNER_TEMP/deploy"
+          git clone --quiet --depth 1 --no-checkout --branch main https://github.com/rfsbraz/parlamento-aberto.git "$RUNNER_TEMP/parlamento-aberto"
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            target=(--branch "$HEAD_REF")
+          else
+            target=(--production)
+          fi
+          python deploy/pages.py deploy --parlamento-aberto "$RUNNER_TEMP/parlamento-aberto" \
+            --work "$RUNNER_TEMP/deploy" "${target[@]}"
+      - name: Clean up
+        if: always()
+        run: |
+          git -C "$RUNNER_TEMP/parlamento-aberto" worktree prune 2>/dev/null || true
+          rm -rf "$RUNNER_TEMP/parlamento-aberto" "$RUNNER_TEMP/deploy"
