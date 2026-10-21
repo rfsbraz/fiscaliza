@@ -76,16 +76,15 @@ group by all;
 -- start, then the longer one), with their circle, and their latest group in it.
 create or replace view deputy_elections as
 with m as (
+    -- The latest period as one struct: arg_max skips rows whose value is null, and an open
+    -- period has a null end_date.
     select
         legislature,
         cadastro_id,
-        arg_max(deputy_id, struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31'))) as deputy_id,
-        arg_max(circle_id, struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31'))) as circle_id,
-        arg_max(situation, struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31'))) as situation,
-        arg_max(start_date, struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31')))
-            as situation_start,
-        arg_max(end_date, struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31')))
-            as situation_end,
+        arg_max(
+            struct_pack(deputy_id, circle_id, situation, start_date, end_date),
+            struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31'))
+        ) as latest,
         bool_or(is_effective) as seated
     from mandates
     group by legislature, cadastro_id
@@ -99,20 +98,20 @@ g as (
 select
     m.legislature,
     m.cadastro_id,
-    m.deputy_id,
-    m.circle_id,
+    m.latest.deputy_id,
+    m.latest.circle_id,
     c.name as circle,
-    m.situation,
+    m.latest.situation,
     g.group_acronym,
     l.start_date as legislature_start,
     l.end_date as legislature_end,
     l.is_open,
     m.seated,
-    m.situation_start,
-    m.situation_end
+    m.latest.start_date as situation_start,
+    m.latest.end_date as situation_end
 from m
 join legislature_days l on l.legislature = m.legislature
-left join electoral_circles c on c.legislature = m.legislature and c.circle_id = m.circle_id
+left join electoral_circles c on c.legislature = m.legislature and c.circle_id = m.latest.circle_id
 left join g on g.legislature = m.legislature and g.cadastro_id = m.cadastro_id;
 
 -- deputy_legislatures: the rows of deputy_elections where the person held a seat. Seated-day
