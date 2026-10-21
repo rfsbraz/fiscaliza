@@ -292,6 +292,17 @@ def test_builds_the_given_commit_from_a_parlamento_aberto_checkout():
     assert "--from-dir /work/release" in sync
 
 
+def test_export_processes_can_be_capped():
+    # The export defaults to one process per CPU the machine reports, which on a shared runner
+    # can be far more than it may use.
+    export = next(
+        c for c in commands(["deploy", "--release", "/rel", "--export-jobs", "2"]) if "fiscaliza_data.export" in c
+    )
+    assert export[export.index("--jobs") + 1] == "2"
+    export = next(c for c in commands(["deploy", "--release", "/rel"]) if "fiscaliza_data.export" in c)
+    assert "--jobs" not in export
+
+
 def test_there_is_no_data_pin_left():
     # Every deploy builds the latest parlamento-aberto main; a pin would freeze the daily refresh.
     assert not (ROOT / "deploy" / "data-pin").exists()

@@ -35,7 +35,7 @@ def test_one_deploy_at_a_time_and_none_cancelled():
 
 def test_deploys_through_pages_py():
     t = text()
-    assert "python deploy/pages.py deploy --parlamento-aberto" in t
+    assert "python -u deploy/pages.py deploy --parlamento-aberto" in t
     assert "--production" in t
     assert "--branch" in t and "github.head_ref" in t
 
@@ -64,3 +64,11 @@ def test_builds_the_latest_parlamento_aberto_main():
 
 def test_wrangler_gets_node_22():
     assert re.search(r"node-version: '22'", text())
+
+
+def test_deploy_is_time_boxed_and_the_export_capped():
+    t = text()
+    job = int(re.search(r"\n    timeout-minutes: (\d+)", t).group(1))
+    step = int(re.search(r"\n        timeout-minutes: (\d+)", t).group(1))
+    assert step < job <= 60
+    assert re.search(r"--export-jobs \d", t)
