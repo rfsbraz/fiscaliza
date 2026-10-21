@@ -597,3 +597,14 @@ def test_evolution_bars_are_scaled_to_their_values():
     assert "const EVOLUTION_TRACK_PX = " in source
     assert "Math.round((total / maxValue) * EVOLUTION_TRACK_PX)" in source
     assert "height: `${barHeight}px`" in source
+
+
+def test_component_labels_elected_legislatures_without_a_seat():
+    # #107: a legislature the person was elected in but never sat in is shown, labelled, and
+    # not counted as a mandate.
+    source = COMPONENT.read_text()
+    assert "'Mandato suspenso'" in source
+    assert "Sem período em exercício registado" in source
+    assert "em_exercicio !== false" in source
+    assert "mandatos em exercício" in source and "eleito em" in source
+    assert "deputado.estatisticas.nivel_experiencia && (" in source
