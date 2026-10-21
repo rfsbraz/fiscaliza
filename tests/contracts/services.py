@@ -9,7 +9,7 @@ Each PR that ports an endpoint adds its entry here, and its contract test then h
 Endpoints not listed are expected failures until they are ported.
 """
 
-from app.services import activity, core, parties
+from app.services import activity, core, deputies, parties
 
 PORTED = {
     "health": core.health,
@@ -21,6 +21,9 @@ PORTED = {
     "coligacao": lambda con: core.coligacao(con, "AD"),
     "coligacao_deputados": lambda con: core.coligacao_deputados(con, "AD"),
     "coligacao_partidos": lambda con: core.coligacao_partidos(con, "AD"),
+    "deputado_detalhes": lambda con: deputies.detalhes(con, 1),
+    "deputado_atividades": lambda con: deputies.atividades(con, 1),
+    "deputado_conflitos_interesse": lambda con: deputies.conflitos_interesse(con, 1),
     "partido_deputados": lambda con: parties.partido_deputados(con, "PSD"),
     "votacoes_recentes": lambda con: activity.votacoes_recentes(con, limite=5),
     "estatisticas_atividade": activity.estatisticas_atividade,

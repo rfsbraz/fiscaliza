@@ -8,9 +8,20 @@ Ids and made-up names only, no real people. Two legislatures:
   the seat on 2026-01-01. Person 500 is a substitute who never sat.
 
 Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) and every
-tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP)
-in both legislatures, and FRS (PS) in XVI only. Votes, initiatives and interventions for the
-agenda page are in tests/site_agenda.py.
+tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP) in both legislatures, and
+FRS (PS) in XVI only.
+
+Activity (ACTIVITY below): person 1 authored initiatives in both legislatures, one of them with
+person 90 (CH), and spoke in both; person 2 (PSD) and person 90 have a little activity in XVII.
+The three PCP deputies (222 to 224) sign 12 initiatives as a whole group and 222 and 223 one more
+on their own, and person 227 (BE, one seat) one. Person 1 has two interest declarations from XV,
+an older and a newer one; person 2 has one that lists only the mandate and leaves exclusivity
+blank; person 301 has one from XVI.
+
+Votes, initiatives and interventions for the agenda page are in tests/site_agenda.py and go into
+the same tables (TABLES below). They use their own initiative ids and deputies, so they do not
+change the deputy figures; the deputy activity above adds 4 XVII interventions on 3 days of 2026
+to the agenda stats.
 """
 
 import hashlib
@@ -113,6 +124,196 @@ def _rows():
     return mandates, memberships, deputies, coalitions
 
 
+def _activity():
+    """Initiatives with their authors and decisive votes, interventions and interest
+    declarations. Returns {table: (create sql, rows)}."""
+    initiatives = [
+        # legislature, initiative_id, number, type_code, type, title, first_event_date, text_url
+        ("XVII", 1, 1, "J", "Projeto de Lei", "Iniciativa 1", "2025-07-01", "https://example.org/1.pdf"),
+        ("XVII", 2, 2, "R", "Projeto de Resolução", "Iniciativa 2", "2025-08-01", None),
+        ("XVII", 3, 3, "J", "Projeto de Lei", "Iniciativa 3", "2025-09-01", None),
+        ("XVII", 4, 4, "J", "Projeto de Lei", "Iniciativa 4", "2025-10-01", None),
+        ("XVII", 6, 6, "J", "Projeto de Lei", "Iniciativa 6", "2025-11-01", None),
+        ("XVI", 5, 5, "J", "Projeto de Lei", "Iniciativa 5", "2024-06-01", None),
+        ("XVII", 7, 7, "J", "Projeto de Lei", "Iniciativa 7", "2025-07-15", None),
+        ("XVII", 8, 8, "R", "Projeto de Resolução", "Iniciativa 8", "2025-07-20", None),
+        ("XVII", 9, 9, "J", "Projeto de Lei", "Iniciativa 9", "2025-07-25", None),
+        ("XVII", 10, 10, "J", "Projeto de Lei", "Iniciativa 10", "2025-07-30", None),
+        ("XVII", 11, 11, "A", "Apreciação Parlamentar", "Iniciativa 11", "2025-08-05", None),
+        *[("XVII", n, n, "J", "Projeto de Lei", f"Iniciativa {n}", "2025-09-15", None) for n in range(30, 43)],
+        ("XVII", 43, 43, "J", "Projeto de Lei", "Iniciativa 43", "2025-09-20", None),
+    ]
+    authors = [
+        # legislature, initiative_id, author_type, cadastro_id, group_code, name
+        ("XVII", 1, "deputy", 1, "PSD", "Deputado 1"),
+        ("XVII", 2, "deputy", 1, "PSD", "Deputado 1"),
+        ("XVII", 3, "deputy", 1, "PSD", "Deputado 1"),
+        ("XVII", 4, "deputy", 1, "PSD", "Deputado 1"),
+        ("XVII", 4, "deputy", 90, "CH", "Deputado 90"),
+        ("XVII", 6, "deputy", 2, "PSD", "Deputado 2"),
+        ("XVII", 6, "group", None, "PSD", "PSD"),
+        ("XVI", 5, "deputy", 1, "PS", "Deputado 1"),
+        *[("XVII", n, "deputy", 1, "PSD", "Deputado 1") for n in (7, 8, 9, 10, 11)],
+        # 30 to 41: the whole PCP group (3 seats); 42: two of its three deputies.
+        *[("XVII", n, "deputy", cad, "PCP", f"Deputado {cad}") for n in range(30, 42) for cad in (222, 223, 224)],
+        *[("XVII", 42, "deputy", cad, "PCP", f"Deputado {cad}") for cad in (222, 223)],
+        ("XVII", 43, "deputy", 227, "BE", "Deputado 227"),
+    ]
+    initiative_votes = [
+        # vote_id, initiative_id, initiative_legislature, body, phase
+        (101, 1, "XVII", "plenary", "Votação na generalidade"),
+        (102, 1, "XVII", "plenary", "Votação final global"),
+        (103, 2, "XVII", "plenary", "Votação Deliberação"),
+        (104, 4, "XVII", "plenary", "Votação na generalidade"),
+        (105, 5, "XVI", "plenary", "Votação final global"),
+        (106, 6, "XVII", "Comissão de Saúde", "Votação final global"),
+        # 7: point by point on the same day, one point passed and one failed.
+        (107, 7, "XVII", "plenary", "Votação final global"),
+        (108, 7, "XVII", "plenary", "Votação final global"),
+        (109, 8, "XVII", "plenary", "Votação final"),
+        (110, 9, "XVII", "plenary", "Votação na generalidade"),
+        # 10: failed on the generality, then passed a later final global vote.
+        (111, 10, "XVII", "plenary", "Votação na generalidade"),
+        (112, 10, "XVII", "plenary", "Votação final global"),
+        (113, 11, "XVII", "plenary", "Votação final global"),
+        *[(200 + n, n, "XVII", "plenary", "Votação final global") for n in range(30, 43)],
+    ]
+    votes = [
+        # vote_id, legislature, date, body, result (unanimous and description added below)
+        (101, "XVII", "2025-07-10", "plenary", "Aprovado"),
+        (102, "XVII", "2025-12-05", "plenary", "Aprovado"),
+        (103, "XVII", "2025-08-10", "plenary", "Rejeitado"),
+        (104, "XVII", "2025-10-10", "plenary", "Aprovado"),
+        (105, "XVI", "2024-07-10", "plenary", "Aprovado"),
+        (106, "XVII", "2025-11-10", "Comissão de Saúde", "Aprovado"),
+        (107, "XVII", "2025-11-20", "plenary", "Aprovado"),
+        (108, "XVII", "2025-11-20", "plenary", "Rejeitado"),
+        (109, "XVII", "2025-11-21", "plenary", "Aprovado"),
+        (110, "XVII", "2025-11-22", "plenary", "Rejeitado"),
+        (111, "XVII", "2025-09-10", "plenary", "Rejeitado"),
+        (112, "XVII", "2025-11-30", "plenary", "Aprovado"),
+        (113, "XVII", "2025-11-23", "plenary", "Aprovado"),
+        # PCP: 30 to 36 passed, 37 to 42 failed.
+        *[(200 + n, "XVII", "2025-12-01", "plenary", "Aprovado" if n < 37 else "Rejeitado") for n in range(30, 43)],
+    ]
+    # All before the agenda page's votes (from 2025-12-10), so its recent votes stay its own.
+    votes = [(*v, False, None) for v in votes]
+    interventions = []
+    for i, (leg, cad, day, kind) in enumerate(
+        [
+            ("XVII", 1, "2026-09-16", "Intervenção"),
+            ("XVII", 1, "2026-09-17", "Pedido de esclarecimento"),
+            ("XVII", 1, "2026-09-18", "Declaração politica"),
+            ("XVII", 90, "2026-09-18", "Intervenção"),
+            ("XVI", 1, "2024-04-10", "Intervenção"),
+            ("XVI", 1, "2024-05-10", "Intervenção"),
+            ("XVI", 1, "2024-06-10", "Pergunta"),
+            ("XVI", 1, "2024-07-10", "Intervenção"),
+            ("XVI", 1, "2024-08-10", "Interpelação à mesa"),
+        ],
+        start=1,
+    ):
+        interventions.append(
+            (
+                leg,
+                1000 + i,
+                1,
+                day,
+                kind,
+                "Período da ordem do dia",
+                f"Debate {i}",
+                f"Sumário {i}",
+                None,
+                "deputy",
+                cad,
+                "Deputado",
+                "DAR I série",
+                i,
+                day,
+                [str(i), str(i + 1)],
+                f"https://example.org/dar/{i}",
+            )
+        )
+    declarations = [
+        # legislature, declaration_key, cadastro_id, declaration_id, version_date, is_exclusive, position, source
+        ("XV", "XV-10", 1, 10, None, True, "Deputado", "ar_open_data"),
+        ("XV", "XV-11", 1, 11, None, False, "Deputado", "ar_open_data"),
+        ("XV", "XV-12", 2, 12, None, None, "Deputado", "ar_open_data"),
+        ("XVI", "XVI-13", 301, 13, None, True, "Deputado", "ar_open_data"),
+    ]
+    interests = [
+        # legislature, declaration_key, item_number, cadastro_id, category, description, entity, share,
+        # location, start_date_raw, end_date_raw
+        ("XV", "XV-10", 1, 1, "activity", "Atividade antiga", "Entidade Antiga", None, None, None, None),
+        ("XV", "XV-11", 1, 1, "activity", "Consultor", "Empresa Exemplo", None, "Lisboa", "2019-01-01", "2021-06-30"),
+        ("XV", "XV-11", 2, 1, "society", "Sócio", "Sociedade Exemplo", "10", "Porto", None, None),
+        ("XV", "XV-11", 3, 1, "social_position", "Vogal", "Associação Exemplo", None, None, None, None),
+        ("XV", "XV-11", 4, 1, "activity", "Deputado", "Assembleia da República", None, "Lisboa", "2022-03-29", None),
+        # The same post again for a later period, and an exact repeat of item 1 as published.
+        ("XV", "XV-11", 5, 1, "activity", "Consultor", "Empresa Exemplo", None, "Lisboa", "2021-07-01", None),
+        ("XV", "XV-11", 6, 1, "activity", "Consultor", "Empresa Exemplo", None, "Lisboa", "2019-01-01", "2021-06-30"),
+        # An older declaration: the whole sentence is in the description, with no entity.
+        ("XV", "XV-12", 1, 2, "activity", "Deputada à Assembleia da República", None, None, None, "2011", None),
+        ("XVI", "XVI-13", 1, 301, "activity", "Deputado", "Assembleia da República", None, None, None, None),
+    ]
+    return {
+        "initiatives": (
+            "legislature varchar, initiative_id bigint, number integer, type_code varchar, type varchar, "
+            "title varchar, first_event_date date, text_url varchar",
+            initiatives,
+        ),
+        "initiative_authors": (
+            "legislature varchar, initiative_id bigint, author_type varchar, cadastro_id bigint, "
+            "group_code varchar, name varchar",
+            authors,
+        ),
+        "initiative_votes": (
+            "vote_id bigint, initiative_id bigint, initiative_legislature varchar, body varchar, phase varchar",
+            initiative_votes,
+        ),
+        "votes": (
+            "vote_id bigint, legislature varchar, date date, body varchar, result varchar, unanimous boolean, "
+            "description varchar",
+            votes,
+        ),
+        "interventions": (
+            "legislature varchar, intervention_id bigint, session_number integer, meeting_date date, "
+            "intervention_type varchar, session_phase varchar, debate varchar, summary varchar, abstract varchar, "
+            "speaker_kind varchar, cadastro_id bigint, speaker_role varchar, publication_type varchar, "
+            "publication_number integer, publication_date date, pages varchar[], diary_url varchar",
+            interventions,
+        ),
+        "interest_declarations": (
+            "legislature varchar, declaration_key varchar, cadastro_id bigint, declaration_id bigint, "
+            "version_date date, is_exclusive boolean, position varchar, source varchar",
+            declarations,
+        ),
+        "interests": (
+            "legislature varchar, declaration_key varchar, item_number integer, cadastro_id bigint, "
+            "category varchar, description varchar, entity varchar, share varchar, location varchar, "
+            "start_date_raw varchar, end_date_raw varchar",
+            interests,
+        ),
+    }
+
+
+ACTIVITY = _activity()
+
+
+def _tables():
+    """ACTIVITY with the agenda page's rows added; a table in both must have the same columns."""
+    tables = dict(ACTIVITY)
+    for table, (columns, rows) in agenda_tables().items():
+        if table in tables:
+            assert columns == tables[table][0], f"{table}: agenda columns differ from ACTIVITY"
+            rows = tables[table][1] + rows
+        tables[table] = (columns, rows)
+    return tables
+
+
+TABLES = _tables()
+
+
 def build_release(root):
     """Write the release folder (Parquet files and manifest.json) and return its path."""
     out = Path(root) / TAG
@@ -158,8 +359,7 @@ def build_release(root):
         "election_url varchar, note varchar)"
     )
     con.executemany("insert into coalitions values (?, ?, ?, ?, ?, ?, ?, ?, ?)", coalitions)
-    agenda = agenda_tables()
-    for table, (columns, rows) in agenda.items():
+    for table, (columns, rows) in TABLES.items():
         con.execute(f"create table {table} ({columns})")
         con.executemany(f"insert into {table} values ({', '.join('?' * len(rows[0]))})", rows)  # noqa: S608
     marts = {}
@@ -171,7 +371,7 @@ def build_release(root):
         "electoral_circles",
         "parliamentary_groups",
         "coalitions",
-        *agenda,
+        *TABLES,
     ):
         path = out / f"{mart}.parquet"
         con.execute(f"copy {mart} to '{path}' (format parquet)")

@@ -18,6 +18,7 @@ from config.settings import FLASK_CONFIG
 from database.models import db
 from app.routes.core import core_bp
 from app.routes.parties import parties_bp
+from app.routes.deputies import deputies_bp
 from app.routes.activity import activity_bp
 from app.routes.parlamento import parlamento_bp
 from app.routes.agenda import agenda_bp
@@ -92,6 +93,7 @@ CORS(app)
 
 app.register_blueprint(core_bp, url_prefix='/api')
 app.register_blueprint(parties_bp, url_prefix='/api')
+app.register_blueprint(deputies_bp, url_prefix='/api')
 app.register_blueprint(activity_bp, url_prefix='/api')
 app.register_blueprint(parlamento_bp, url_prefix='/api')
 app.register_blueprint(agenda_bp, url_prefix='/api')
