@@ -191,6 +191,30 @@ def test_coalition_detail_deputies_and_parties(con):
     )  # FRS ran in XVI only: PS there, person 1 included
 
 
+def test_coalition_pages_show_no_unsourced_history_or_formation_date():
+    # #111: the narratives and key moments were hard-coded, the "formation" date is the start
+    # of a legislature, data_adesao likewise, and the results tab and spectrum badge are empty.
+    page = (ROOT / "frontend" / "src" / "components" / "ColigacaoDetalhes.jsx").read_text()
+    for text in (
+        "Contexto Histórico",
+        "Momentos Chave",
+        "Sá Carneiro",
+        "Alentejo",
+        "geringonça",
+        "maximizar a representação",
+        ">Formação<",
+        "Formação da Coligação",
+        "data_formacao",
+        "data_adesao",
+        "Desempenho Eleitoral",
+        "em desenvolvimento",
+        "'N/A'",
+    ):
+        assert text not in page, text
+    listing = (ROOT / "frontend" / "src" / "components" / "PartidosPage.jsx").read_text()
+    assert "Formada:" not in listing and "data_formacao" not in listing
+
+
 def test_unknown_coalition_is_not_found(con):
     for fn in (core.coligacao, core.coligacao_deputados, core.coligacao_partidos):
         with pytest.raises(core.NotFound):
