@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, TrendingUp, Users, BarChart3, Zap, Network, Activity, Shield } from 'lucide-react';
+import { TrendingUp, BarChart3, Zap, Network, Activity, Shield } from 'lucide-react';
 import { apiFetch } from '../config/api';
 
 const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
@@ -58,70 +58,63 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
 
   const charts = [
     { id: 'overview', label: 'Visão Geral', icon: Activity },
-    { id: 'positioning', label: 'Posicionamento Ideológico', icon: Target },
-    { id: 'coalitions', label: 'Padrões de Coligação', icon: Network },
-    { id: 'effectiveness', label: 'Eficácia Legislativa', icon: Zap }
+    { id: 'coalitions', label: 'Alinhamento com Outros Grupos', icon: Network },
+    { id: 'effectiveness', label: 'Iniciativas e Votações', icon: Zap }
   ];
 
-  // Party Cohesion by Theme Component
+  // Cohesion by initiative type
   const CohesionByThemeChart = () => {
     const { cohesion_by_theme } = analytics || {};
-    
+
     if (!cohesion_by_theme || !cohesion_by_theme.length) {
       return (
         <div className="text-center py-8">
           <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Dados de coesão partidária não disponíveis</p>
+          <p className="text-gray-500">Dados de coesão por tipo de iniciativa não disponíveis</p>
         </div>
       );
     }
-    
+
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cohesion_by_theme.map((theme, index) => (
+          {cohesion_by_theme.map((theme) => (
             <div key={theme.tema} className="bg-white border rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h5 className="text-sm font-medium text-gray-900">{theme.tema}</h5>
                 <div className="text-xs text-gray-500">{theme.total_votes} votações</div>
               </div>
-              
+
               <div className="mb-3">
                 <div className="flex items-center justify-between text-sm mb-1">
-                  <span>Coesão Partidária</span>
+                  <span>Sem votos diferentes no grupo</span>
                   <span className="font-medium">{(theme.cohesion_score * 100).toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    className={`h-3 rounded-full transition-all duration-300 ${
-                      theme.cohesion_score >= 0.9 ? 'bg-green-500' :
-                      theme.cohesion_score >= 0.7 ? 'bg-yellow-500' :
-                      'bg-red-500'
-                    }`}
+                  <div
+                    className="h-3 rounded-full transition-all duration-300 bg-blue-500"
                     style={{ width: `${theme.cohesion_score * 100}%` }}
                   />
                 </div>
               </div>
-              
+
               <div className="text-xs text-gray-600">
-                {theme.cohesion_score >= 0.9 ? '🟢 Muito Coesa' :
-                 theme.cohesion_score >= 0.7 ? '🟡 Moderada' :
-                 '🔴 Fragmentada'}
+                {theme.cohesive_votes} de {theme.total_votes} votações
               </div>
             </div>
           ))}
         </div>
-        
+
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start">
             <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
             <div>
               <h5 className="text-sm font-medium text-blue-900">
-                Coesão Partidária por Tema
+                Coesão por Tipo de Iniciativa
               </h5>
               <p className="text-sm text-blue-700 mt-1">
-                Mede o grau de unidade do partido em diferentes áreas políticas. 
-                Scores altos indicam disciplina partidária forte.
+                Votações em plenário em que o grupo votou como um todo, por tipo de iniciativa, e em quantas
+                nenhum dos seus deputados votou de outra forma. Ausências não contam.
               </p>
             </div>
           </div>
@@ -130,61 +123,60 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
     );
   };
 
-  // Legislative Effectiveness Chart
+  // Initiatives and their outcomes
   const EffectivenessChart = () => {
     const { legislative_effectiveness, participation_metrics } = analytics || {};
-    
+    const byType = legislative_effectiveness?.by_type || [];
+
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <BarChart3 className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-purple-900">
-                  {legislative_effectiveness.bills_initiated}
-                </div>
-                <div className="text-sm text-purple-600">Iniciativas</div>
-              </div>
-            </div>
-            <p className="text-sm text-purple-700">Projetos de lei apresentados</p>
-          </div>
-          
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <Target className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-green-900">
-                  {legislative_effectiveness.bills_passed}
-                </div>
-                <div className="text-sm text-green-600">Aprovadas</div>
-              </div>
-            </div>
-            <p className="text-sm text-green-700">Iniciativas bem-sucedidas</p>
-          </div>
-          
-          <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <Zap className="h-6 w-6 text-orange-600" />
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-orange-900">
-                  {(legislative_effectiveness.success_rate * 100).toFixed(1)}%
-                </div>
-                <div className="text-sm text-orange-600">Taxa Sucesso</div>
-              </div>
-            </div>
-            <p className="text-sm text-orange-700">Eficácia legislativa</p>
-          </div>
+        <div className="bg-white border rounded-lg p-6 overflow-x-auto">
+          <h5 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <BarChart3 className="h-5 w-5 text-purple-600 mr-2" />
+            Iniciativas por Tipo
+          </h5>
+          {byType.length === 0 ? (
+            <p className="text-sm text-gray-500">Nenhuma iniciativa nesta legislatura</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-600 border-b">
+                  <th className="py-2 pr-4">Tipo</th>
+                  <th className="py-2 pr-4 text-right">Apresentadas</th>
+                  <th className="py-2 pr-4 text-right">Aprovadas</th>
+                  <th className="py-2 pr-4 text-right">Rejeitadas</th>
+                  <th className="py-2 pr-4 text-right">Sem desfecho</th>
+                  <th className="py-2 text-right">Taxa de aprovação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {byType.map((row) => (
+                  <tr key={row.type_code} className="border-b last:border-0">
+                    <td className="py-2 pr-4 text-gray-900">{row.tipo}</td>
+                    <td className="py-2 pr-4 text-right">{row.initiated}</td>
+                    <td className="py-2 pr-4 text-right">
+                      {row.approved}
+                      {row.partly_approved > 0 && (
+                        <span className="text-xs text-gray-500"> ({row.partly_approved} em parte)</span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-4 text-right">{row.rejected}</td>
+                    <td className="py-2 pr-4 text-right">{row.undecided}</td>
+                    <td className="py-2 text-right">
+                      {row.approval_rate == null ? 'sem taxa' : `${(row.approval_rate * 100).toFixed(1)}%`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {legislative_effectiveness?.note && (
+            <p className="text-xs text-gray-500 mt-4">{legislative_effectiveness.note}</p>
+          )}
         </div>
-        
+
         <div className="bg-white border rounded-lg p-6">
-          <h5 className="text-lg font-medium text-gray-900 mb-4">Métricas de Participação</h5>
+          <h5 className="text-lg font-medium text-gray-900 mb-4">Atividade na Legislatura</h5>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <div className="text-xl font-bold text-gray-900">{participation_metrics.total_interventions}</div>
@@ -199,116 +191,36 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
               <div className="text-sm text-gray-600">Votações</div>
             </div>
           </div>
+          {participation_metrics.interventions_note && (
+            <p className="text-xs text-gray-500 mt-4">{participation_metrics.interventions_note}</p>
+          )}
         </div>
       </div>
     );
   };
 
-  // Ideological Positioning Chart
-  const IdeologicalPositioningChart = () => {
-    const { ideological_positioning } = analytics || {};
-    
-    if (!ideological_positioning || !ideological_positioning.all_parties || !ideological_positioning.all_parties.length) {
-      return (
-        <div className="text-center py-8">
-          <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Dados de posicionamento não disponíveis</p>
-        </div>
-      );
-    }
-    
-    const sortedParties = [...ideological_positioning.all_parties].sort((a, b) => b.favor_rate - a.favor_rate);
-    const ourParty = analytics?.party_info?.sigla;
-    
-    return (
-      <div className="space-y-6">
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-6">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Target className="h-5 w-5 text-indigo-600 mr-2" />
-            Posicionamento Ideológico (Taxa de Aprovação)
-          </h4>
-          
-          <div className="space-y-3">
-            {sortedParties.map((party, index) => {
-              const isOurParty = party.sigla === ourParty;
-              return (
-                <div key={party.sigla} className={`flex items-center space-x-4 p-3 rounded-lg ${
-                  isOurParty ? 'bg-blue-100 border-2 border-blue-300' : 'bg-white border border-gray-200'
-                }`}>
-                  <div className="w-16 text-sm font-medium text-gray-900">
-                    {party.sigla}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-600">
-                        {isOurParty && '👈 Seu partido'}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {(party.favor_rate * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          isOurParty ? 'bg-blue-500' : 'bg-gray-400'
-                        }`}
-                        style={{ width: `${party.favor_rate * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          
-          <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-            <span>← Mais Opositor</span>
-            <span>Mais Favorável →</span>
-          </div>
-        </div>
-        
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <Target className="h-5 w-5 text-yellow-600 mt-0.5 mr-3" />
-            <div>
-              <h5 className="text-sm font-medium text-yellow-900">
-                Interpretação do Posicionamento
-              </h5>
-              <p className="text-sm text-yellow-700 mt-1">
-                Partidos com taxas de aprovação mais altas tendem a votar favoravelmente 
-                mais frequentemente, indicando posições pró-governo ou pró-iniciativas.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Coalition Patterns Chart
+  // Agreement with other groups
   const CoalitionPatternsChart = () => {
     const { coalition_patterns } = analytics || {};
-    
+
     if (!coalition_patterns || !coalition_patterns.length) {
       return (
         <div className="text-center py-8">
           <Network className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Dados de coligação não disponíveis</p>
+          <p className="text-gray-500">Dados de alinhamento com outros grupos não disponíveis</p>
         </div>
       );
     }
-    
-    const sortedCoalitions = [...coalition_patterns].sort((a, b) => b.alignment_rate - a.alignment_rate);
-    
+
     return (
       <div className="space-y-6">
         <h4 className="text-lg font-semibold text-gray-900 flex items-center">
           <Network className="h-5 w-5 text-green-600 mr-2" />
-          Padrões de Colaboração Inter-Partidária
+          Alinhamento com Outros Grupos
         </h4>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {sortedCoalitions.map((coalition, index) => (
+          {coalition_patterns.map((coalition) => (
             <div key={coalition.party} className="bg-white border rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <h5 className="text-sm font-medium text-gray-900">{coalition.party}</h5>
@@ -316,47 +228,35 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
                   {coalition.aligned_votes}/{coalition.total_votes} votações
                 </span>
               </div>
-              
-              <div className="mb-3">
+
+              <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-600">Alinhamento</span>
+                  <span className="text-xs text-gray-600">Mesmo sentido de voto</span>
                   <span className="text-sm font-medium">
                     {(coalition.alignment_rate * 100).toFixed(1)}%
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      coalition.alignment_rate >= 0.7 ? 'bg-green-500' :
-                      coalition.alignment_rate >= 0.5 ? 'bg-yellow-500' :
-                      coalition.alignment_rate >= 0.3 ? 'bg-orange-500' :
-                      'bg-red-500'
-                    }`}
+                  <div
+                    className="h-2 rounded-full transition-all duration-300 bg-blue-500"
                     style={{ width: `${coalition.alignment_rate * 100}%` }}
                   />
                 </div>
               </div>
-              
-              <div className="text-xs">
-                {coalition.alignment_rate >= 0.7 ? '🤝 Parceiro Frequente' :
-                 coalition.alignment_rate >= 0.5 ? '🤝 Parceiro Ocasional' :
-                 coalition.alignment_rate >= 0.3 ? '⚖️ Relação Mista' :
-                 '🔴 Opositor Frequente'}
-              </div>
             </div>
           ))}
         </div>
-        
+
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-start">
             <Network className="h-5 w-5 text-green-600 mt-0.5 mr-3" />
             <div>
               <h5 className="text-sm font-medium text-green-900">
-                Análise de Coligações
+                Como se calcula
               </h5>
               <p className="text-sm text-green-700 mt-1">
-                Mostra com que frequência o partido vota alinhado com outros partidos, 
-                revelando potenciais parceiros de coligação e adversários políticos.
+                Votações em plenário em que os dois grupos votaram como um todo (a favor, contra ou abstenção),
+                e em quantas o sentido de voto foi o mesmo.
               </p>
             </div>
           </div>
@@ -365,68 +265,47 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
     );
   };
 
-  // Temporal Behavior Chart
+  // Votes and initiatives by month
   const TemporalBehaviorChart = () => {
     const { temporal_behavior } = analytics || {};
-    
+
     if (!temporal_behavior || !temporal_behavior.length) {
       return (
         <div className="text-center py-8">
           <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Dados temporais não disponíveis</p>
+          <p className="text-gray-500">Dados mensais não disponíveis</p>
         </div>
       );
     }
-    
-    // Calculate monthly averages for better visualization
-    const monthlyData = temporal_behavior.reduce((acc, day) => {
-      const month = day.date.substring(0, 7); // YYYY-MM
-      if (!acc[month]) {
-        acc[month] = { 
-          month, 
-          total_votes: 0, 
-          favor_votes: 0, 
-          total_days: 0 
-        };
-      }
-      acc[month].total_votes += day.total_votes;
-      acc[month].favor_votes += day.favor_votes;
-      acc[month].total_days += 1;
-      return acc;
-    }, {});
-    
-    const monthlyArray = Object.values(monthlyData).map(month => ({
-      ...month,
-      favor_rate: month.total_votes > 0 ? month.favor_votes / month.total_votes : 0
-    })).slice(-12); // Last 12 months
-    
+
+    const monthlyArray = temporal_behavior.slice(-12);
+
     return (
       <div className="space-y-6">
         <h4 className="text-lg font-semibold text-gray-900 flex items-center">
           <TrendingUp className="h-5 w-5 text-blue-600 mr-2" />
-          Comportamento Temporal (Últimos 12 Meses)
+          Votações e Iniciativas por Mês (Últimos 12 Meses)
         </h4>
-        
+
         <div className="bg-white border rounded-lg p-6">
           <div className="space-y-4">
-            {monthlyArray.map((month, index) => (
-              <div key={month.month} className="flex items-center space-x-4">
+            {monthlyArray.map((month) => (
+              <div key={month.date} className="flex items-center space-x-4">
                 <div className="w-20 text-sm font-medium text-gray-900">
-                  {month.month}
+                  {month.date}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-600">
-                      {month.total_votes} votações
+                  <div className="flex items-center justify-between mb-1 text-xs text-gray-600">
+                    <span>
+                      {month.total_votes} votações: {month.favor_votes} a favor, {month.against_votes} contra,{' '}
+                      {month.abstention_votes} abstenções
                     </span>
-                    <span className="text-sm font-medium">
-                      {(month.favor_rate * 100).toFixed(1)}% favorável
-                    </span>
+                    <span>{month.initiatives} iniciativas</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
+                    <div
                       className="h-2 bg-blue-500 rounded-full transition-all duration-300"
-                      style={{ width: `${month.favor_rate * 100}%` }}
+                      style={{ width: `${month.total_votes > 0 ? (month.favor_votes / month.total_votes) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -434,17 +313,17 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
             ))}
           </div>
         </div>
-        
+
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start">
             <TrendingUp className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
             <div>
               <h5 className="text-sm font-medium text-blue-900">
-                Tendências Temporais
+                Por Mês
               </h5>
               <p className="text-sm text-blue-700 mt-1">
-                Analisa mudanças no comportamento de votação ao longo do tempo, 
-                identificando períodos de maior ou menor apoio a iniciativas.
+                Sentido de voto do grupo como um todo nas votações em plenário de cada mês (a barra mostra a parte
+                a favor), e iniciativas que o grupo ou os seus deputados apresentaram nesse mês.
               </p>
             </div>
           </div>
@@ -461,7 +340,7 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Shield className="h-5 w-5 text-blue-600 mr-2" />
-            Coesão Partidária por Tema
+            Coesão por Tipo de Iniciativa
           </h4>
           <CohesionByThemeChart />
         </div>
@@ -470,7 +349,7 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Zap className="h-5 w-5 text-purple-600 mr-2" />
-            Eficácia Legislativa
+            Iniciativas e Votações
           </h4>
           <EffectivenessChart />
         </div>
@@ -479,7 +358,7 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <TrendingUp className="h-5 w-5 text-green-600 mr-2" />
-            Comportamento Temporal
+            Por Mês
           </h4>
           <TemporalBehaviorChart />
         </div>
@@ -491,8 +370,6 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
     switch (activeChart) {
       case 'overview':
         return <OverviewChart />;
-      case 'positioning':
-        return <IdeologicalPositioningChart />;
       case 'coalitions':
         return <CoalitionPatternsChart />;
       case 'effectiveness':
@@ -538,12 +415,11 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
           <BarChart3 className="h-5 w-5 text-indigo-600 mt-0.5 mr-3" />
           <div>
             <h5 className="text-sm font-medium text-indigo-900">
-              Análise Política Avançada
+              Sobre estes números
             </h5>
             <p className="text-sm text-indigo-700 mt-1">
-              Estas visualizações analisam o comportamento do partido {analytics.party_info?.sigla} 
-              na {legislatura}ª Legislatura, incluindo coesão interna, posicionamento ideológico, 
-              padrões de coligação e eficácia legislativa baseados em dados reais de votação.
+              Votações em plenário e iniciativas do grupo {analytics.party_info?.sigla} na legislatura{' '}
+              {analytics.legislatura}, a partir dos dados abertos da Assembleia da República.
             </p>
           </div>
         </div>

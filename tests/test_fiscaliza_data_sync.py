@@ -49,6 +49,15 @@ def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema
     )
     con.execute("create table electoral_circles (legislature varchar, circle_id integer, name varchar)")
     con.execute("create table parliamentary_groups (legislature varchar, group_acronym varchar, name varchar)")
+    con.execute("create table votes (vote_id bigint, legislature varchar, date date, body varchar)")
+    con.execute(
+        "create table vote_group_positions (vote_id bigint, legislature varchar, body varchar, "
+        "group_code varchar, position varchar, deputies integer)"
+    )
+    con.execute(
+        "create table vote_deputy_dissents (vote_id bigint, legislature varchar, body varchar, "
+        "position varchar, group_code varchar, cadastro_id bigint)"
+    )
     marts = {}
     for mart in (
         "legislatures",
@@ -57,6 +66,9 @@ def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema
         "group_memberships",
         "electoral_circles",
         "parliamentary_groups",
+        "votes",
+        "vote_group_positions",
+        "vote_deputy_dissents",
     ):
         path = out / f"{mart}.parquet"
         con.execute(f"copy {mart} to '{path}' (format parquet)")

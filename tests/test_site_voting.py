@@ -76,6 +76,12 @@ def test_a_group_split_by_unnamed_counts_leaves_its_deputies_unknown(con):
     assert _positions(con, 150)[2] == "against"
 
 
+def test_a_count_matched_by_named_deputies_keeps_the_group_position(con):
+    # Vote 8 has 1-PSD against and person 1 named against: the other PSD deputies are known.
+    assert _positions(con, 2)[8] == "favour"
+    assert _positions(con, 3)[2] == "favour"
+
+
 def test_tallies_add_the_groups_seats_counts_and_named_deputies(con):
     rows = con.execute(
         "select vote_id, favour, against, abstention, absent, complete from vote_tallies order by vote_id"

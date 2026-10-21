@@ -8,14 +8,15 @@ XVII plenary votes:
 
 - 1 (2025-07-10) unanimous, no positions published, so every group gets an inferred favour row.
 - 2 (2025-09-10) PSD and CDS-PP favour, IL, PAN and JPP abstain, the rest against. Person 2
-  (PSD) is named against. Rejected 90 to 129.
+  (PSD) is named against, and counted as 1-PSD. Rejected 90 to 129.
 - 3 (2025-11-20) PSD, CDS-PP and IL favour, CH abstains, PS against except 3 unnamed PS deputies
   in favour, the rest against. PS deputies have no known position on it.
 - 4 (2026-02-10) PS and CH against, the rest favour, person 2 named as abstaining. Rejected
   111 to 118, a close vote.
 - 5 (2026-03-05) not unanimous and no detail: no positions at all.
 - 6 (2026-04-10) PSD and CDS-PP abstain, the rest against. Person 1 is named absent.
-- 8 (2026-05-04) PSD and CH favour, PS against, the rest abstain. Person 1 is named against.
+- 8 (2026-05-04) PSD and CH favour, PS against, the rest abstain. Person 1 is named against,
+  and counted as 1-PSD.
 
 Vote 7 is a committee vote and never counts. XVI: vote 9 (2024-06-03) PS favour, PSD against,
 the rest abstain; votes 20 to 34 decide PSD's XVI initiatives and have no detail.
@@ -60,9 +61,12 @@ def _votes():
         3, "XVII", XVII_GROUPS, "against", PSD="favour", CDS_PP="favour", IL="favour", CH="abstention"
     )
     positions.append((3, "XVII", "plenary", "PS", "favour", 3, False))
+    # The AR usually also gives the count of the deputies it names, as here for 2 and 8.
+    positions.append((2, "XVII", "plenary", "PSD", "against", 1, False))
+    positions.append((8, "XVII", "plenary", "PSD", "against", 1, False))
     positions += _positions(4, "XVII", XVII_GROUPS, "favour", PS="against", CH="against")
     positions += _positions(6, "XVII", XVII_GROUPS, "against", PSD="abstention", CDS_PP="abstention")
-    positions += _positions(7, "XVII", ["PSD", "PS"], "favour")
+    positions += [(7, "XVII", "Comissão de Saúde", g, "favour", None, False) for g in ("PSD", "PS")]
     positions += _positions(8, "XVII", XVII_GROUPS, "abstention", PSD="favour", CH="favour", PS="against")
     positions += _positions(9, "XVI", XVI_GROUPS, "abstention", PS="favour", PSD="against")
     dissents = [

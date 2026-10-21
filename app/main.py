@@ -20,6 +20,7 @@ from app.routes.core import core_bp
 from app.routes.parlamento import parlamento_bp
 from app.routes.agenda import agenda_bp
 from app.routes.health import health_bp
+from app.routes.voting import voting_bp
 from app.data.connection import init_app as init_data
 
 # Configure logging with more detailed formatting for debugging
@@ -92,6 +93,7 @@ app.register_blueprint(core_bp, url_prefix='/api')
 app.register_blueprint(parlamento_bp, url_prefix='/api')
 app.register_blueprint(agenda_bp, url_prefix='/api')
 app.register_blueprint(health_bp, url_prefix='/api')
+app.register_blueprint(voting_bp, url_prefix='/api')
 
 # Site data: the read-only DuckDB file built by `python -m fiscaliza_data sync`
 init_data(app)
