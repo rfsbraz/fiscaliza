@@ -3,196 +3,310 @@
   "route": "/api/deputados/<int:cad_id>/atividades",
   "keys": [
     {
+      "path": "aprovacao",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2999"
+    },
+    {
+      "path": "aprovacao[].aprovadas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:85"
+    },
+    {
+      "path": "aprovacao[].aprovadas_parcialmente",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:87"
+    },
+    {
+      "path": "aprovacao[].codigo",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:76"
+    },
+    {
+      "path": "aprovacao[].descricao",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:83"
+    },
+    {
+      "path": "aprovacao[].rejeitadas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:86"
+    },
+    {
+      "path": "aprovacao[].sem_votacao",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:88"
+    },
+    {
+      "path": "aprovacao[].taxa_aprovacao",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:84"
+    },
+    {
+      "path": "aprovacao[].votadas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:85"
+    },
+    {
+      "path": "assinatura",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2982"
+    },
+    {
+      "path": "assinatura.grupo_parlamentar",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:40"
+    },
+    {
+      "path": "assinatura.outros_grupos",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:42"
+    },
+    {
+      "path": "assinatura.subscricao_restrita",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/InitiativeRecord.jsx:41"
+    },
+    {
+      "path": "comparacao_intervencoes",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2443"
+    },
+    {
+      "path": "comparacao_intervencoes.deputado_por_ano",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/InterventionsSummaryBar.jsx:35"
+    },
+    {
+      "path": "comparacao_intervencoes.grupo",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/InterventionsSummaryBar.jsx:146"
+    },
+    {
+      "path": "comparacao_intervencoes.media_grupo_por_ano",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/InterventionsSummaryBar.jsx:33"
+    },
+    {
+      "path": "comparacao_intervencoes.nota",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/InterventionsSummaryBar.jsx:171"
+    },
+    {
       "path": "iniciativas",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2939"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2929"
     },
     {
-      "path": "iniciativas[].autores",
-      "type": "array",
+      "path": "iniciativas[].aprovada_parcialmente",
+      "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2995"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3221"
     },
     {
       "path": "iniciativas[].data",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3229"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3179"
     },
     {
       "path": "iniciativas[].data_apresentacao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3229"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3179"
     },
     {
       "path": "iniciativas[].estado",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2967"
-    },
-    {
-      "path": "iniciativas[].is_cross_party",
-      "type": "boolean",
-      "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2996"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2957"
     },
     {
       "path": "iniciativas[].resultado",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3258"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3230"
+    },
+    {
+      "path": "iniciativas[].subscricao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3208"
+    },
+    {
+      "path": "iniciativas[].subscritores",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3218"
     },
     {
       "path": "iniciativas[].tipo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3178"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3128"
     },
     {
       "path": "iniciativas[].tipo_descricao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3203"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3153"
     },
     {
       "path": "iniciativas[].titulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3242"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3192"
     },
     {
       "path": "iniciativas[].urls",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3530"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3502"
     },
     {
       "path": "iniciativas[].urls.debates",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3551"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3523"
     },
     {
       "path": "iniciativas[].urls.documento",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3530"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3502"
     },
     {
       "path": "iniciativas[].urls.oficial",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3572"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3544"
     },
     {
       "path": "intervencoes",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2360"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2352"
     },
     {
       "path": "intervencoes[].assunto",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2750"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2740"
     },
     {
       "path": "intervencoes[].data",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2498"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2488"
     },
     {
       "path": "intervencoes[].duracao_video",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2650"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2640"
     },
     {
       "path": "intervencoes[].fase_sessao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2766"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2756"
     },
     {
       "path": "intervencoes[].publicacao",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2725"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2715"
     },
     {
       "path": "intervencoes[].publicacao.paginas",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2807"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2797"
     },
     {
       "path": "intervencoes[].publicacao.pub_data",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2802"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2792"
     },
     {
       "path": "intervencoes[].publicacao.pub_numero",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2743"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2733"
     },
     {
       "path": "intervencoes[].publicacao.pub_tipo",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2797"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2787"
     },
     {
       "path": "intervencoes[].publicacao.url_diario",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2725"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2715"
     },
     {
       "path": "intervencoes[].qualidade",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2599"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2589"
     },
     {
       "path": "intervencoes[].resumo",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2759"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2749"
     },
     {
       "path": "intervencoes[].sessao_numero",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2611"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2601"
     },
     {
       "path": "intervencoes[].sumario",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2766"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2756"
     },
     {
       "path": "intervencoes[].thumbnail_url",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2628"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2618"
     },
     {
       "path": "intervencoes[].tipo",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2459"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2449"
     },
     {
       "path": "intervencoes[].url_video",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2454"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2444"
     },
     {
       "path": "intervention_metadata",
@@ -216,8 +330,17 @@
       "path": "nota_intervencoes",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2429"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2421"
     }
   ],
-  "dropped": []
+  "dropped": [
+    {
+      "path": "iniciativas[].is_cross_party",
+      "reason": "Replaced by iniciativas[].subscricao (grupo_parlamentar, subscricao_restrita or outros_grupos)."
+    },
+    {
+      "path": "medias_intervencoes",
+      "reason": "Group and parliament averages over everyone with any seat, also for an open legislature. Replaced by comparacao_intervencoes, within the group and for closed legislatures only."
+    }
+  ]
 }

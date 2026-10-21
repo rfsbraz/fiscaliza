@@ -17,6 +17,14 @@ MAX_INITIATIVES = 100
 EPT_FROM = "XVI"
 EPT_URL = "https://entidadetransparencia.pt/"
 INITIATIVE_URL = "https://www.parlamento.pt/ActividadeParlamentar/Paginas/DetalheIniciativa.aspx?BID={}"
+# An approval rate needs at least this many decided initiatives (passed or failed).
+MIN_DECIDED = 10
+# A group average needs at least this many other people in the comparison population.
+MIN_PEERS = 5
+SMALL_GROUP = "Grupo demasiado pequeno para comparação"
+SHORT_MANDATE = "Mandato curto nesta legislatura; sem comparação"
+NO_CLOSED_LEGISLATURE = "Sem legislatura concluída para comparar intervenções"
+OPEN_LEGISLATURE = "A {} Legislatura ainda está em curso; sem comparação de intervenções"
 
 
 def _person(con, cadastro_id):
@@ -37,6 +45,80 @@ def _experience(mandates):
     return "Novato"
 
 
+def _approval(row):
+    """One type of projeto in one legislature. The rate counts decided initiatives only: passed
+    (fully or on some points) or failed. The rest (lapsed, withdrawn or not voted yet) are in
+    ``sem_votacao`` and stay out of the rate."""
+    decided = row["approved"] + row["rejected"]
+    return {
+        "codigo": row["type_code"],
+        "descricao": row["type"] or row["type_code"],
+        "aprovadas": row["approved"],
+        "aprovadas_parcialmente": row["partly_approved"],
+        "rejeitadas": row["rejected"],
+        "votadas": decided,
+        "taxa_aprovacao": round(row["approved"] / decided * 100, 1) if decided >= MIN_DECIDED else None,
+        "sem_votacao": row["total"] - decided,
+    }
+
+
+def _signing(row):
+    return {
+        "grupo_parlamentar": row["grupo_parlamentar"] if row else 0,
+        "subscricao_restrita": row["subscricao_restrita"] if row else 0,
+        "outros_grupos": row["outros_grupos"] if row else 0,
+    }
+
+
+def _initiative_record(con, cadastro_id, career):
+    """Per legislature, newest first: how the person's projetos were signed and how they ended."""
+    open_legs = {c["legislature"]: c["is_open"] for c in career}
+    outcomes, signing = {}, {r["legislature"]: r for r in repository.deputy_signing(con, cadastro_id)}
+    for row in repository.deputy_outcomes(con, cadastro_id):
+        outcomes.setdefault(row["legislature"], []).append(_approval(row))
+    return [
+        {
+            "legislatura": leg,
+            "aberta": open_legs.get(leg, False),
+            "assinatura": _signing(signing.get(leg)),
+            "aprovacao": rows,
+        }
+        for leg, rows in reversed(outcomes.items())
+    ]
+
+
+def _comparison(con, cadastro_id, legislature, measure):
+    """The person against the people of their group seated at least half of ``legislature``, per
+    seat-year. No average when the person sat less than that or has fewer than MIN_PEERS others."""
+    row = repository.group_comparison(con, cadastro_id, legislature, measure) if legislature else None
+    out = {
+        "legislatura": legislature,
+        "grupo": row["group_acronym"] if row else None,
+        "deputado_por_ano": round(row["per_year"], 2) if row and row["per_year"] is not None else None,
+        "media_grupo_por_ano": None,
+        "pares": row["peers"] if row else 0,
+        "nota": None,
+    }
+    if row is None:
+        return out
+    if not row["eligible"]:
+        out["nota"] = SHORT_MANDATE
+    elif row["peers"] < MIN_PEERS:
+        out["nota"] = SMALL_GROUP
+    else:
+        out["media_grupo_por_ano"] = round(row["group_per_year"], 2)
+    return out
+
+
+def _interventions_comparison(con, cadastro_id, legislature, is_open):
+    """Interventions are published late for an open legislature, so there is no comparison then."""
+    if is_open:
+        out = _comparison(con, cadastro_id, None, "interventions")
+        out.update(legislatura=legislature, nota=OPEN_LEGISLATURE.format(legislature))
+        return out
+    return _comparison(con, cadastro_id, legislature, "interventions")
+
+
 def detalhes(con, cadastro_id):
     person, career = _person(con, cadastro_id)
     current = _legislature(con)
@@ -48,12 +130,13 @@ def detalhes(con, cadastro_id):
     completed = [c for c in career if not c["is_open"]]
 
     activity = {a["legislature"]: a for a in repository.deputy_activity_by_legislature(con, cadastro_id)}
-    proposed = sum(a["initiatives"] for a in activity.values())
-    approved = sum(a["approved"] for a in activity.values())
     interventions = sum(a["interventions"] for a in activity.values())
-    here = activity.get(leg, {"initiatives": 0, "interventions": 0})
-    compare = repository.legislature_comparison(con, cadastro_id, leg, latest["group_acronym"])
     days = sum(p["days"] for p in periods.values())
+    interventions_comparison = _comparison(
+        con, cadastro_id, completed[-1]["legislature"] if completed else None, "interventions"
+    )
+    if not completed:
+        interventions_comparison["nota"] = NO_CLOSED_LEGISLATURE
 
     group = latest["group_acronym"]
     return {
@@ -88,9 +171,6 @@ def detalhes(con, cadastro_id):
             ),
         },
         "estatisticas": {
-            "iniciativas_propostas": proposed,
-            "iniciativas_aprovadas": approved,
-            "taxa_aprovacao": round(approved / proposed * 100, 1) if proposed else 0.0,
             "iniciativas_por_tipo": [
                 {"codigo": t["type_code"], "descricao": t["type"] or t["type_code"], "total": t["total"]}
                 for t in repository.deputy_initiative_types(con, cadastro_id)
@@ -109,12 +189,14 @@ def detalhes(con, cadastro_id):
                 }
                 for c in reversed(career)
             ],
-            # F08, within the latest legislature the person sat in.
-            "iniciativas_legislatura": here["initiatives"],
-            "intervencoes_legislatura": here["interventions"],
-            "media_partido_iniciativas": round(compare["party_initiatives"] or 0, 2),
-            "media_partido_intervencoes": round(compare["party_interventions"] or 0, 2),
-            "percentil_nacional": round((compare["rank"] or 0) * 100),
+            # F06 and F07: per legislature and type, never a career total or a ranking.
+            "iniciativas_legislaturas": _initiative_record(con, cadastro_id, career),
+            # F08: within the group only. Initiatives on restricted lists in the latest
+            # legislature; interventions in the latest closed one.
+            "comparacao": {
+                "iniciativas_subscricao_restrita": _comparison(con, cadastro_id, leg, "restricted_initiatives"),
+                "intervencoes": interventions_comparison,
+            },
         },
         "mandatos_historico": [
             {
@@ -174,10 +256,12 @@ def _initiative(row):
         "estado": row["result"],
         "resultado": row["result"],
         "aprovada": row["result"] == "Aprovado",
+        "aprovada_parcialmente": row["partly_approved"],
         "data": _iso(row["first_event_date"]),
         "data_apresentacao": _iso(row["first_event_date"]),
         "autores": row["authors"] or [],
-        "is_cross_party": (row["groups"] or 0) > 1,
+        "subscricao": row["signing"],
+        "subscritores": row["signatories"],
         "urls": {"documento": row["text_url"], "oficial": INITIATIVE_URL.format(row["initiative_id"])},
     }
 
@@ -205,8 +289,7 @@ def atividades(con, cadastro_id, legislatura=None, tipo=None, ordem="newest", pa
     )
     total = rows[0]["total"] if rows else repository.interventions_count(con, cadastro_id, name, kind=tipo)
     initiatives = repository.deputy_initiatives_in(con, cadastro_id, name, limit=MAX_INITIATIVES)
-    seat = next((c for c in career if c["legislature"] == name), None)
-    compare = repository.legislature_comparison(con, cadastro_id, name, seat["group_acronym"]) if seat else None
+    signing = repository.deputy_signing(con, cadastro_id, name)
     return {
         "deputado": {
             "id_cadastro": cadastro_id,
@@ -222,11 +305,11 @@ def atividades(con, cadastro_id, legislatura=None, tipo=None, ordem="newest", pa
             "pages": (total + per_page - 1) // per_page,
         },
         "nota_intervencoes": _interventions_note(con, leg) if served else None,
-        # Averages over everyone who held a seat in the legislature, and over the deputy's group.
-        "medias_intervencoes": {
-            "partido": round(compare["party_interventions"] or 0, 2) if compare else None,
-            "parlamento": round(compare["all_interventions"] or 0, 2) if compare else None,
-        },
+        "comparacao_intervencoes": _interventions_comparison(con, cadastro_id, name, leg["is_open"])
+        if served
+        else None,
+        "assinatura": _signing(signing[0] if signing else None),
+        "aprovacao": [_approval(r) for r in repository.deputy_outcomes(con, cadastro_id, name)],
         "iniciativas": [_initiative(r) for r in initiatives],
         "iniciativas_total": initiatives[0]["total"] if initiatives else 0,
     }
@@ -235,10 +318,20 @@ def atividades(con, cadastro_id, legislatura=None, tipo=None, ordem="newest", pa
 def conflitos_interesse(con, cadastro_id):
     person, _ = _person(con, cadastro_id)
     pending = repository.seated_since(con, cadastro_id, EPT_FROM)
+    coverage = repository.declaration_coverage(con)
     out = {
         "deputado_id": cadastro_id,
         "tem_declaracao": False,
         "ept": {"pendente": bool(pending), "legislaturas": pending, "url": EPT_URL},
+        # How few of the seated deputies have a declaration in the AR open data.
+        "cobertura": {
+            "de": coverage["first_legislature"],
+            "ate": coverage["last_legislature"],
+            "com_declaracao": coverage["declared"],
+            "total": coverage["seated"],
+        }
+        if coverage and coverage["seated"]
+        else None,
     }
     declaration = repository.latest_declaration(con, cadastro_id)
     if declaration is None:
@@ -252,15 +345,18 @@ def conflitos_interesse(con, cadastro_id):
     shareholdings = [
         {"entity_name": i["entity"], "share_percentage": i["share"]} for i in items if i["category"] == "society"
     ]
-    exclusive = declaration["is_exclusive"]
+    flags = repository.declaration_flags(con, declaration["legislature"], declaration["declaration_key"])
     out.update(
         tem_declaracao=True,
         full_name=person["full_name"] or person["parliamentary_name"],
         legislatura=declaration["legislature"],
         last_updated=_iso(declaration["version_date"]),
         declaration_url=None,
-        is_exclusive=exclusive,
-        has_conflict_potential=exclusive is False or bool(activities) or bool(shareholdings),
+        # As published; null when the declaration does not say.
+        is_exclusive=declaration["is_exclusive"],
+        # Neutral facts about what was declared. Declaring is a legal duty, not a sign of anything.
+        declara_outras_atividades=flags["other_activities"],
+        declara_participacoes=flags["shareholdings"],
         professional_activities=activities,
         shareholdings=shareholdings,
         # No sector or legislation matching in the release yet; the page hides the sector status.
