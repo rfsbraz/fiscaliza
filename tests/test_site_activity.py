@@ -3,6 +3,8 @@
 Values are checked against the votes, initiatives and interventions in tests/site_agenda.py.
 """
 
+from pathlib import Path
+
 import duckdb
 import pytest
 
@@ -124,3 +126,27 @@ def test_routes_are_served_by_the_activity_blueprint(app):
     endpoints = {rule.rule: rule.endpoint for rule in app.url_map.iter_rules()}
     assert endpoints["/api/votacoes/recentes"].startswith("activity.")
     assert endpoints["/api/estatisticas/atividade"].startswith("activity.")
+
+
+# Agenda page component
+
+AGENDA_PAGE = Path(__file__).resolve().parents[1] / "frontend" / "src" / "components" / "AgendaPage.jsx"
+PANEL_STATE = {"hoje": "agendaHoje", "semana": "agendaSemana", "votacoes": "votacoesRecentes"}
+
+
+def test_agenda_panels_load_and_fail_on_their_own():
+    # Today and the week stay on the old code until the agenda mart lands (S13), so one failed
+    # request must not throw away the votes and the stats.
+    source = AGENDA_PAGE.read_text()
+    assert "Promise.all(" not in source
+    assert "Promise.allSettled(" in source
+    for endpoint in ("agenda/hoje", "agenda/semana", "votacoes/recentes?limite=5", "estatisticas/atividade"):
+        assert f"'{endpoint}'" in source
+    for panel in ("hoje", "semana", "votacoes"):
+        assert f"activeTab === '{panel}' && !{PANEL_STATE[panel]} && <PainelIndisponivel" in source
+
+
+def test_agenda_page_has_no_demo_data_banner():
+    source = AGENDA_PAGE.read_text()
+    assert "Dados Demonstrativos" not in source
+    assert "simulados" not in source
