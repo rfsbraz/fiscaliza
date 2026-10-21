@@ -17,6 +17,18 @@ on their own, and person 227 (BE, one seat) one. Person 1 has two interest decla
 an older and a newer one; person 2 has one that lists only the mandate and leaves exclusivity
 blank; person 301 has one from XVI.
 
+Plenary attendance (ATTENDANCE below, the plenary_attendance mart): each list holds whoever had a
+seat that day, everyone PR (present) unless listed here.
+
+- XVII: meetings 9000 (2025-10-16, 231 still on the list), 9001 (2026-01-15), 9002 (2026-02-12),
+  9003 (2026-03-12), 9004 (2026-04-25, Solene), 9005 (2026-09-17) and 9006 (2026-10-15), the
+  last five with 232. Person 1: ME on 9002, FJ on 9003, FI on 9004 (solemn), FA on 9005 (33
+  days before source_updated, so pending). Person 2: FA on 9001 (over 60 days, unclassified),
+  QV on 9002, PNO on 9003, FI on 9006.
+- XVI: meetings 8001 (2024-04-11), 8002 (2024-10-10) and 8003 (2025-03-13). Person 1 (PS): PT,
+  CO, FIJ. Person 301: MP, QVJ, PR.
+- No lists for any other legislature.
+
 Votes, initiatives and interventions for the agenda page are in tests/site_agenda.py and go into
 the same tables (TABLES below). They use their own initiative ids and deputies, so they do not
 change the deputy figures; the deputy activity above adds 4 XVII interventions on 3 days of 2026
@@ -285,10 +297,112 @@ def _activity():
 
 ACTIVITY = _activity()
 
+ATTENDANCE_CATEGORY = {
+    "PR": "present",
+    "PT": "present",
+    "PNO": "other_body_or_mission",
+    "CO": "other_body_or_mission",
+    "ME": "other_body_or_mission",
+    "MP": "other_body_or_mission",
+    "FJ": "justified",
+    "FIJ": "justified",
+    "QVJ": "justified",
+    "QV": "missed_quorum_vote",
+    "FI": "unjustified",
+}
+SOURCE_UPDATED = "2026-10-20"
+XVII_MEETINGS = [
+    # meeting_id, number, session, date, type
+    (9000, 10, 1, "2025-10-16", "Ordinária"),
+    (9001, 20, 1, "2026-01-15", "Ordinária"),
+    (9002, 30, 1, "2026-02-12", "Ordinária"),
+    (9003, 40, 1, "2026-03-12", "Extraordinária"),
+    (9004, 50, 1, "2026-04-25", "Solene"),
+    (9005, 60, 2, "2026-09-17", "Ordinária"),
+    (9006, 70, 2, "2026-10-15", "Ordinária"),
+]
+XVI_MEETINGS = [
+    (8001, 5, 1, "2024-04-11", "Ordinária"),
+    (8002, 50, 2, "2024-10-10", "Ordinária"),
+    (8003, 90, 2, "2025-03-13", "Ordinária"),
+]
+ATTENDANCE_CODES = {
+    (1, 9002): "ME",
+    (1, 9003): "FJ",
+    (1, 9004): "FI",
+    (1, 9005): "FA",
+    (2, 9001): "FA",
+    (2, 9002): "QV",
+    (2, 9003): "PNO",
+    (2, 9006): "FI",
+    (1, 8001): "PT",
+    (1, 8002): "CO",
+    (1, 8003): "FIJ",
+    (301, 8001): "MP",
+    (301, 8002): "QVJ",
+}
+
+
+def _attendance():
+    """The plenary_attendance mart for the meetings above, as parlamento-aberto publishes it."""
+    from datetime import date
+
+    updated = date.fromisoformat(SOURCE_UPDATED)
+    xvii = _xvii_seats()
+    xvi = list(range(1, 51)) + list(range(300, 480))
+    rows = []
+
+    def add(leg, meeting, seats):
+        meeting_id, number, session, day, kind = meeting
+        for cad, group in seats:
+            code = ATTENDANCE_CODES.get((cad, meeting_id), "PR")
+            if code == "FA":
+                pending = (updated - date.fromisoformat(day)).days < 60
+                category = "pending" if pending else "unclassified"
+            else:
+                pending, category = False, ATTENDANCE_CATEGORY[code]
+            rows.append(
+                (
+                    leg,
+                    meeting_id,
+                    number,
+                    session,
+                    day,
+                    kind,
+                    kind in ("Solene", "Comemorativa"),
+                    cad,
+                    f"Deputado {cad}",
+                    group,
+                    group,
+                    code,
+                    category,
+                    pending,
+                    SOURCE_UPDATED,
+                )
+            )
+
+    for meeting in XVII_MEETINGS:
+        last = 231 if meeting[3] < "2026-01-01" else 232
+        add("XVII", meeting, [*xvii, (last, "PS")])
+    for meeting in XVI_MEETINGS:
+        add("XVI", meeting, [(cad, "PS" if cad == 1 else XVI_GROUPS[i % len(XVI_GROUPS)]) for i, cad in enumerate(xvi)])
+    return {
+        "plenary_attendance": (
+            "legislature varchar, meeting_id bigint, meeting_number integer, session_number integer, "
+            "meeting_date date, meeting_type varchar, is_ceremonial boolean, cadastro_id bigint, "
+            "parliamentary_name varchar, group_code varchar, group_code_raw varchar, code varchar, "
+            "category varchar, is_pending boolean, source_updated date",
+            rows,
+        )
+    }
+
+
+ATTENDANCE = _attendance()
+
 
 def _tables():
     """ACTIVITY with the agenda page's rows added; a table in both must have the same columns."""
-    tables = dict(ACTIVITY)
+    tables = {**ACTIVITY, **ATTENDANCE}
     for table, (columns, rows) in agenda_tables().items():
         if table in tables:
             assert columns == tables[table][0], f"{table}: agenda columns differ from ACTIVITY"
@@ -367,7 +481,7 @@ def build_release(root):
     manifest = {
         "tag": TAG,
         "schema_version": "1.2.0",
-        "source_updated": "2026-10-20",
+        "source_updated": SOURCE_UPDATED,
         "data_commit": "0123456789abcdef0123456789abcdef01234567",
         "marts": marts,
     }

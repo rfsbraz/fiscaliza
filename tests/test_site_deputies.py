@@ -218,7 +218,7 @@ def test_no_comparison_for_a_short_mandate(con):
 def test_dropped_and_unavailable_fields(con):
     s = deputies.detalhes(con, 1)["estatisticas"]
     assert "contexto_oposicao" not in s  # F09
-    assert s["taxa_assiduidade"] is None  # attendance waits for its mart (S11)
+    assert "taxa_assiduidade" not in s  # replaced by estatisticas.assiduidade (S11)
 
 
 # Interventions and initiatives (F10, F11 without phase)
@@ -512,7 +512,7 @@ def test_deputy_modules_have_no_sqlalchemy_or_old_database_import(path):
     assert [n for n in names if n.split(".")[0] in {"sqlalchemy", "flask_sqlalchemy", "database"}] == []
 
 
-# Evolution chart and attendance
+# Evolution chart
 
 
 def test_evolution_bars_are_scaled_to_their_values():
@@ -523,13 +523,3 @@ def test_evolution_bars_are_scaled_to_their_values():
     assert "const EVOLUTION_TRACK_PX = " in source
     assert "Math.round((total / maxValue) * EVOLUTION_TRACK_PX)" in source
     assert "height: `${barHeight}px`" in source
-
-
-def test_attendance_tab_is_hidden_until_its_mart_lands():
-    # Attendance still runs on the old code (S11 brings it back on the plenary attendance mart), so
-    # the page neither calls it nor offers the tab.
-    source = COMPONENT.read_text()
-    assert "const ATTENDANCE_AVAILABLE = false;" in source
-    assert "ATTENDANCE_AVAILABLE ? apiFetch(`deputados/${cadId}/attendance`)" in source
-    assert "...(ATTENDANCE_AVAILABLE ? [{ id: 'attendance', label: 'Presenças', icon: Activity }] : [])" in source
-    assert "{ATTENDANCE_AVAILABLE && activeTab === 'attendance' && (" in source

@@ -22,7 +22,7 @@ def _sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema="1.1.0"):
+def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema="1.1.0", attendance=True):
     """A release folder like `release build` writes, with XVII and `seated` deputies."""
     out = Path(root) / tag
     out.mkdir(parents=True)
@@ -62,8 +62,13 @@ def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema
         "create table initiatives (legislature varchar, initiative_id bigint, type_code varchar, type varchar, "
         "first_event_date date)"
     )
+    con.execute(
+        "create table plenary_attendance (legislature varchar, meeting_id bigint, meeting_date date, "
+        "is_ceremonial boolean, cadastro_id bigint, code varchar, category varchar, is_pending boolean)"
+    )
     marts = {}
     for mart in (
+        *(["plenary_attendance"] if attendance else []),
         "legislatures",
         "mandates",
         "deputies",
@@ -174,6 +179,23 @@ def test_row_count_drop_over_five_percent_leaves_the_previous_file_live(tmp_path
     with pytest.raises(sync.SyncError, match="deputies: 230 rows, 330 live"):
         sync.sync(data_dir, from_dir=release)
     _assert_previous_still_live(data_dir)
+
+
+def test_release_without_the_attendance_mart_is_refused(tmp_path, data_dir):
+    sync.sync(data_dir, from_dir=make_release(tmp_path / "a", tag="data-2026-10-19"))
+    release = make_release(tmp_path / "b", attendance=False)
+    with pytest.raises(sync.SyncError, match="plenary_attendance"):
+        sync.sync(data_dir, from_dir=release)
+    assert live_tag(data_dir) == "data-2026-10-19"
+
+
+def test_attendance_mart_is_loaded(tmp_path, data_dir):
+    result = sync.sync(data_dir, from_dir=make_release(tmp_path))
+    con = duckdb.connect(str(result.path), read_only=True)
+    try:
+        assert con.execute("select count(*) from plenary_attendance").fetchone() == (0,)
+    finally:
+        con.close()
 
 
 def test_missing_parquet_leaves_the_previous_file_live(tmp_path, data_dir):
