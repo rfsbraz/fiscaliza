@@ -13,13 +13,23 @@ calls `deploy/pages.py`; everything a deploy does is in that script.
 | Trigger | Deploys |
 |---|---|
 | Push to `master` | production |
-| Pull request from this repo | a preview on a Pages branch named after the PR's head branch |
+| Pull request from this repo that changes the site, or has the `preview` label | a preview on a Pages branch named after the PR's head branch |
 
 There is no schedule: the data only changes when the pin moves, and moving the pin is a pull
 request, which deploys production when it merges.
 
 Pull requests from forks don't deploy, and neither do Dependabot's: neither gets the repository
 secrets.
+
+A deploy holds my single runner for about half an hour, so a pull request only gets a preview when
+it needs one. A short `Preview Needed` job diffs the PR against master and lets the deploy run when
+something changed under `frontend/`, `fiscaliza_data/`, `app/` or `deploy/`, or in
+`.github/workflows/deploy.yml` (`PREVIEW_PATHS` in the workflow). Anything else, such as docs or
+tests, gets no deploy job.
+
+To get a preview for any other pull request, add the `preview` label. Adding it starts a deploy
+right away, and every later push to that PR deploys again until the label comes off. Adding any
+other label starts nothing.
 
 There is one concurrency group for every trigger, with `cancel-in-progress: false`: a deploy
 waits for the one before it to finish and is never cancelled halfway through an upload.
