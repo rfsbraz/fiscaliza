@@ -1,9 +1,9 @@
-"""Build Fiscaliza from the latest parlamento-aberto main and upload it to Cloudflare Pages.
+"""Build Fiscaliza from the pinned parlamento-aberto commit and upload it to Cloudflare Pages.
 
-    python deploy/pages.py deploy --parlamento-aberto PATH   # build the release from the latest main
-    python deploy/pages.py deploy --release DIR              # a release folder you already have (previews)
+    python deploy/pages.py deploy --parlamento-aberto PATH   # build the release from the pin
+    python deploy/pages.py deploy --release DIR              # a release folder built from the pin
     python deploy/pages.py deploy ... --branch NAME          # preview branch (default: preview)
-    python deploy/pages.py deploy --parlamento-aberto PATH --production   # production (master)
+    python deploy/pages.py deploy ... --production           # production (master)
     python deploy/pages.py deploy ... --dry-run              # print the steps, run nothing
     python deploy/pages.py prepare DIST                      # only the Pages step on a built dist/
 
@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parent.parent
 DEPLOY = ROOT / "deploy"
 FRONTEND = ROOT / "frontend"
+PIN_FILE = DEPLOY / "data-pin"
 HEADERS_FILE = DEPLOY / "_headers"
 
 PROJECT = "fiscaliza"
@@ -50,25 +51,47 @@ class Step:
     env: dict[str, str] = field(default_factory=dict)
 
 
-def latest_main(checkout):
-    """The tip of parlamento-aberto main, fetched now. Every deploy builds it, so data only
-    moves forward: a run never puts older data live than the run before it."""
+@dataclass(frozen=True)
+class Pin:
+    commit: str
+    tag: str | None
+
+
+def read_pin(path=PIN_FILE):
+    values = {}
+    for line in Path(path).read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            key, _, value = line.partition("=")
+            values[key.strip()] = value.strip()
+    commit = values.get("commit", "")
+    if len(commit) != 40 or any(c not in "0123456789abcdef" for c in commit):
+        raise DeployError(f"{path}: commit must be a full 40 character SHA, got {commit!r}")
+    return Pin(commit=commit, tag=values.get("tag") or None)
+
+
+def _git(checkout, *args):
+    return subprocess.run(["git", "-C", str(checkout), *args], check=True, capture_output=True, text=True)
+
+
+def fetch_pin(checkout, commit):
+    """Make sure the pinned commit is in the parlamento-aberto clone, whatever its branches
+    point at. Fetches that exact SHA when it is missing, one commit deep in a shallow clone."""
     try:
-        subprocess.run(
-            ["git", "-C", str(checkout), "fetch", "--quiet", "origin", "main"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        out = subprocess.run(
-            ["git", "-C", str(checkout), "rev-parse", "FETCH_HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+        _git(checkout, "rev-parse", "--git-dir")
     except subprocess.CalledProcessError as e:
-        raise DeployError(f"{checkout}: cannot fetch parlamento-aberto main: {e.stderr.strip()}") from e
-    return out.stdout.strip()
+        raise DeployError(f"{checkout} is not a parlamento-aberto git clone") from e
+    try:
+        _git(checkout, "cat-file", "-e", f"{commit}^{{commit}}")
+        return
+    except subprocess.CalledProcessError:
+        pass
+    shallow = _git(checkout, "rev-parse", "--is-shallow-repository").stdout.strip() == "true"
+    try:
+        _git(checkout, "fetch", "--quiet", *(["--depth", "1"] if shallow else []), "origin", commit)
+        _git(checkout, "cat-file", "-e", f"{commit}^{{commit}}")
+    except subprocess.CalledProcessError as e:
+        raise DeployError(f"{checkout}: cannot fetch the pinned commit {commit[:9]}: {e.stderr.strip()}") from e
 
 
 def prepare(dist):
@@ -89,10 +112,20 @@ def prepare(dist):
     return len(files)
 
 
+def check_release(folder, pin):
+    manifest = Path(folder) / "manifest.json"
+    if not manifest.is_file():
+        raise DeployError(f"{manifest} is missing; --release takes a `release build` output folder")
+    data_commit = json.loads(manifest.read_text()).get("data_commit", "")
+    if data_commit != pin.commit:
+        raise DeployError(
+            f"{folder} was built from {data_commit[:9] or 'an unknown commit'}, the pin is {pin.commit[:9]}; "
+            "build it from the pin or move the pin in deploy/data-pin"
+        )
+
+
 def branch_for(args):
     if args.production:
-        if not args.parlamento_aberto:
-            raise DeployError("production builds the latest parlamento-aberto main; pass --parlamento-aberto PATH")
         if args.branch not in (None, PRODUCTION_BRANCH):
             raise DeployError(f"--production deploys {PRODUCTION_BRANCH}; drop --branch {args.branch}")
         return PRODUCTION_BRANCH
@@ -102,9 +135,9 @@ def branch_for(args):
     return branch
 
 
-def plan(args, work, commit=None):
-    """The commands for one deploy, in order. Nothing runs here. `commit` is the
-    parlamento-aberto commit to build, from latest_main()."""
+def plan(args, work):
+    """The commands for one deploy, in order. Nothing runs here."""
+    pin = read_pin()
     branch = branch_for(args)
     work = Path(work)
     data_dir = work / "data"
@@ -119,19 +152,21 @@ def plan(args, work, commit=None):
         today = datetime.now(ZoneInfo("Europe/Lisbon")).strftime("%Y-%m-%d")
         steps += [
             Step(
-                "check out parlamento-aberto main",
-                ["git", "-C", str(args.parlamento_aberto), "worktree", "add", "--detach", str(checkout), commit],
+                "check out the pin",
+                ["git", "-C", str(args.parlamento_aberto), "worktree", "add", "--detach", str(checkout), pin.commit],
             ),
             Step(
                 "build the release",
                 ["uv", "run", "--locked", "python", "-m", "parlamento_aberto.release", "build"]
-                + ["--data", "data", "--out", str(release), "--sha", commit, "--date", today],
+                + ["--data", "data", "--out", str(release), "--sha", pin.commit, "--date", today],
                 cwd=checkout,
             ),
         ]
         sync_source = ["--from-dir", str(release)]
+    elif pin.tag:
+        sync_source = ["--tag", pin.tag]
     else:
-        raise DeployError("pass --parlamento-aberto PATH (or --release DIR for a preview)")
+        raise DeployError("the pin has no release tag; pass --parlamento-aberto PATH or --release DIR")
 
     wrangler = shlex.split(os.environ.get("WRANGLER", DEFAULT_WRANGLER))
     steps += [
@@ -162,28 +197,20 @@ def plan(args, work, commit=None):
 
 
 def run(args):
+    pin = read_pin()
     branch_for(args)
+    if args.release:
+        check_release(args.release, pin)
     if args.dry_run:
-        commit = latest_main(args.parlamento_aberto) if args.parlamento_aberto else None
-        for step in plan(args, Path(args.work or "$WORK"), commit):
+        for step in plan(args, Path(args.work or "$WORK")):
             print(f"[{step.name}] (cd {step.cwd} && {shlex.join(step.argv)})")
         return 0
-    if args.release:
-        manifest = Path(args.release) / "manifest.json"
-        if not manifest.is_file():
-            raise DeployError(f"{manifest} is missing; --release takes a `release build` output folder")
-        data_commit = json.loads(manifest.read_text()).get("data_commit", "unknown")
-        source = f"release folder {args.release} (parlamento-aberto {data_commit[:9]})"
-        commit = None
-    elif args.parlamento_aberto:
-        commit = latest_main(args.parlamento_aberto)
-        source = f"parlamento-aberto main {commit[:9]}"
-    else:
-        commit, source = None, None
+    if args.parlamento_aberto:
+        fetch_pin(args.parlamento_aberto, pin.commit)
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="fiscaliza-deploy-"))
     try:
-        steps = plan(args, work, commit)
-        print(f"deploying {source} to Pages project {PROJECT}, branch {branch_for(args)}")
+        steps = plan(args, work)
+        print(f"deploying parlamento-aberto {pin.commit[:9]} to Pages project {PROJECT}, branch {branch_for(args)}")
         for step in steps:
             print(f"[{step.name}]", flush=True)
             if step.argv[0] == "prepare":
@@ -216,10 +243,8 @@ def parse_args(argv=None):
     sub = parser.add_subparsers(dest="cmd", required=True)
     d = sub.add_parser("deploy", help="build and upload to Pages")
     source = d.add_mutually_exclusive_group()
-    source.add_argument(
-        "--parlamento-aberto", metavar="PATH", help="a parlamento-aberto checkout; its origin main is fetched and built"
-    )
-    source.add_argument("--release", metavar="DIR", help="a `release build` output folder (previews only)")
+    source.add_argument("--parlamento-aberto", metavar="PATH", help="a parlamento-aberto clone to build the pin in")
+    source.add_argument("--release", metavar="DIR", help="a `release build` output folder built from the pin")
     d.add_argument("--branch", help=f"Pages branch to deploy (default {PREVIEW_BRANCH})")
     d.add_argument("--production", action="store_true", help=f"deploy production ({PRODUCTION_BRANCH})")
     d.add_argument("--export-jobs", type=int, help="processes for the export (default: one per CPU)")

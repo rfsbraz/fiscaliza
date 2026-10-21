@@ -1,17 +1,15 @@
 name: Deploy
 
-# Fiscaliza on Cloudflare Pages, project fiscaliza (docs/DEPLOY.md). Every run builds the latest
-# parlamento-aberto main with deploy/pages.py:
-# - a push to master and the daily run deploy production (Pages branch master);
+# Fiscaliza on Cloudflare Pages, project fiscaliza (docs/DEPLOY.md). Every run builds the
+# parlamento-aberto commit in deploy/data-pin with deploy/pages.py:
+# - a push to master deploys production (Pages branch master);
 # - a pull request from this repo deploys a preview on a Pages branch named after its head ref.
+# The data moves when a PR moves the pin, so there is no schedule.
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
-  schedule:
-    # Daily data refresh. Cron is UTC: 06:00 Lisbon in summer time, 05:00 in winter time.
-    - cron: "0 5 * * *"
 
 permissions:
   contents: read

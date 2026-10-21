@@ -13,12 +13,10 @@ calls `deploy/pages.py`; everything a deploy does is in that script.
 | Trigger | Deploys |
 |---|---|
 | Push to `master` | production |
-| Daily at 05:00 UTC | production, for the data refresh |
 | Pull request from this repo | a preview on a Pages branch named after the PR's head branch |
 
-Cron is UTC and doesn't follow summer time: 05:00 UTC is 06:00 in Lisbon in summer time and
-05:00 in winter time. parlamento-aberto's nightly data sync starts at 06:15 UTC, so the daily
-deploy picks up the data merged the day before.
+There is no schedule: the data only changes when the pin moves, and moving the pin is a pull
+request, which deploys production when it merges.
 
 Pull requests from forks don't deploy, and neither do Dependabot's: neither gets the repository
 secrets.
@@ -33,19 +31,18 @@ The workflow needs:
 
 The project already exists. Nothing creates it, and nothing prints the token.
 
-## Which data it builds
+## The data pin
 
-Every deploy builds the latest parlamento-aberto `main`. `deploy/pages.py` fetches `origin main`
-in the parlamento-aberto clone it is given and builds that commit, so even a clone that is behind
-gets the newest data. There is no pin.
+`deploy/data-pin` holds the parlamento-aberto commit the site is built from, and its release tag
+when there is one. It is the only place the data version is set, and every deploy, production and
+preview, builds exactly that commit.
 
-`main` only moves forward, and data only reaches it through its data PR checks, so each deploy has
-the same data as the one before it or newer, whatever triggered it. A daily run and a later push to
-`master` can't put older data back in production. A fixed pin would make the daily run rebuild the
-same data forever, and a push to `master` would take production back to the pin.
+Production is pinned because CI starts from an empty data folder each time: the sync's check that
+no table lost more than 5% of its rows has nothing to compare against, so a bad commit on
+parlamento-aberto `main` would go straight to production. Moving the pin is a small pull request of
+its own, after checking the new data; its preview shows the new data before it merges.
 
-When parlamento-aberto starts publishing data releases, the rule becomes "the latest release",
-which `fiscaliza_data sync` already downloads when it gets no `--tag`. It moves forward the same way.
+When parlamento-aberto turns on data releases (`DATA_RELEASES`), the pin moves to a release tag.
 
 ## What a deploy runs
 
@@ -55,7 +52,8 @@ python deploy/pages.py deploy --parlamento-aberto ~/src/parlamento-aberto --bran
 
 This runs, in order:
 
-1. `git fetch origin main` in that clone, then `git worktree add --detach` of the commit it got, and
+1. A fetch of the pinned SHA when the clone doesn't have it (one commit deep in a shallow clone),
+   then `git worktree add --detach` of the pinned commit, and
    `uv run python -m parlamento_aberto.release build` there (the same command as its release
    workflow), into a scratch folder.
 2. `python -m fiscaliza_data sync --from-dir <release>` into a scratch DuckDB folder.
@@ -67,19 +65,20 @@ This runs, in order:
 6. `wrangler pages deploy dist --project-name fiscaliza --branch <branch>`.
 
 The scratch folder and the parlamento-aberto worktree are removed at the end. CI clones
-parlamento-aberto with `--depth 1 --no-checkout`, so its data is checked out once, by step 1.
+parlamento-aberto with `--depth 1 --no-checkout`, so its data is checked out once, by step 1, and
+fetches the pinned commit if `main` has moved past it.
 
 Options:
 
 - `--branch NAME` picks the preview branch (default `preview`).
-- `--production` deploys `master`. `--branch master` without it is refused, and so is
-  `--production` with `--release`.
-- `--release DIR` takes a `release build` folder you already have, for a preview only: it can be
-  older than what is live.
+- `--production` deploys `master`. `--branch master` without it is refused.
+- `--release DIR` takes a `release build` folder you already have. Its `manifest.json` must name
+  the pinned commit as `data_commit`, or the script stops.
+- With no source and a `tag=` in the pin, the sync downloads that release from GitHub.
 - `--export-jobs N` caps the export's processes (default: one per CPU the machine reports). CI
   uses 2, and the deploy step stops after 45 minutes; a deploy takes about 5 minutes on 8 cores.
 - `--work DIR` keeps the scratch files in that folder instead of a temporary one.
-- `--dry-run` fetches main, prints every command and runs nothing else.
+- `--dry-run` prints every command and runs nothing.
 - `WRANGLER` overrides the wrangler command. The default is `npx --yes wrangler@4.151.3`, pinned
   so CI and a local run use the same version. Wrangler 4 needs Node 22 or newer; the workflow sets
   up Node 22.
