@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { motion } from 'framer-motion'
 import { ExternalLink, AlertTriangle, X } from 'lucide-react'
 import Navigation from './components/Navigation'
+import DataAttribution from './components/DataAttribution'
 
 const Dashboard = lazy(() => import('./components/Dashboard'))
 const DeputadosPage = lazy(() => import('./components/DeputadosPage'))
@@ -296,6 +297,8 @@ const AppContent = () => {
               </a>
             </div>
           </div>
+
+          <DataAttribution />
 
           {/* Bottom section with branding */}
           <div

@@ -14,6 +14,9 @@ MAX_PER_PAGE = 100
 TOP_CIRCLES = 10
 
 
+SERVICE = "fiscaliza-api"
+
+
 class NotFound(Exception):
     """The legislature or coalition asked for does not exist."""
 
@@ -310,3 +313,11 @@ def coligacao_partidos(con, sigla):
         "partidos": parties,
         "total_partidos": len(parties),
     }
+
+
+def health(con):
+    """The live release: tag, schema version, source_updated, data commit and sync time, as
+    text. The footer shows the tag and source_updated on every page."""
+    meta = repository.meta(con) or {}
+    data = {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in meta.items()}
+    return {"status": "healthy", "service": SERVICE, "data": data}

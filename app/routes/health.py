@@ -9,9 +9,10 @@ from flask import Blueprint, current_app, jsonify
 
 from app.data import repository
 from app.data.connection import DataUnavailable, data_source
+from app.services import core
+from app.services.core import SERVICE
 
 health_bp = Blueprint("health", __name__)
-SERVICE = "fiscaliza-api"
 
 
 @health_bp.route("/ping", methods=["GET"])
@@ -23,11 +24,10 @@ def ping():
 def health_check():
     try:
         with data_source(current_app).cursor() as con:
-            meta = repository.meta(con)
+            body = core.health(con)
     except DataUnavailable as e:
         return jsonify({"status": "unhealthy", "service": SERVICE, "reason": str(e)}), 503
-    data = {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in (meta or {}).items()}
-    return jsonify({"status": "healthy", "service": SERVICE, "data": data}), 200
+    return jsonify(body), 200
 
 
 @health_bp.route("/ready", methods=["GET"])
