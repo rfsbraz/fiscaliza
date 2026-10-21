@@ -339,11 +339,23 @@ def conflitos_interesse(con, cadastro_id):
     items = repository.declaration_items(
         con, declaration["legislature"], declaration["declaration_key"], ["activity", "society"]
     )
+    # Only fields the release publishes, as published. Dates stay as written in the declaration
+    # (some give only a year); the period is what tells two terms in the same post apart.
     activities = [
-        {"entity_name": i["entity"], "function_type": i["description"]} for i in items if i["category"] == "activity"
+        {
+            "function_type": i["description"],
+            "entity_name": i["entity"],
+            "location": i["location"],
+            "start_date": i["start_date_raw"],
+            "end_date": i["end_date_raw"],
+        }
+        for i in items
+        if i["category"] == "activity"
     ]
     shareholdings = [
-        {"entity_name": i["entity"], "share_percentage": i["share"]} for i in items if i["category"] == "society"
+        {"entity_name": i["entity"], "share_percentage": i["share"], "location": i["location"]}
+        for i in items
+        if i["category"] == "society"
     ]
     flags = repository.declaration_flags(con, declaration["legislature"], declaration["declaration_key"])
     out.update(
@@ -359,8 +371,5 @@ def conflitos_interesse(con, cadastro_id):
         declara_participacoes=flags["shareholdings"],
         professional_activities=activities,
         shareholdings=shareholdings,
-        # No sector or legislation matching in the release yet; the page hides the sector status.
-        regulated_sector_count=None,
-        total_sectors=None,
     )
     return out

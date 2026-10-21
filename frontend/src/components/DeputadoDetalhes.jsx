@@ -17,7 +17,7 @@ import InterventionsSummaryBar, { ActivityBadge, VideoIndicator } from './deputy
 import TimelineSparkline, { ActivityHeatmap, TrendIndicator, BarSparkline } from './charts/TimelineSparkline';
 import AchievementBadge, { BadgeCollection, BadgeSummary, RedFlagIndicator } from './deputy/AchievementBadge';
 import PolicySpecializationChart, { PolicyRadar, TopicTag } from './charts/PolicySpecializationChart';
-import SectorHeatmap, { SectorOverlapSummary, VotingInterestCrossReference } from './deputy/SectorHeatmap';
+import InterestTable, { ACTIVITY_COLUMNS, SHAREHOLDING_COLUMNS } from './deputy/InterestTable';
 
 // TODO: Deputy mandate linking limitation
 // Current system uses name-based linking to connect same person across legislaturas
@@ -3772,72 +3772,17 @@ const DeputadoDetalhes = () => {
                       </p>
                     </EducationalBox>
 
-                    {/* Phase 2: Sector Overlap Summary */}
-                    {conflitosInteresse.regulated_sector_count > 0 && (
-                      <SectorOverlapSummary
-                        totalSectors={conflitosInteresse.total_sectors || 5}
-                        overlappingSectors={conflitosInteresse.regulated_sector_count || 0}
-                        showContext={true}
-                      />
-                    )}
-
-                    {/* Phase 2: Sector Heatmap - showing interests vs legislation */}
-                    {(() => {
-                      // Generate sample sector data from available conflict data
-                      const sectorData = [];
-
-                      // Add professional activities as sectors
-                      if (conflitosInteresse.professional_activities?.length > 0) {
-                        conflitosInteresse.professional_activities.forEach((activity, idx) => {
-                          sectorData.push({
-                            sectorKey: `prof_${idx}`,
-                            sectorName: activity.entity_name || activity.function_type || 'Atividade Profissional',
-                            interest: activity.function_type || 'Atividade declarada',
-                            legislationCount: 0, // Would need legislation matching data
-                            status: 'noLegislation',
-                          });
-                        });
-                      }
-
-                      // Add shareholdings as sectors
-                      if (conflitosInteresse.shareholdings?.length > 0) {
-                        conflitosInteresse.shareholdings.forEach((holding, idx) => {
-                          sectorData.push({
-                            sectorKey: `share_${idx}`,
-                            sectorName: holding.entity_name || 'Participação Social',
-                            interest: holding.share_percentage ? `${holding.share_percentage}%` : 'Participação declarada',
-                            legislationCount: 0,
-                            status: 'noLegislation',
-                          });
-                        });
-                      }
-
-                      if (sectorData.length === 0) return null;
-
-                      return (
-                        <div style={{
-                          backgroundColor: tokens.colors.bgSecondary,
-                          border: `1px solid ${tokens.colors.border}`,
-                          borderRadius: '4px',
-                          padding: '20px',
-                        }}>
-                          <h4 style={{
-                            margin: '0 0 16px 0',
-                            fontFamily: tokens.fonts.body,
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                            color: tokens.colors.textPrimary,
-                          }}>
-                            Interesses por Sector
-                          </h4>
-                          <SectorHeatmap
-                            data={sectorData.slice(0, 6)} // Limit to 6 sectors
-                            showLegend={false}
-                            showDetails={false}
-                          />
-                        </div>
-                      );
-                    })()}
+                    {/* What the declaration lists, with only the fields the release has */}
+                    <InterestTable
+                      title="Atividades e cargos declarados"
+                      columns={ACTIVITY_COLUMNS}
+                      items={conflitosInteresse.professional_activities}
+                    />
+                    <InterestTable
+                      title="Participações sociais declaradas"
+                      columns={SHAREHOLDING_COLUMNS}
+                      items={conflitosInteresse.shareholdings}
+                    />
 
                     {/* Personal Information */}
                     <div style={{

@@ -518,13 +518,19 @@ def latest_declaration(con, cadastro_id):
 
 
 def declaration_items(con, legislature, declaration_key, categories):
-    """Items of one declaration in the given categories, in their published order."""
+    """Items of one declaration in the given categories, in their published order. Items the
+    declaration repeats word for word (same post, place and period) come back once; the same
+    post for another period is its own item."""
     return _rows(
         con,
         """
-        select category, description, entity, share
+        select category, description, entity, share, location, start_date_raw, end_date_raw
         from interests
         where legislature = ? and declaration_key = ? and list_contains(?, category)
+        qualify row_number() over (
+            partition by category, description, entity, share, location, start_date_raw, end_date_raw
+            order by item_number
+        ) = 1
         order by item_number
         """,
         [legislature, declaration_key, list(categories)],
