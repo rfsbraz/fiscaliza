@@ -3,214 +3,292 @@
   "route": "/api/deputados/<int:cad_id>/voting-analytics",
   "keys": [
     {
-      "path": "critical_votes",
+      "path": "close_votes",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:432"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:409"
     },
     {
-      "path": "critical_votes[].atividade_desc_tipo",
-      "type": "scalar",
-      "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:556"
-    },
-    {
-      "path": "critical_votes[].atividade_numero",
-      "type": "scalar",
-      "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:514"
-    },
-    {
-      "path": "critical_votes[].criticality",
-      "type": "scalar",
-      "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:491"
-    },
-    {
-      "path": "critical_votes[].data",
-      "type": "scalar",
-      "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:512"
-    },
-    {
-      "path": "critical_votes[].objeto",
+      "path": "close_votes[].abstencoes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:501"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:339"
     },
     {
-      "path": "critical_votes[].resultado",
-      "type": "scalar",
-      "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:529"
-    },
-    {
-      "path": "critical_votes[].type",
+      "path": "close_votes[].data",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:505"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:336"
     },
     {
-      "path": "critical_votes[].vote_breakdown",
+      "path": "close_votes[].objeto",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:333"
+    },
+    {
+      "path": "close_votes[].resultado",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:352"
+    },
+    {
+      "path": "close_votes[].vote_breakdown",
       "type": "mapping",
-      "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:492"
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:357"
     },
     {
-      "path": "critical_votes[].voto",
+      "path": "close_votes[].vote_id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:522"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:431"
+    },
+    {
+      "path": "close_votes[].voto",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:346"
+    },
+    {
+      "path": "close_votes[].votos_contra",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:339"
+    },
+    {
+      "path": "close_votes[].votos_favor",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:339"
     },
     {
       "path": "cross_party_collaboration",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:289"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:256"
     },
     {
       "path": "cross_party_collaboration[].aligned_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:319"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:289"
     },
     {
       "path": "cross_party_collaboration[].alignment_rate",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:313"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:283"
     },
     {
       "path": "cross_party_collaboration[].party",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:309"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:279"
     },
     {
       "path": "cross_party_collaboration[].total_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:319"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:289"
     },
     {
       "path": "data_sources",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:737"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:610"
     },
     {
-      "path": "data_sources.initiative_votes",
+      "path": "data_sources.close_margin",
       "type": "scalar",
-      "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:740"
+      "nullable": true,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:410"
     },
     {
       "path": "data_sources.note",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:743"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:617"
+    },
+    {
+      "path": "data_sources.votes_counted",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:613"
     },
     {
       "path": "deputy_info",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:733"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:607"
     },
     {
       "path": "deputy_info.party",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:733"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:607"
     },
     {
       "path": "deputy_info.party.sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:733"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:607"
+    },
+    {
+      "path": "dissent_votes",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:375"
+    },
+    {
+      "path": "dissent_votes[].data",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:336"
+    },
+    {
+      "path": "dissent_votes[].objeto",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:333"
+    },
+    {
+      "path": "dissent_votes[].resultado",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:352"
+    },
+    {
+      "path": "dissent_votes[].vote_breakdown",
+      "type": "mapping",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:357"
+    },
+    {
+      "path": "dissent_votes[].vote_id",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:396"
+    },
+    {
+      "path": "dissent_votes[].voto",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:346"
+    },
+    {
+      "path": "dissent_votes[].voto_grupo",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:348"
+    },
+    {
+      "path": "legislatura",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:606"
     },
     {
       "path": "participation_timeline",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:227"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:194"
     },
     {
       "path": "participation_timeline[].abstention_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:270"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:237"
     },
     {
       "path": "participation_timeline[].contra_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:266"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:233"
     },
     {
       "path": "participation_timeline[].date",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:244"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:214"
     },
     {
       "path": "participation_timeline[].favor_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:262"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:229"
     },
     {
       "path": "participation_timeline[].participated",
-      "type": "boolean",
+      "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:255"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:222"
     },
     {
       "path": "participation_timeline[].participation_rate",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:255"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:222"
     },
     {
       "path": "participation_timeline[].total_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:255"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:222"
     },
     {
       "path": "party_discipline",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:69"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:75"
+    },
+    {
+      "path": "party_discipline.aligned_votes",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:99"
+    },
+    {
+      "path": "party_discipline.monthly",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:105"
+    },
+    {
+      "path": "party_discipline.monthly[].aligned_votes",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:112"
+    },
+    {
+      "path": "party_discipline.monthly[].month",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:107"
+    },
+    {
+      "path": "party_discipline.monthly[].total_votes",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:112"
     },
     {
       "path": "party_discipline.overall_alignment",
       "type": "number",
-      "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:81"
-    },
-    {
-      "path": "party_discipline.timeline",
-      "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:72"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:86"
     },
     {
-      "path": "party_discipline.timeline[].aligned",
-      "type": "boolean",
-      "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:90"
-    },
-    {
-      "path": "party_discipline.timeline[].date",
+      "path": "party_discipline.total_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:85"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:99"
     },
     {
       "path": "vote_distribution",
       "type": "mapping",
       "nullable": false,
-      "read_at": "frontend/src/components/VotingAnalytics.jsx:162"
+      "read_at": "frontend/src/components/VotingAnalytics.jsx:129"
     }
   ],
   "dropped": [
@@ -221,6 +299,18 @@
     {
       "path": "data_sources.budget_votes",
       "reason": "F20: State Budget votes deferred. Dropped (D2)."
+    },
+    {
+      "path": "critical_votes",
+      "reason": "F19: \"critical votes\" replaced by dissent_votes (named against the group) and close_votes (decided by 10 or fewer). Simplified (D2)."
+    },
+    {
+      "path": "party_discipline.timeline",
+      "reason": "One row per vote is replaced by party_discipline.monthly counts, which is what the component draws."
+    },
+    {
+      "path": "data_sources.initiative_votes",
+      "reason": "Replaced by data_sources.votes_counted, which counts every plenary vote with a known position, not only initiative votes."
     }
   ]
 }

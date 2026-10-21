@@ -67,9 +67,28 @@ def agenda_tables():
     positions += [(308, "XVI", "plenary", "PS", "against", None, False)]
     interventions = [
         # legislature, intervention_id, session_number, meeting_date, intervention_type, session_phase,
-        # debate, summary, abstract, speaker_kind, cadastro_id, speaker_role, publication_type,
+        # debate, summary, abstract, speaker_kind, cadastro_id, group_acronym, speaker_role, publication_type,
         # publication_number, publication_date, pages, diary_url
-        (leg, i, 1, day, "Intervenção", None, None, None, None, "deputy", cad, "Deputado", None, None, None, [], None)
+        (
+            leg,
+            i,
+            1,
+            day,
+            "Intervenção",
+            None,
+            None,
+            None,
+            None,
+            "deputy",
+            cad,
+            "PS",
+            "Deputado",
+            None,
+            None,
+            None,
+            [],
+            None,
+        )
         for leg, i, day, cad in [
             ("XVII", 1, "2026-01-15", 151),
             ("XVII", 2, "2026-01-15", 152),
@@ -100,8 +119,9 @@ def agenda_tables():
         "interventions": (
             "legislature varchar, intervention_id bigint, session_number integer, meeting_date date, "
             "intervention_type varchar, session_phase varchar, debate varchar, summary varchar, abstract varchar, "
-            "speaker_kind varchar, cadastro_id bigint, speaker_role varchar, publication_type varchar, "
-            "publication_number integer, publication_date date, pages varchar[], diary_url varchar",
+            "speaker_kind varchar, cadastro_id bigint, group_acronym varchar, speaker_role varchar, "
+            "publication_type varchar, publication_number integer, publication_date date, pages varchar[], "
+            "diary_url varchar",
             interventions,
         ),
     }

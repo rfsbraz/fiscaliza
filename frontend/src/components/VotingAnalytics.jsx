@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, TrendingUp, Users, Target, BarChart3, PieChart, Activity, Shield, BookOpen } from 'lucide-react';
+import { Calendar, TrendingUp, Users, Target, Scale, PieChart, Activity, Shield, BookOpen } from 'lucide-react';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
+
+const ABSENCE_NOTE =
+  'O registo das votações só indica ausências quando as nomeia, por isso a maioria das faltas não aparece aqui. ' +
+  'A presença em plenário está no separador de presenças.';
 
 const VotingAnalytics = ({ deputadoId, legislatura }) => {
   const [analytics, setAnalytics] = useState(null);
@@ -13,7 +17,9 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
     const fetchVotingAnalytics = async () => {
       try {
         setLoading(true);
-        const response = await apiFetch(`deputados/${deputadoId}/voting-analytics`);
+        const response = await apiFetch(
+          `deputados/${deputadoId}/voting-analytics?legislatura=${encodeURIComponent(legislatura || '')}`
+        );
         if (!response.ok) {
           throw new Error('Erro ao carregar análises de votação');
         }
@@ -59,42 +65,25 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
 
   const charts = [
     { id: 'overview', label: 'Visão Geral', icon: Activity },
-    { id: 'collaboration', label: 'Colaboração Cross-Party', icon: Users },
-    { id: 'themes', label: 'Temas Legislativos', icon: BarChart3 },
-    { id: 'critical', label: 'Votações Críticas', icon: Target }
+    { id: 'collaboration', label: 'Alinhamento com Outros Grupos', icon: Users },
+    { id: 'dissent', label: 'Votos Diferentes do Grupo', icon: Target },
+    { id: 'close', label: 'Votações Renhidas', icon: Scale }
   ];
 
-  // Party Discipline Heatmap Component
+  // Alignment with the deputy's own group, by month
   const PartyDisciplineChart = () => {
     const { party_discipline } = analytics || {};
-    
-    // Check if party_discipline data exists
-    if (!party_discipline || !party_discipline.timeline) {
+
+    if (!party_discipline || !party_discipline.monthly || party_discipline.overall_alignment == null) {
       return (
         <div className="text-center py-8 text-gray-500">
           <Shield className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <p>Dados de disciplina partidária não disponíveis</p>
+          <p>Sem votações com sentido de voto conhecido do deputado e do grupo</p>
         </div>
       );
     }
-    
-    const alignment = (party_discipline.overall_alignment * 100).toFixed(1);
-    
-    // Group timeline data by month for better visualization
-    const monthlyData = party_discipline.timeline.reduce((acc, item) => {
-      const month = item.date.substring(0, 7); // YYYY-MM
-      if (!acc[month]) {
-        acc[month] = { aligned: 0, total: 0, month };
-      }
-      acc[month].total++;
-      if (item.aligned) acc[month].aligned++;
-      return acc;
-    }, {});
 
-    const monthlyDataArray = Object.values(monthlyData).map(month => ({
-      ...month,
-      alignment_rate: month.total > 0 ? (month.aligned / month.total * 100) : 0
-    }));
+    const alignment = (party_discipline.overall_alignment * 100).toFixed(1);
 
     return (
       <div className="space-y-6">
@@ -102,55 +91,33 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-lg font-semibold text-gray-900 flex items-center">
               <Shield className="h-5 w-5 text-blue-600 mr-2" />
-              Disciplina Partidária
+              Alinhamento com o Grupo Parlamentar
             </h4>
             <div className="text-right">
               <div className="text-2xl font-bold text-blue-600">{alignment}%</div>
-              <div className="text-sm text-gray-600">Alinhamento Geral</div>
+              <div className="text-sm text-gray-600">
+                {party_discipline.aligned_votes} de {party_discipline.total_votes} votações
+              </div>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-            {monthlyDataArray.map((month, index) => (
+            {party_discipline.monthly.map((month) => (
               <div key={month.month} className="relative">
                 <div className="text-xs text-gray-600 mb-1">{month.month}</div>
-                <div 
-                  className={`h-8 rounded flex items-center justify-center text-white text-xs font-medium ${
-                    month.alignment_rate >= 90 ? 'bg-green-600' :
-                    month.alignment_rate >= 70 ? 'bg-yellow-500' :
-                    month.alignment_rate >= 50 ? 'bg-orange-500' :
-                    'bg-red-500'
-                  }`}
-                  title={`${month.month}: ${month.aligned}/${month.total} votações alinhadas (${month.alignment_rate.toFixed(1)}%)`}
+                <div
+                  className="h-8 rounded flex items-center justify-center text-xs font-medium bg-blue-100 text-blue-900"
+                  title={`${month.month}: ${month.aligned_votes}/${month.total_votes} votações com o mesmo sentido do grupo`}
                 >
-                  {month.alignment_rate.toFixed(0)}%
+                  {month.aligned_votes}/{month.total_votes}
                 </div>
               </div>
             ))}
           </div>
-          
-          <div className="mt-4 flex items-center justify-between text-sm">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-green-600 rounded mr-2"></div>
-                <span>≥90% Alinhado</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-yellow-500 rounded mr-2"></div>
-                <span>70-89%</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-orange-500 rounded mr-2"></div>
-                <span>50-69%</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-red-500 rounded mr-2"></div>
-                <span>&lt;50%</span>
-              </div>
-            </div>
-            <div className="text-gray-600">
-              {party_discipline.timeline.length} votações analisadas
-            </div>
+
+          <div className="mt-4 text-sm text-gray-600">
+            Conta as votações em que o deputado e o seu grupo votaram (a favor, contra ou abstenção).
+            Ausências não contam.
           </div>
         </div>
       </div>
@@ -177,7 +144,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
       { key: 'favor', label: 'A Favor', color: 'bg-green-500', textColor: 'text-green-800' },
       { key: 'contra', label: 'Contra', color: 'bg-red-500', textColor: 'text-red-800' },
       { key: 'abstencao', label: 'Abstenção', color: 'bg-yellow-500', textColor: 'text-yellow-800' },
-      { key: 'ausente', label: 'Ausente', color: 'bg-gray-400', textColor: 'text-gray-800' }
+      { key: 'ausente', label: 'Ausência registada', color: 'bg-gray-400', textColor: 'text-gray-800' }
     ];
 
     return (
@@ -292,7 +259,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
       return (
         <div className="text-center py-8">
           <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Dados de colaboração cross-party não disponíveis</p>
+          <p className="text-gray-500">Dados de alinhamento com outros grupos não disponíveis</p>
         </div>
       );
     }
@@ -301,8 +268,11 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
       <div className="space-y-6">
         <h4 className="text-lg font-semibold text-gray-900 flex items-center">
           <Users className="h-5 w-5 text-indigo-600 mr-2" />
-          Colaboração Cross-Party
+          Alinhamento com Outros Grupos
         </h4>
+        <p className="text-sm text-gray-600">
+          Votações em que o deputado e o grupo votaram, e em quantas o sentido foi o mesmo.
+        </p>
         
         <div className="space-y-3">
           {cross_party_collaboration.map((party, index) => (
@@ -316,17 +286,13 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
               
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs text-gray-500">
-                  {party.aligned_votes}/{party.total_votes} votações alinhadas
+                  {party.aligned_votes}/{party.total_votes} votações com o mesmo sentido
                 </div>
               </div>
               
               <div className="bg-gray-200 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    party.alignment_rate >= 0.7 ? 'bg-green-500' :
-                    party.alignment_rate >= 0.5 ? 'bg-yellow-500' :
-                    'bg-red-500'
-                  }`}
+                <div
+                  className="h-2 rounded-full transition-all duration-300 bg-blue-500"
                   style={{ width: `${party.alignment_rate * 100}%` }}
                 />
               </div>
@@ -337,231 +303,138 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
     );
   };
 
-  // Legislative Theme Radar Chart
-  const ThemeAnalysisChart = () => {
-    const { theme_analysis } = analytics;
-    
-    // Ensure theme_analysis is an array
-    const themes = Array.isArray(theme_analysis) ? theme_analysis : [];
-    
+  const voteLabels = {
+    favor: 'A Favor',
+    contra: 'Contra',
+    abstencao: 'Abstenção',
+    ausente: 'Ausência registada'
+  };
+
+  const voteColors = {
+    favor: 'text-green-600',
+    contra: 'text-red-600',
+    abstencao: 'text-yellow-600',
+    ausente: 'text-gray-500'
+  };
+
+  const resultLabels = {
+    aprovada: 'Aprovada',
+    rejeitada: 'Rejeitada',
+    prejudicada: 'Prejudicada',
+    retirada: 'Retirada'
+  };
+
+  // One vote in the dissent or close lists
+  const VoteItem = ({ vote, close }) => (
+    <div className="bg-white border rounded-lg p-4">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <div className="text-sm font-medium text-gray-900 line-clamp-3 leading-relaxed mb-2">
+            {vote.objeto}
+          </div>
+          <div className="flex items-center gap-3 flex-wrap text-xs text-gray-500">
+            <span>{vote.data ? new Date(vote.data).toLocaleDateString('pt-PT') : 'Data não disponível'}</span>
+            {close && (
+              <span className="bg-gray-100 px-2 py-1 rounded">
+                {vote.votos_favor} a favor, {vote.votos_contra} contra, {vote.abstencoes} abstenções (estimativa)
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <span className={`text-sm font-medium ${voteColors[vote.voto] || 'text-gray-600'}`}>
+            {voteLabels[vote.voto] || vote.voto}
+          </span>
+          {vote.voto_grupo && (
+            <span className="text-xs text-gray-500">Grupo: {voteLabels[vote.voto_grupo] || vote.voto_grupo}</span>
+          )}
+          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
+            {resultLabels[vote.resultado] || vote.resultado}
+          </span>
+        </div>
+      </div>
+
+      {vote.vote_breakdown && Object.keys(vote.vote_breakdown).length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="text-xs text-gray-600 mb-2">Sentido de voto dos grupos:</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-1 text-xs">
+            {Object.entries(vote.vote_breakdown).map(([party, position]) => (
+              <div key={party} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
+                <span className="font-medium">{party}</span>
+                <span className={voteColors[position] || 'text-gray-500'}>{voteLabels[position] || position}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Votes where the deputy is named voting differently from their group
+  const DissentVotesChart = () => {
+    const { dissent_votes } = analytics || {};
+
     return (
       <div className="space-y-6">
-        <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-          <BarChart3 className="h-5 w-5 text-orange-600 mr-2" />
-          Análise por Temas Legislativos
-        </h4>
-        
-        {themes.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {themes.map((theme, index) => (
-            <div key={theme.tema} className="bg-white border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-sm font-medium text-gray-900">{theme.tema}</div>
-                <div className="text-xs text-gray-500">{theme.total_votes} votações</div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded mr-1"></div>
-                    A Favor
-                  </span>
-                  <span>{theme.favor_votes} ({(theme.favor_rate * 100).toFixed(0)}%)</span>
-                </div>
-                
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center">
-                    <div className="w-2 h-2 bg-red-500 rounded mr-1"></div>
-                    Contra
-                  </span>
-                  <span>{theme.contra_votes}</span>
-                </div>
-                
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center">
-                    <div className="w-2 h-2 bg-yellow-500 rounded mr-1"></div>
-                    Abstenção
-                  </span>
-                  <span>{theme.abstention_votes}</span>
-                </div>
-                
-                {theme.absent_votes > 0 && (
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center">
-                      <div className="w-2 h-2 bg-gray-400 rounded mr-1"></div>
-                      Ausente
-                    </span>
-                    <span>{theme.absent_votes}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="mt-3 flex rounded overflow-hidden h-2">
-                <div 
-                  className="bg-green-500" 
-                  style={{ width: `${(theme.favor_votes / theme.total_votes) * 100}%` }}
-                />
-                <div 
-                  className="bg-red-500" 
-                  style={{ width: `${(theme.contra_votes / theme.total_votes) * 100}%` }}
-                />
-                <div 
-                  className="bg-yellow-500" 
-                  style={{ width: `${(theme.abstention_votes / theme.total_votes) * 100}%` }}
-                />
-                <div 
-                  className="bg-gray-400" 
-                  style={{ width: `${(theme.absent_votes / theme.total_votes) * 100}%` }}
-                />
-              </div>
-            </div>
-          ))}
+        <div>
+          <h4 className="text-lg font-semibold text-gray-900 flex items-center mb-2">
+            <Target className="h-5 w-5 text-gray-600 mr-2" />
+            Votos Diferentes do Grupo
+          </h4>
+          <p className="text-sm text-gray-600">
+            Votações em plenário em que o registo da votação nomeia o deputado com um sentido de voto
+            diferente do seu grupo parlamentar. Mais recentes primeiro.
+          </p>
+        </div>
+        {!dissent_votes || dissent_votes.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>Nenhuma votação nesta legislatura</p>
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500">
-            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p>Dados de análise temática não disponíveis</p>
+          <div className="space-y-3">
+            {dissent_votes.slice(0, 15).map((vote) => (
+              <VoteItem key={vote.vote_id} vote={vote} />
+            ))}
+            {dissent_votes.length > 15 && (
+              <p className="text-xs text-gray-500">A mostrar 15 de {dissent_votes.length} votações.</p>
+            )}
           </div>
         )}
       </div>
     );
   };
 
-  // Critical Votes Analysis
-  const CriticalVotesChart = () => {
-    const { critical_votes } = analytics || {};
-    
-    // Check if critical_votes data exists
-    if (!critical_votes || critical_votes.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray-500">
-          <Target className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <p>Dados de votações críticas não disponíveis</p>
-        </div>
-      );
-    }
-    
-    const voteTypeColors = {
-      budget: 'bg-purple-100 text-purple-800 border-purple-200',
-      government: 'bg-blue-100 text-blue-800 border-blue-200',
-      confidence: 'bg-red-100 text-red-800 border-red-200',
-      regular: 'bg-gray-100 text-gray-800 border-gray-200'
-    };
-    
-    const voteColors = {
-      favor: 'text-green-600',
-      contra: 'text-red-600',
-      abstencao: 'text-yellow-600',
-      ausente: 'text-gray-500'
-    };
+  // Recent plenary votes decided by a small margin
+  const CloseVotesChart = () => {
+    const { close_votes, data_sources } = analytics || {};
+    const margin = data_sources?.close_margin ?? 10;
 
-    const criticalityColors = {
-      high: 'border-l-4 border-red-500 bg-red-50',
-      medium: 'border-l-4 border-yellow-500 bg-yellow-50',
-      low: 'border-l-4 border-gray-300 bg-gray-50'
-    };
-
-    const criticalityIcons = {
-      high: '🔴',
-      medium: '🟡', 
-      low: '⚪'
-    };
-    
     return (
       <div className="space-y-6">
-        <div className="mb-6">
+        <div>
           <h4 className="text-lg font-semibold text-gray-900 flex items-center mb-2">
-            <Target className="h-5 w-5 text-red-600 mr-2" />
-            Análise de Votações Críticas
+            <Scale className="h-5 w-5 text-gray-600 mr-2" />
+            Votações Renhidas
           </h4>
-          <p className="text-sm text-gray-600 mb-3">
-            Votações críticas incluem: <span className="font-medium">orçamentos de estado</span>, 
-            <span className="font-medium"> moções de confiança</span>, <span className="font-medium">eleições para órgãos</span>, 
-            <span className="font-medium"> leis constitucionais</span> e <span className="font-medium">votações não-unânimes</span> recentes.
+          <p className="text-sm text-gray-600">
+            Votações em plenário decididas por {margin} votos ou menos, estimados a partir do sentido de voto
+            de cada grupo e dos deputados que tinham lugar nesse dia. Mais recentes primeiro.
           </p>
-          <div className="flex items-center gap-4 text-xs text-gray-500">
-            <span className="flex items-center">🔴 Alta criticidade</span>
-            <span className="flex items-center">🟡 Média criticidade</span>
-            <span className="flex items-center">⚪ Baixa criticidade</span>
+        </div>
+        {!close_votes || close_votes.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>Nenhuma votação nesta legislatura</p>
           </div>
-        </div>
-        
-        <div className="space-y-3">
-          {critical_votes.slice(0, 15).map((vote, index) => {
-            const criticality = vote.criticality || 'medium';
-            const hasVoteBreakdown = vote.vote_breakdown && Object.keys(vote.vote_breakdown).length > 0;
-            
-            return (
-              <div key={index} className={`bg-white border rounded-lg p-4 ${criticalityColors[criticality] || criticalityColors.medium}`}>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-start gap-2 mb-2">
-                      <span className="text-sm">{criticalityIcons[criticality]}</span>
-                      <div className="text-sm font-medium text-gray-900 line-clamp-3 leading-relaxed">
-                        {vote.objeto}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${voteTypeColors[vote.type] || voteTypeColors.regular}`}>
-                        {vote.type === 'budget' ? 'Orçamento' :
-                         vote.type === 'government' ? 'Governo' :
-                         vote.type === 'confidence' ? 'Confiança' :
-                         'Regular'}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {vote.data ? new Date(vote.data).toLocaleDateString('pt-PT') : 'Data não disponível'}
-                      </span>
-                      {vote.atividade_numero && (
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                          Nº {vote.atividade_numero}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className={`text-sm font-medium ${voteColors[vote.voto] || 'text-gray-600'}`}>
-                      {vote.voto === 'favor' ? 'A Favor' :
-                       vote.voto === 'contra' ? 'Contra' :
-                       vote.voto === 'abstencao' ? 'Abstenção' :
-                       'Ausente'}
-                    </span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      vote.resultado === 'aprovada' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {vote.resultado === 'aprovada' ? 'Aprovada' : 'Rejeitada'}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Vote breakdown section */}
-                {hasVoteBreakdown && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <div className="text-xs text-gray-600 mb-2">Posições dos partidos:</div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1 text-xs">
-                      {Object.entries(vote.vote_breakdown).slice(0, 8).map(([party, position]) => (
-                        <div key={party} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
-                          <span className="font-medium">{party}</span>
-                          <span className={`${voteColors[position] || 'text-gray-500'}`}>
-                            {position === 'favor' ? '✓' :
-                             position === 'contra' ? '✗' :
-                             position === 'abstencao' ? '○' : '–'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Additional context for activities */}
-                {vote.atividade_desc_tipo && vote.atividade_desc_tipo !== vote.type && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    <span className="font-medium">Tipo:</span> {vote.atividade_desc_tipo}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        ) : (
+          <div className="space-y-3">
+            {close_votes.slice(0, 15).map((vote) => (
+              <VoteItem key={vote.vote_id} vote={vote} close />
+            ))}
+            {close_votes.length > 15 && (
+              <p className="text-xs text-gray-500">A mostrar 15 de {close_votes.length} votações.</p>
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -574,7 +447,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Shield className="h-5 w-5 text-blue-600 mr-2" />
-            Disciplina Partidária
+            Alinhamento com o Grupo
           </h4>
           <PartyDisciplineChart />
         </div>
@@ -592,9 +465,10 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Activity className="h-5 w-5 text-green-600 mr-2" />
-            Participação
+            Votações por Dia
           </h4>
           <ParticipationTimelineChart />
+          <p className="text-xs text-gray-500 mt-3">{ABSENCE_NOTE}</p>
         </div>
       </div>
     );
@@ -606,10 +480,10 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
         return <OverviewChart />;
       case 'collaboration':
         return <CollaborationChart />;
-      case 'themes':
-        return <ThemeAnalysisChart />;
-      case 'critical':
-        return <CriticalVotesChart />;
+      case 'dissent':
+        return <DissentVotesChart />;
+      case 'close':
+        return <CloseVotesChart />;
       default:
         return <OverviewChart />;
     }
@@ -726,20 +600,20 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
           <TrendingUp className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
           <div>
             <h5 className="text-sm font-medium text-blue-900">
-              Análise Baseada em Dados Reais
+              Como estes números são calculados
             </h5>
             <p className="text-sm text-blue-700 mt-1">
-              Estas visualizações são baseadas no historial completo de votações do deputado
-              {analytics.deputy_info?.party && ` (${analytics.deputy_info.party.sigla})`}
-              na {legislatura}ª Legislatura, incluindo análises de disciplina partidária,
-              colaboração cross-party e padrões temáticos de votação.
+              Votações em plenário da legislatura {analytics.legislatura} em que o deputado
+              {analytics.deputy_info?.party && ` (${analytics.deputy_info.party.sigla})`} tinha lugar. O sentido
+              de voto de cada deputado é o do seu grupo, exceto quando o registo da votação o nomeia.
             </p>
             {analytics.data_sources && (
               <div className="mt-3 pt-3 border-t border-blue-200">
                 <p className="text-xs text-blue-600">
-                  <strong>Fontes:</strong> {analytics.data_sources.initiative_votes} votações de iniciativas
-                  {analytics.data_sources.budget_votes > 0 && `, ${analytics.data_sources.budget_votes} votações orçamentais`}
+                  <strong>Fontes:</strong> {analytics.data_sources.votes_counted} votações em plenário com sentido de
+                  voto conhecido, dados abertos da Assembleia da República
                 </p>
+                <p className="text-xs text-blue-500 mt-1 italic">{ABSENCE_NOTE}</p>
                 {analytics.data_sources.note && (
                   <p className="text-xs text-blue-500 mt-1 italic">
                     {analytics.data_sources.note}
