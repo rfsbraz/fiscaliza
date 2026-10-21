@@ -76,12 +76,12 @@ jobs:
     concurrency:
       group: pages-deploy
       cancel-in-progress: false
-    # A deploy takes about 5 minutes on 8 cores; this stops a stuck one from holding the runner.
-    timeout-minutes: 60
+    # A deploy takes about 5 minutes on 8 cores and over 45 on the runner's current 1 CPU; this
+    # stops a stuck one from holding the runner.
+    timeout-minutes: 90
     env:
       CLOUDFLARE_ACCOUNT_ID: cda49578092f3bc8595c954e1e771ac1
-      # The runner has 2 CPUs and 3 GB of memory but reports the host's 8 (docs/DEPLOY.md).
-      EXPORT_WORKERS: 2
+      # The export takes its workers from the cgroup CPU limit, not a fixed count (docs/DEPLOY.md).
     steps:
       - uses: actions/checkout@v4
         with:
@@ -107,7 +107,7 @@ jobs:
           echo "$(nproc) CPUs"; free -h; df -h "$RUNNER_TEMP"
           git clone --quiet --depth 1 --no-checkout --branch main https://github.com/rfsbraz/parlamento-aberto.git "$RUNNER_TEMP/parlamento-aberto"
       - name: Deploy
-        timeout-minutes: 45
+        timeout-minutes: 80
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           HEAD_REF: ${{ github.head_ref }}

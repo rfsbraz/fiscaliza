@@ -176,19 +176,6 @@ def test_a_new_render_replaces_the_old_one(data_dir, tmp_path):
     assert result.bytes == sum(p.stat().st_size for p in _files(target))
 
 
-def test_a_new_deputy_endpoint_is_one_registration(data_dir, tmp_path, monkeypatch):
-    # How attendance (S11) gets in: one DeputySection here, one entry in staticApi.js (there
-    # already). Any existing module stands in for its service.
-    section = export.DeputySection(
-        "attendance", "fiscaliza_data.sync", lambda s, con, cad, legs: {"attendance": {"id": cad, "legs": legs}}
-    )
-    monkeypatch.setattr(export, "DEPUTY_SECTIONS", (*export.DEPUTY_SECTIONS, section))
-    out = tmp_path / "api"
-    export.export(data_dir, out, jobs=1)
-    [answer] = _static_answers(out, ["deputados/1/attendance"])
-    assert answer == {"status": 200, "body": {"id": 1, "legs": ["XVI", "XVII"]}}
-
-
 def test_cli_renders_and_reports(data_dir, tmp_path):
     run = subprocess.run(
         [sys.executable, "-m", "fiscaliza_data.export", "--data-dir", str(data_dir), "--out", str(tmp_path / "api")],
@@ -298,10 +285,20 @@ def test_static_answers_equal_the_flask_answers(out, con, client, flask_app):
     assert checked >= 25
 
 
-def test_attendance_and_agenda_say_not_available_until_s11_and_s13(out):
-    answers = _static_answers(out, ["deputados/1/attendance", "agenda/hoje", "agenda/semana"])
-    assert [a["status"] for a in answers] == [503, 503, 503]
-    assert [a["body"]["planned"] for a in answers] == ["S11", "S13", "S13"]
+def test_agenda_says_not_available_until_s13(out):
+    answers = _static_answers(out, ["agenda/hoje", "agenda/semana"])
+    assert [a["status"] for a in answers] == [503, 503]
+    assert [a["body"]["planned"] for a in answers] == ["S13", "S13"]
+
+
+def test_attendance_is_in_each_deputy_file(out, con):
+    from app.services import attendance
+
+    bundle = json.loads((out / "deputados" / "1.json").read_text())
+    assert bundle["attendance"] == json.loads(json.dumps(attendance.deputado_attendance(con, 1)))
+    answers = _static_answers(out, ["deputados/1/attendance", "deputados/999999/attendance"])
+    assert [a["status"] for a in answers] == [200, 404]
+    assert answers[0]["body"]["legislaturas"][0]["reunioes"] == 6
 
 
 # Worker count and DuckDB threads: a container reports the host's CPUs, not its own limit.

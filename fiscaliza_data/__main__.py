@@ -1,6 +1,10 @@
-"""python -m fiscaliza_data sync [--tag TAG] [--from-dir DIR] [--data-dir DIR]"""
+"""python -m fiscaliza_data sync [--tag TAG] [--from PATH] [--data-dir DIR]
+
+Also runnable as `python -m fiscaliza_data.sync [--tag TAG] [--from PATH] [--data-dir DIR]`.
+"""
 
 import argparse
+import os
 import sys
 
 from fiscaliza_data.sync import DEFAULT_DATA_DIR, SyncError, sync
@@ -11,13 +15,22 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("sync", help="build the site's DuckDB file from a parlamento-aberto release")
     s.add_argument("--tag", help="release tag; default: the latest release")
-    s.add_argument("--from-dir", help="read a local `release build` output instead of GitHub")
     s.add_argument(
-        "--data-dir", default=DEFAULT_DATA_DIR, help=f"where the DuckDB files live (default {DEFAULT_DATA_DIR})"
+        "--from",
+        "--from-dir",
+        dest="source",
+        metavar="PATH",
+        help="a local `release build` output instead of GitHub: the folder, its manifest.json, "
+        "or a .tar.gz, .tgz or .zip of the folder",
+    )
+    s.add_argument(
+        "--data-dir",
+        default=os.getenv("FISCALIZA_DATA_DIR") or DEFAULT_DATA_DIR,
+        help=f"where the DuckDB files live (default $FISCALIZA_DATA_DIR, else {DEFAULT_DATA_DIR})",
     )
     args = parser.parse_args(argv)
     try:
-        result = sync(args.data_dir, tag=args.tag, from_dir=args.from_dir)
+        result = sync(args.data_dir, tag=args.tag, source=args.source)
     except SyncError as e:
         print(f"sync failed: {e}", file=sys.stderr)
         return 1

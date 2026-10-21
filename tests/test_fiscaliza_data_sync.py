@@ -22,7 +22,7 @@ def _sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema="1.1.0"):
+def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema="1.1.0", attendance=True):
     """A release folder like `release build` writes, with XVII and `seated` deputies."""
     out = Path(root) / tag
     out.mkdir(parents=True)
@@ -63,6 +63,10 @@ def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema
         "first_event_date date)"
     )
     con.execute(
+        "create table plenary_attendance (legislature varchar, meeting_id bigint, meeting_date date, "
+        "is_ceremonial boolean, cadastro_id bigint, code varchar, category varchar, is_pending boolean)"
+    )
+    con.execute(
         "create table vote_group_positions (vote_id bigint, legislature varchar, body varchar, "
         "group_code varchar, position varchar, deputies integer)"
     )
@@ -72,6 +76,7 @@ def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema
     )
     marts = {}
     for mart in (
+        *(["plenary_attendance"] if attendance else []),
         "legislatures",
         "mandates",
         "deputies",
@@ -186,6 +191,23 @@ def test_row_count_drop_over_five_percent_leaves_the_previous_file_live(tmp_path
     _assert_previous_still_live(data_dir)
 
 
+def test_release_without_the_attendance_mart_is_refused(tmp_path, data_dir):
+    sync.sync(data_dir, from_dir=make_release(tmp_path / "a", tag="data-2026-10-19"))
+    release = make_release(tmp_path / "b", attendance=False)
+    with pytest.raises(sync.SyncError, match="plenary_attendance"):
+        sync.sync(data_dir, from_dir=release)
+    assert live_tag(data_dir) == "data-2026-10-19"
+
+
+def test_attendance_mart_is_loaded(tmp_path, data_dir):
+    result = sync.sync(data_dir, from_dir=make_release(tmp_path))
+    con = duckdb.connect(str(result.path), read_only=True)
+    try:
+        assert con.execute("select count(*) from plenary_attendance").fetchone() == (0,)
+    finally:
+        con.close()
+
+
 def test_missing_parquet_leaves_the_previous_file_live(tmp_path, data_dir):
     release = _live_then_fail(tmp_path, data_dir)
     (release / "mandates.parquet").unlink()
@@ -268,3 +290,132 @@ def test_cli_reports_seats(tmp_path, data_dir, capsys):
     assert "data-2026-10-20 is live" in out and "XVII: 230 seated" in out
     assert main(["sync", "--from-dir", str(release), "--data-dir", str(data_dir)]) == 0
     assert "already live" in capsys.readouterr().out
+
+
+# A local build as a source: the folder, its manifest.json, or an archive of the folder. We may go
+# live before parlamento-aberto publishes a release, so a build copied from another machine has to
+# go through the same checks.
+
+
+def _tar(release, dest, arcname=None):
+    import tarfile
+
+    with tarfile.open(dest, "w:gz") as tar:
+        tar.add(release, arcname=arcname if arcname is not None else release.name)
+    return dest
+
+
+def _zip(release, dest, prefix=None):
+    import zipfile
+
+    prefix = release.name if prefix is None else prefix
+    with zipfile.ZipFile(dest, "w") as z:
+        for p in sorted(release.iterdir()):
+            z.write(p, f"{prefix}/{p.name}" if prefix else p.name)
+    return dest
+
+
+def test_source_can_be_the_build_folder(tmp_path, data_dir):
+    result = sync.sync(data_dir, source=make_release(tmp_path / "rel"))
+    assert result.changed and live_tag(data_dir) == "data-2026-10-20"
+
+
+def test_source_can_be_the_manifest_file(tmp_path, data_dir):
+    release = make_release(tmp_path / "rel")
+    result = sync.sync(data_dir, source=release / "manifest.json")
+    assert result.changed and live_tag(data_dir) == "data-2026-10-20"
+
+
+@pytest.mark.parametrize("suffix", [".tar.gz", ".tgz"])
+def test_source_can_be_a_tarball_of_the_build(tmp_path, data_dir, suffix):
+    archive = _tar(make_release(tmp_path / "rel"), tmp_path / f"build{suffix}")
+    result = sync.sync(data_dir, source=archive)
+    assert result.changed and result.seated == {"XVII": SEATS}
+    # Nothing from the archive is left behind next to the data files.
+    assert sorted(p.name for p in data_dir.iterdir()) == ["current.duckdb", "fiscaliza-data-2026-10-20.duckdb"]
+
+
+def test_source_can_be_a_zip_with_the_files_at_the_top(tmp_path, data_dir):
+    archive = _zip(make_release(tmp_path / "rel"), tmp_path / "build.zip", prefix="")
+    assert sync.sync(data_dir, source=archive).changed
+    assert live_tag(data_dir) == "data-2026-10-20"
+
+
+def test_archive_with_a_tampered_file_leaves_the_previous_file_live(tmp_path, data_dir):
+    release = _live_then_fail(tmp_path, data_dir)
+    with (release / "deputies.parquet").open("ab") as f:
+        f.write(b"tampered")
+    with pytest.raises(sync.SyncError, match="deputies.parquet: SHA-256 does not match"):
+        sync.sync(data_dir, source=_tar(release, tmp_path / "bad.tar.gz"))
+    _assert_previous_still_live(data_dir)
+
+
+def test_archive_that_writes_outside_its_folder_is_refused(tmp_path, data_dir):
+    import zipfile
+
+    release = _live_then_fail(tmp_path, data_dir)
+    archive = tmp_path / "evil.zip"
+    with zipfile.ZipFile(archive, "w") as z:
+        for p in sorted(release.iterdir()):
+            z.write(p, p.name)
+        z.writestr("../escaped.txt", "x")
+    with pytest.raises(sync.SyncError, match="unsafe path"):
+        sync.sync(data_dir, source=archive)
+    assert not (tmp_path / "escaped.txt").exists()
+    assert not (data_dir.parent / "escaped.txt").exists()
+    _assert_previous_still_live(data_dir)
+
+
+def test_source_that_is_not_a_build_is_refused(tmp_path, data_dir):
+    other = tmp_path / "notes.txt"
+    other.write_text("hello")
+    with pytest.raises(sync.SyncError, match="notes.txt"):
+        sync.sync(data_dir, source=other)
+    with pytest.raises(sync.SyncError, match="does not exist"):
+        sync.sync(data_dir, source=tmp_path / "missing")
+    assert list(data_dir.iterdir()) == []
+
+
+def test_source_and_from_dir_are_the_same_thing(tmp_path, data_dir):
+    release = make_release(tmp_path / "rel")
+    with pytest.raises(sync.SyncError, match="one local source"):
+        sync.sync(data_dir, source=release, from_dir=release)
+
+
+def test_cli_takes_a_local_archive_with_from(tmp_path, data_dir, capsys):
+    archive = _tar(make_release(tmp_path / "rel"), tmp_path / "build.tar.gz")
+    assert main(["sync", "--from", str(archive), "--data-dir", str(data_dir)]) == 0
+    assert "XVII: 230 seated" in capsys.readouterr().out
+
+
+def test_data_dir_defaults_to_the_environment(tmp_path, monkeypatch, capsys):
+    data = tmp_path / "from-env"
+    monkeypatch.setenv("FISCALIZA_DATA_DIR", str(data))
+    assert main(["sync", "--from", str(make_release(tmp_path / "rel"))]) == 0
+    assert live_tag(data) == "data-2026-10-20"
+
+
+def _run_module(*args, cwd):
+    import subprocess
+    import sys
+
+    root = Path(__file__).resolve().parent.parent
+    env = {**os.environ, "PYTHONPATH": str(root)}
+    return subprocess.run(
+        [sys.executable, "-m", "fiscaliza_data.sync", *args], cwd=cwd, env=env, capture_output=True, text=True
+    )
+
+
+def test_module_entry_point_runs_the_sync(tmp_path, data_dir):
+    # `python -m fiscaliza_data.sync` is the command a scheduler runs; it must not be a silent no-op.
+    done = _run_module("--from", str(make_release(tmp_path / "rel")), "--data-dir", str(data_dir), cwd=tmp_path)
+    assert done.returncode == 0, done.stderr
+    assert "data-2026-10-20 is live" in done.stdout
+    assert live_tag(data_dir) == "data-2026-10-20"
+
+
+def test_module_entry_point_exits_non_zero_on_failure(tmp_path, data_dir):
+    release = make_release(tmp_path / "rel", schema="2.0.0")
+    done = _run_module("--from", str(release), "--data-dir", str(data_dir), cwd=tmp_path)
+    assert done.returncode == 1
+    assert "schema_version 2.0.0" in done.stderr

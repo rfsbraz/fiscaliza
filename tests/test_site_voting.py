@@ -279,8 +279,8 @@ def test_voting_routes_have_no_sqlalchemy(con):
         if isinstance(node, ast.Import | ast.ImportFrom):
             names = [node.module or ""] + [a.name for a in node.names]
             assert not any("sqlalchemy" in n or n.startswith("database") for n in names)
-    legacy = (ROOT / "app" / "routes" / "parlamento.py").read_text()
-    assert "voting-analytics" not in legacy
+    # The old blueprint went with the old stack (tests/test_old_stack_removed.py).
+    assert not (ROOT / "app" / "routes" / "parlamento.py").exists()
 
 
 def test_voting_routes_serve_json(data_dir):

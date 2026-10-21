@@ -7,7 +7,7 @@ import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
 // Phase 1 Components - Constitutional Modernism Design System
-import TrafficLightIndicator, { TrafficLightBar, ATTENDANCE_THRESHOLDS } from './deputy/TrafficLightIndicator';
+import AttendancePanel, { AttendanceCard } from './deputy/AttendancePanel';
 import { EducationalBox, ImportantContextBox, MethodologyNote } from './deputy/ContextBox';
 import InterestStatusCard, { ExclusivityBadge, DeclaredInterestsBadge, SectorInterestRow } from './deputy/InterestStatusCard';
 import InitiativeProcessStepper, { InitiativeOutcomesSummary } from './deputy/InitiativeProcessStepper';
@@ -25,10 +25,6 @@ import InterestTable, { ACTIVITY_COLUMNS, SHAREHOLDING_COLUMNS } from './deputy/
 // Future enhancement: Implement proper unique person identifiers or create person-linking table
 
 // Enhanced Statistics Components
-
-// Attendance still runs on the old database code. S11 turns this on once the
-// plenary_attendance mart is released; until then the tab is hidden and the endpoint not called.
-const ATTENDANCE_AVAILABLE = false;
 
 /**
  * Calculate trend indicator based on current vs career average
@@ -83,34 +79,6 @@ const colorSchemes = {
     textLight: '#F97316',
     border: '#FED7AA',
   },
-};
-
-/**
- * Get progress bar color based on percentage (for attendance)
- */
-const getAttendanceColors = (percentage) => {
-  if (percentage >= 75) {
-    return {
-      bar: tokens.colors.success,
-      bg: '#DCFCE7',
-      text: tokens.colors.success,
-      label: 'Excelente',
-    };
-  } else if (percentage >= 50) {
-    return {
-      bar: tokens.colors.orange,
-      bg: '#FFEDD5',
-      text: tokens.colors.warning,
-      label: 'Boa',
-    };
-  } else {
-    return {
-      bar: tokens.colors.danger,
-      bg: '#FEE2E2',
-      text: tokens.colors.danger,
-      label: 'Baixa',
-    };
-  }
 };
 
 /**
@@ -410,153 +378,6 @@ const StatisticsError = ({ error, onRetry }) => (
     </div>
   </section>
 );
-
-/**
- * Enhanced Attendance Card with Data Observatory theme
- */
-const AttendanceCard = ({ currentRate, totalRate, totalSessions, onCardClick }) => {
-  const currentPercentage = (currentRate * 100);
-  const totalPercentage = (totalRate * 100);
-  const colors = getAttendanceColors(currentPercentage);
-  const scheme = colorSchemes.orange;
-
-  const handleClick = () => {
-    if (onCardClick) {
-      onCardClick('attendance');
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleClick();
-    }
-  };
-
-  return (
-    <article
-      style={{
-        position: 'relative',
-        background: `linear-gradient(135deg, ${scheme.bg} 0%, #FEE2E2 100%)`,
-        borderRadius: '4px',
-        border: `1px solid ${scheme.border}`,
-        padding: '16px',
-        cursor: 'pointer',
-        transition: 'border-color 0.15s ease',
-        fontFamily: tokens.fonts.body,
-      }}
-      role="listitem"
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-      aria-labelledby="attendance-title"
-      aria-describedby="attendance-description attendance-stats"
-      onMouseEnter={(e) => e.currentTarget.style.borderColor = scheme.primary}
-      onMouseLeave={(e) => e.currentTarget.style.borderColor = scheme.border}
-    >
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <div style={{
-          padding: '10px',
-          backgroundColor: scheme.primary,
-          borderRadius: '4px',
-          flexShrink: 0,
-        }}>
-          <Activity style={{ width: '20px', height: '20px', color: '#FFFFFF' }} aria-hidden="true" />
-        </div>
-        <div style={{
-          padding: '4px 8px',
-          backgroundColor: 'rgba(255, 255, 255, 0.7)',
-          borderRadius: '9999px',
-          fontSize: '0.75rem',
-          fontWeight: 500,
-          color: colors.text,
-        }}>
-          {colors.label}
-        </div>
-      </header>
-
-      {/* Content */}
-      <div>
-        <h4
-          id="attendance-title"
-          style={{
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            color: scheme.text,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            marginBottom: '12px',
-          }}
-        >
-          Taxa de Presença
-        </h4>
-
-        {/* Statistics */}
-        <div id="attendance-stats">
-          {/* Current Rate */}
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 500, color: scheme.textLight }}>Atual</span>
-            <span style={{ fontSize: '1.5rem', fontWeight: 700, color: scheme.text, fontFamily: tokens.fonts.mono }}>
-              {currentPercentage.toFixed(1)}%
-            </span>
-          </div>
-
-          {/* Visual Progress */}
-          <div style={{ marginBottom: '12px' }}>
-            <div style={{
-              width: '100%',
-              backgroundColor: colors.bg,
-              borderRadius: '9999px',
-              height: '6px',
-              overflow: 'hidden',
-            }}>
-              <div
-                style={{
-                  height: '100%',
-                  backgroundColor: colors.bar,
-                  borderRadius: '9999px',
-                  width: `${currentPercentage}%`,
-                  transition: 'width 0.5s ease',
-                }}
-                role="progressbar"
-                aria-valuenow={currentPercentage}
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-label={`Taxa de presença: ${currentPercentage.toFixed(1)}%`}
-              />
-            </div>
-          </div>
-
-          {/* Career Total */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            justifyContent: 'space-between',
-            borderTop: `1px solid ${scheme.border}`,
-            paddingTop: '8px',
-            marginBottom: '12px',
-          }}>
-            <span style={{ fontSize: '0.75rem', color: scheme.textLight }}>Total carreira</span>
-            <span style={{ fontSize: '1.125rem', fontWeight: 600, color: scheme.text, fontFamily: tokens.fonts.mono }}>
-              {totalPercentage.toFixed(1)}%
-            </span>
-          </div>
-
-          {/* Sessions Info */}
-          <div style={{ fontSize: '0.75rem', color: scheme.textLight, textAlign: 'center' }}>
-            {totalSessions} sessões na legislatura atual
-          </div>
-        </div>
-      </div>
-
-      {/* Screen reader description */}
-      <p id="attendance-description" className="sr-only">
-        Taxa de presença às sessões parlamentares. Clique para ver detalhes.
-      </p>
-    </article>
-  );
-};
 
 /**
  * Mandate Timeline Component - Visual horizontal timeline showing career progression
@@ -1072,7 +893,7 @@ const DeputadoDetalhes = () => {
   // Get active tab from URL hash, default to 'intervencoes'
   const getActiveTabFromUrl = () => {
     const hash = location.hash.replace('#', '');
-    const validTabs = ['intervencoes', 'iniciativas', 'votacoes', ...(ATTENDANCE_AVAILABLE ? ['attendance'] : []), 'conflitos-interesse'];
+    const validTabs = ['intervencoes', 'iniciativas', 'votacoes', 'attendance', 'conflitos-interesse'];
     // Support legacy 'biografia' hash by redirecting to main page (no tab)
     if (hash === 'biografia' || hash === 'mandatos-anteriores') {
       return 'intervencoes';
@@ -1149,7 +970,7 @@ const DeputadoDetalhes = () => {
           apiFetch(`deputados/${cadId}/detalhes`).then(r => { if (!r.ok) throw new Error('Erro ao carregar dados do deputado'); return r.json(); }),
           apiFetch(`deputados/${cadId}/atividades?${apiParams.toString()}`).then(r => { if (!r.ok) throw new Error('Erro ao carregar atividades do deputado'); return r.json(); }),
           apiFetch(`deputados/${cadId}/conflitos-interesse`).then(r => r.ok ? r.json() : null),
-          ATTENDANCE_AVAILABLE ? apiFetch(`deputados/${cadId}/attendance`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
+          apiFetch(`deputados/${cadId}/attendance`).then(r => r.ok ? r.json() : null),
         ]);
 
         // Process required results
@@ -1238,7 +1059,7 @@ const DeputadoDetalhes = () => {
     { id: 'intervencoes', label: 'Intervenções', icon: MessageSquare },
     { id: 'iniciativas', label: 'Iniciativas', icon: FileText },
     { id: 'votacoes', label: 'Votações', icon: Vote },
-    ...(ATTENDANCE_AVAILABLE ? [{ id: 'attendance', label: 'Presenças', icon: Activity }] : []),
+    { id: 'attendance', label: 'Presenças', icon: Activity },
     { id: 'conflitos-interesse', label: 'Registo de Interesses', icon: Shield }
   ];
 
@@ -1763,87 +1584,12 @@ const DeputadoDetalhes = () => {
               </div>
             </article>
 
-            {/* PRESENÇA CARD - hidden until attendance data is available */}
-            {deputado.estatisticas.taxa_assiduidade != null && (
-            <article style={{
-              backgroundColor: tokens.colors.bgSecondary,
-              border: `1px solid ${tokens.colors.border}`,
-              borderRadius: '6px',
-              padding: '20px',
-            }}>
-              <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <div style={{
-                  padding: '10px',
-                  backgroundColor: deputado.estatisticas.taxa_assiduidade >= 0.85 ? tokens.colors.success :
-                                   deputado.estatisticas.taxa_assiduidade >= 0.7 ? tokens.colors.warning :
-                                   tokens.colors.orange,
-                  borderRadius: '4px',
-                }}>
-                  <Activity style={{ width: '20px', height: '20px', color: '#FFFFFF' }} />
-                </div>
-                <span style={{
-                  padding: '4px 10px',
-                  backgroundColor: deputado.estatisticas.taxa_assiduidade >= 0.85 ? '#DCFCE7' :
-                                   deputado.estatisticas.taxa_assiduidade >= 0.7 ? '#FEF3C7' :
-                                   '#FEE2E2',
-                  borderRadius: '12px',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: deputado.estatisticas.taxa_assiduidade >= 0.85 ? tokens.colors.success :
-                         deputado.estatisticas.taxa_assiduidade >= 0.7 ? '#92400E' :
-                         tokens.colors.danger,
-                }}>
-                  {deputado.estatisticas.taxa_assiduidade >= 0.85 ? 'Excelente' :
-                   deputado.estatisticas.taxa_assiduidade >= 0.7 ? 'Boa' : 'Baixa'}
-                </span>
-              </header>
-
-              <h4 style={{
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: deputado.estatisticas.taxa_assiduidade >= 0.85 ? tokens.colors.success :
-                       deputado.estatisticas.taxa_assiduidade >= 0.7 ? '#92400E' :
-                       tokens.colors.orange,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '12px',
-              }}>Taxa de Presença</h4>
-
-              <div style={{ marginBottom: '16px' }}>
-                <span style={{
-                  fontSize: '2rem',
-                  fontWeight: 700,
-                  fontFamily: tokens.fonts.mono,
-                  color: deputado.estatisticas.taxa_assiduidade >= 0.85 ? tokens.colors.success :
-                         deputado.estatisticas.taxa_assiduidade >= 0.7 ? '#92400E' :
-                         tokens.colors.orange,
-                }}>
-                  {(deputado.estatisticas.taxa_assiduidade * 100).toFixed(0)}%
-                </span>
-              </div>
-
-              {/* Progress bar */}
-              <div style={{
-                height: '8px',
-                backgroundColor: '#E5E7EB',
-                borderRadius: '4px',
-                overflow: 'hidden',
-                marginBottom: '8px',
-              }}>
-                <div style={{
-                  height: '100%',
-                  width: `${deputado.estatisticas.taxa_assiduidade * 100}%`,
-                  backgroundColor: deputado.estatisticas.taxa_assiduidade >= 0.85 ? tokens.colors.success :
-                                   deputado.estatisticas.taxa_assiduidade >= 0.7 ? '#F59E0B' :
-                                   tokens.colors.orange,
-                  borderRadius: '4px',
-                  transition: 'width 0.5s ease',
-                }} />
-              </div>
-              <p style={{ fontSize: '0.75rem', color: tokens.colors.textMuted, margin: 0 }}>
-                Assiduidade às sessões plenárias
-              </p>
-            </article>
+            {/* PRESENÇA CARD: latest legislature with attendance lists */}
+            {deputado.estatisticas.assiduidade && (
+              <AttendanceCard
+                assiduidade={deputado.estatisticas.assiduidade}
+                onOpen={() => handleTabChange('attendance')}
+              />
             )}
 
             {/* CARREIRA CARD */}
@@ -3902,533 +3648,32 @@ const DeputadoDetalhes = () => {
               </div>
             )}
 
-            {ATTENDANCE_AVAILABLE && activeTab === 'attendance' && (
+            {activeTab === 'attendance' && (
               <div>
-                {/* Tab Section Header */}
                 <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
                   marginBottom: '24px',
                   paddingBottom: '20px',
                   borderBottom: `1px solid ${tokens.colors.border}`,
                 }}>
-                  <div>
-                    <h3 style={{
-                      fontSize: '1.125rem',
-                      fontWeight: 600,
-                      color: tokens.colors.textPrimary,
-                      fontFamily: tokens.fonts.headline,
-                      margin: 0,
-                    }}>
-                      Registo de Presenças
-                    </h3>
-                    <p style={{
-                      fontSize: '0.8125rem',
-                      color: tokens.colors.textMuted,
-                      marginTop: '6px',
-                      fontFamily: tokens.fonts.body,
-                    }}>
-                      Participação em sessões plenárias e comissões
-                    </p>
-                  </div>
-                </div>
-
-                {attendanceData ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {/* Traffic Light Status Indicator */}
-                    {(() => {
-                      const attendanceRate = attendanceData.summary.total_sessions > 0
-                        ? (attendanceData.summary.present / attendanceData.summary.total_sessions) * 100
-                        : null;
-                      const parliamentAverage = 87.5; // TODO: Calculate from actual data
-
-                      return (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                          <TrafficLightIndicator
-                            value={attendanceRate}
-                            thresholds={ATTENDANCE_THRESHOLDS}
-                            labels={{
-                              green: 'Acima da média parlamentar',
-                              amber: 'Abaixo da média - ver detalhes',
-                              red: 'Significativamente abaixo do esperado',
-                              neutral: 'Dados insuficientes',
-                            }}
-                            showComparison={true}
-                            comparisonValue={parliamentAverage}
-                            comparisonLabel="média parlamentar"
-                            size="large"
-                          />
-
-                          {/* Absence Categories Breakdown */}
-                          <div style={{
-                            backgroundColor: tokens.colors.bgSecondary,
-                            border: `1px solid ${tokens.colors.border}`,
-                            borderRadius: '4px',
-                            padding: '20px 24px',
-                          }}>
-                            <h4 style={{
-                              fontFamily: tokens.fonts.body,
-                              fontSize: '0.875rem',
-                              fontWeight: 600,
-                              color: tokens.colors.textPrimary,
-                              margin: '0 0 16px 0',
-                            }}>
-                              Categorias de Ausência
-                            </h4>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                              {/* Institutional absences */}
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{
-                                    width: '10px',
-                                    height: '10px',
-                                    borderRadius: '2px',
-                                    backgroundColor: tokens.colors.primary,
-                                  }} />
-                                  <span style={{
-                                    fontFamily: tokens.fonts.body,
-                                    fontSize: '0.875rem',
-                                    color: tokens.colors.textSecondary,
-                                  }}>
-                                    Institucionais (missões, audiências)
-                                  </span>
-                                </div>
-                                <span style={{
-                                  fontFamily: tokens.fonts.mono,
-                                  fontSize: '0.875rem',
-                                  fontWeight: 600,
-                                  color: tokens.colors.textPrimary,
-                                }}>
-                                  {attendanceData.summary.institutional_absence || 0}
-                                </span>
-                              </div>
-                              {/* Personal justified */}
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{
-                                    width: '10px',
-                                    height: '10px',
-                                    borderRadius: '2px',
-                                    backgroundColor: tokens.colors.statusAmber,
-                                  }} />
-                                  <span style={{
-                                    fontFamily: tokens.fonts.body,
-                                    fontSize: '0.875rem',
-                                    color: tokens.colors.textSecondary,
-                                  }}>
-                                    Pessoais justificadas (saúde, família)
-                                  </span>
-                                </div>
-                                <span style={{
-                                  fontFamily: tokens.fonts.mono,
-                                  fontSize: '0.875rem',
-                                  fontWeight: 600,
-                                  color: tokens.colors.textPrimary,
-                                }}>
-                                  {attendanceData.summary.justified_absence || 0}
-                                </span>
-                              </div>
-                              {/* Unjustified */}
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{
-                                    width: '10px',
-                                    height: '10px',
-                                    borderRadius: '2px',
-                                    backgroundColor: tokens.colors.statusRed,
-                                  }} />
-                                  <span style={{
-                                    fontFamily: tokens.fonts.body,
-                                    fontSize: '0.875rem',
-                                    color: tokens.colors.textSecondary,
-                                  }}>
-                                    Injustificadas
-                                  </span>
-                                </div>
-                                <span style={{
-                                  fontFamily: tokens.fonts.mono,
-                                  fontSize: '0.875rem',
-                                  fontWeight: 600,
-                                  color: tokens.colors.statusRed,
-                                }}>
-                                  {attendanceData.summary.unjustified_absence || 0}
-                                </span>
-                              </div>
-                            </div>
-                            {/* Progress bar showing breakdown */}
-                            <div style={{
-                              marginTop: '16px',
-                              height: '8px',
-                              borderRadius: '4px',
-                              backgroundColor: tokens.colors.bgTertiary,
-                              overflow: 'hidden',
-                              display: 'flex',
-                            }}>
-                              <div style={{
-                                width: `${(attendanceData.summary.present / attendanceData.summary.total_sessions) * 100}%`,
-                                backgroundColor: tokens.colors.statusGreen,
-                              }} />
-                              <div style={{
-                                width: `${((attendanceData.summary.institutional_absence || 0) / attendanceData.summary.total_sessions) * 100}%`,
-                                backgroundColor: tokens.colors.primary,
-                              }} />
-                              <div style={{
-                                width: `${(attendanceData.summary.justified_absence / attendanceData.summary.total_sessions) * 100}%`,
-                                backgroundColor: tokens.colors.statusAmber,
-                              }} />
-                              <div style={{
-                                width: `${(attendanceData.summary.unjustified_absence / attendanceData.summary.total_sessions) * 100}%`,
-                                backgroundColor: tokens.colors.statusRed,
-                              }} />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Educational Context Box */}
-                    <EducationalBox title="Como interpretar os dados de presença">
-                      <p style={{ margin: '0 0 8px 0' }}>
-                        A taxa de presença mede a participação em sessões plenárias. O Parlamento
-                        considera uma taxa acima de <strong>85%</strong> como adequada.
-                      </p>
-                      <p style={{ margin: 0 }}>
-                        <strong>Nota importante:</strong> Deputados com cargos específicos (presidentes de comissão,
-                        membros da Mesa) podem ter padrões diferentes devido a responsabilidades institucionais.
-                        Ausências por missões oficiais são contabilizadas separadamente.
-                      </p>
-                    </EducationalBox>
-
-                    {/* Summary Cards - Compact Version */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                      gap: '1rem',
-                    }}>
-                      <div style={{
-                        backgroundColor: tokens.colors.bgSecondary,
-                        borderRadius: '4px',
-                        border: `1px solid ${tokens.colors.border}`,
-                        padding: '1rem',
-                        textAlign: 'center',
-                      }}>
-                        <p style={{
-                          fontFamily: tokens.fonts.body,
-                          fontSize: '0.75rem',
-                          fontWeight: '500',
-                          color: tokens.colors.textMuted,
-                          margin: '0 0 4px 0',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                        }}>Total Sessões</p>
-                        <p style={{
-                          fontFamily: tokens.fonts.mono,
-                          fontSize: '1.75rem',
-                          fontWeight: '700',
-                          color: tokens.colors.textPrimary,
-                          margin: 0,
-                        }}>{attendanceData.summary.total_sessions}</p>
-                      </div>
-
-                      <div style={{
-                        backgroundColor: tokens.colors.statusGreenBg,
-                        borderRadius: '4px',
-                        border: `1px solid ${tokens.colors.statusGreenBorder}`,
-                        padding: '1rem',
-                        textAlign: 'center',
-                      }}>
-                        <p style={{
-                          fontFamily: tokens.fonts.body,
-                          fontSize: '0.75rem',
-                          fontWeight: '500',
-                          color: tokens.colors.textMuted,
-                          margin: '0 0 4px 0',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                        }}>Presente</p>
-                        <p style={{
-                          fontFamily: tokens.fonts.mono,
-                          fontSize: '1.75rem',
-                          fontWeight: '700',
-                          color: tokens.colors.statusGreen,
-                          margin: 0,
-                        }}>{attendanceData.summary.present}</p>
-                      </div>
-
-                      <div style={{
-                        backgroundColor: tokens.colors.statusAmberBg,
-                        borderRadius: '4px',
-                        border: `1px solid ${tokens.colors.statusAmberBorder}`,
-                        padding: '1rem',
-                        textAlign: 'center',
-                      }}>
-                        <p style={{
-                          fontFamily: tokens.fonts.body,
-                          fontSize: '0.75rem',
-                          fontWeight: '500',
-                          color: tokens.colors.textMuted,
-                          margin: '0 0 4px 0',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                        }}>Falta Justificada</p>
-                        <p style={{
-                          fontFamily: tokens.fonts.mono,
-                          fontSize: '1.75rem',
-                          fontWeight: '700',
-                          color: tokens.colors.statusAmber,
-                          margin: 0,
-                        }}>{attendanceData.summary.justified_absence}</p>
-                      </div>
-
-                      <div style={{
-                        backgroundColor: tokens.colors.statusRedBg,
-                        borderRadius: '4px',
-                        border: `1px solid ${tokens.colors.statusRedBorder}`,
-                        padding: '1rem',
-                        textAlign: 'center',
-                      }}>
-                        <p style={{
-                          fontFamily: tokens.fonts.body,
-                          fontSize: '0.75rem',
-                          fontWeight: '500',
-                          color: tokens.colors.textMuted,
-                          margin: '0 0 4px 0',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                        }}>Falta Injustificada</p>
-                        <p style={{
-                          fontFamily: tokens.fonts.mono,
-                          fontSize: '1.75rem',
-                          fontWeight: '700',
-                          color: tokens.colors.statusRed,
-                          margin: 0,
-                        }}>{attendanceData.summary.unjustified_absence}</p>
-                      </div>
-                    </div>
-
-                    {/* Timeline */}
-                    <div style={{
-                      backgroundColor: tokens.colors.bgSecondary,
-                      borderRadius: '4px',
-                      border: `1px solid ${tokens.colors.border}`
-                    }}>
-                      <div style={{
-                        padding: '1rem 1.5rem',
-                        borderBottom: `1px solid ${tokens.colors.border}`
-                      }}>
-                        <h4 style={{
-                          fontFamily: tokens.fonts.headline,
-                          fontSize: '1rem',
-                          fontWeight: '600',
-                          color: tokens.colors.textPrimary,
-                          margin: 0
-                        }}>Timeline de Presenças</h4>
-                      </div>
-                      <div style={{ padding: '1.5rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                          {attendanceData.timeline.map((entry, index) => {
-                            const getStatusColor = (status) => {
-                              switch (status) {
-                                case 'success': return tokens.colors.success;
-                                case 'warning': return '#F59E0B';
-                                case 'danger': return tokens.colors.danger;
-                                case 'info': return tokens.colors.blue;
-                                default: return tokens.colors.textMuted;
-                              }
-                            };
-
-                            const getStatusBg = (status) => {
-                              switch (status) {
-                                case 'success': return { bg: colorSchemes.green.bg, text: colorSchemes.green.text, border: colorSchemes.green.border };
-                                case 'warning': return { bg: colorSchemes.orange.bg, text: colorSchemes.orange.text, border: colorSchemes.orange.border };
-                                case 'danger': return { bg: tokens.colors.dangerBg, text: tokens.colors.danger, border: '#FECACA' };
-                                case 'info': return { bg: colorSchemes.blue.bg, text: colorSchemes.blue.text, border: colorSchemes.blue.border };
-                                default: return { bg: '#F3F4F6', text: tokens.colors.textSecondary, border: tokens.colors.border };
-                              }
-                            };
-
-                            const statusStyles = getStatusBg(entry.status);
-
-                            return (
-                              <div
-                                key={index}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'flex-start',
-                                  gap: '1rem',
-                                  padding: '1rem',
-                                  borderRadius: '4px',
-                                  border: `1px solid ${tokens.colors.border}`,
-                                  backgroundColor: tokens.colors.bgPrimary
-                                }}
-                              >
-                                <div style={{
-                                  flexShrink: 0,
-                                  width: '12px',
-                                  height: '12px',
-                                  borderRadius: '2px',
-                                  marginTop: '6px',
-                                  backgroundColor: getStatusColor(entry.status)
-                                }}></div>
-
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                      <span style={{
-                                        fontFamily: tokens.fonts.mono,
-                                        fontSize: '0.875rem',
-                                        fontWeight: '500',
-                                        color: tokens.colors.textPrimary
-                                      }}>
-                                        {new Date(entry.date).toLocaleDateString('pt-PT')}
-                                      </span>
-                                      <span style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        padding: '0.25rem 0.5rem',
-                                        borderRadius: '2px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: '500',
-                                        backgroundColor: statusStyles.bg,
-                                        color: statusStyles.text,
-                                        border: `1px solid ${statusStyles.border}`
-                                      }}>
-                                        {entry.attendance_description}
-                                      </span>
-                                    </div>
-                                    <span style={{
-                                      fontFamily: tokens.fonts.body,
-                                      fontSize: '0.75rem',
-                                      color: tokens.colors.textMuted
-                                    }}>
-                                      {entry.session_type}
-                                    </span>
-                                  </div>
-
-                                  {entry.reason && (
-                                    <p style={{
-                                      fontFamily: tokens.fonts.body,
-                                      fontSize: '0.875rem',
-                                      color: tokens.colors.textSecondary,
-                                      marginTop: '0.5rem'
-                                    }}>
-                                      <span style={{ fontWeight: '600' }}>Motivo:</span> {entry.reason}
-                                    </p>
-                                  )}
-
-                                  {entry.justification && (
-                                    <p style={{
-                                      fontFamily: tokens.fonts.body,
-                                      fontSize: '0.875rem',
-                                      color: tokens.colors.textSecondary,
-                                      marginTop: '0.25rem'
-                                    }}>
-                                      <span style={{ fontWeight: '600' }}>Justificação:</span> {entry.justification}
-                                    </p>
-                                  )}
-
-                                  {entry.observations && (
-                                    <p style={{
-                                      fontFamily: tokens.fonts.body,
-                                      fontSize: '0.875rem',
-                                      color: tokens.colors.textSecondary,
-                                      marginTop: '0.25rem'
-                                    }}>
-                                      <span style={{ fontWeight: '600' }}>Observações:</span> {entry.observations}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {attendanceData.timeline.length === 0 && (
-                          <div style={{ textAlign: 'center', padding: '2rem' }}>
-                            <Activity style={{ height: '3rem', width: '3rem', color: tokens.colors.textMuted, margin: '0 auto 0.75rem' }} />
-                            <p style={{
-                              fontFamily: tokens.fonts.body,
-                              color: tokens.colors.textMuted
-                            }}>Nenhum registo de presença encontrado</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Legend */}
-                    <div style={{
-                      backgroundColor: tokens.colors.bgSecondary,
-                      borderRadius: '4px',
-                      border: `1px solid ${tokens.colors.border}`,
-                      padding: '1.5rem'
-                    }}>
-                      <h4 style={{
-                        fontFamily: tokens.fonts.headline,
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        color: tokens.colors.textPrimary,
-                        marginBottom: '1rem'
-                      }}>Legenda dos Códigos</h4>
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: '0.75rem'
-                      }}>
-                        {Object.entries(attendanceData.codes_legend).map(([code, info]) => {
-                          const getCodeStyles = (status) => {
-                            switch (status) {
-                              case 'success': return { bg: colorSchemes.green.bg, text: colorSchemes.green.text, border: colorSchemes.green.border };
-                              case 'warning': return { bg: colorSchemes.orange.bg, text: colorSchemes.orange.text, border: colorSchemes.orange.border };
-                              case 'danger': return { bg: tokens.colors.dangerBg, text: tokens.colors.danger, border: '#FECACA' };
-                              case 'info': return { bg: colorSchemes.blue.bg, text: colorSchemes.blue.text, border: colorSchemes.blue.border };
-                              default: return { bg: '#F3F4F6', text: tokens.colors.textSecondary, border: tokens.colors.border };
-                            }
-                          };
-                          const codeStyles = getCodeStyles(info.status);
-
-                          return (
-                            <div key={code} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <span style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: '0.25rem 0.5rem',
-                                borderRadius: '2px',
-                                fontSize: '0.75rem',
-                                fontFamily: tokens.fonts.mono,
-                                fontWeight: '600',
-                                backgroundColor: codeStyles.bg,
-                                color: codeStyles.text,
-                                border: `1px solid ${codeStyles.border}`
-                              }}>
-                                {code}
-                              </span>
-                              <span style={{
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.875rem',
-                                color: tokens.colors.textSecondary
-                              }}>{info.description}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{
-                    textAlign: 'center',
-                    padding: '3rem 1rem',
-                    backgroundColor: tokens.colors.bgSecondary,
-                    border: `1px solid ${tokens.colors.border}`,
-                    borderRadius: '4px'
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: 600,
+                    color: tokens.colors.textPrimary,
+                    fontFamily: tokens.fonts.headline,
+                    margin: 0,
                   }}>
-                    <Activity style={{ height: '3rem', width: '3rem', color: tokens.colors.textMuted, margin: '0 auto 0.75rem' }} />
-                    <p style={{
-                      fontFamily: tokens.fonts.body,
-                      color: tokens.colors.textMuted
-                    }}>Dados de presença não disponíveis</p>
-                  </div>
-                )}
+                    Presenças no Plenário
+                  </h3>
+                  <p style={{
+                    fontSize: '0.8125rem',
+                    color: tokens.colors.textMuted,
+                    marginTop: '6px',
+                    fontFamily: tokens.fonts.body,
+                  }}>
+                    Listas de presenças das reuniões plenárias, por legislatura
+                  </p>
+                </div>
+                <AttendancePanel data={attendanceData} />
               </div>
             )}
 

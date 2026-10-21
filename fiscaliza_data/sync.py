@@ -1,9 +1,11 @@
 """Turn a parlamento-aberto data release into the site's local, read-only DuckDB file.
 
-1. Find the release: a tag, the latest release on GitHub, or a local `release build` folder.
+1. Find the release: a tag, the latest release on GitHub, or a local `release build` output
+   (the folder, its manifest.json, or a .tar.gz, .tgz or .zip of the folder).
 2. Stop if that tag is already live.
 3. Get manifest.json and every Parquet file it lists; check each SHA-256.
-4. Refuse a schema_version whose major the site does not support.
+4. Refuse a schema_version whose major the site does not support, or a release without the
+   marts the site needs (REQUIRED_MARTS).
 5. Load the Parquet files as tables into a new fiscaliza-<tag>.duckdb, with the seating
    macros (seating.sql), the site views (views.sql) and a _meta table.
 6. Smoke checks: the current legislature has 230 seated deputies at its extract date, and
@@ -11,6 +13,9 @@
 7. Point current.duckdb at the new file atomically and keep only the last two files.
 
 Any failure raises SyncError and leaves the previous file live.
+
+Run it as `python -m fiscaliza_data sync` or `python -m fiscaliza_data.sync`; both take the same
+options and exit non-zero on failure.
 """
 
 import hashlib
@@ -18,7 +23,10 @@ import json
 import os
 import re
 import shutil
+import sys
+import tarfile
 import tempfile
+import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -37,6 +45,8 @@ SEATING_SQL = Path(__file__).with_name("seating.sql")
 VIEWS_SQL = Path(__file__).with_name("views.sql")
 _TAG = re.compile(r"^[A-Za-z0-9._-]+$")
 _MART = re.compile(r"^[a-z][a-z0-9_]*$")
+# Marts the site reads that older releases may not have (plenary attendance, schema 1.2.0).
+REQUIRED_MARTS = ("plenary_attendance",)
 
 
 class SyncError(Exception):
@@ -125,6 +135,9 @@ def _parquet_files(manifest):
         if name != f"{mart}.parquet" or not sha:
             raise SyncError(f"manifest.json has no Parquet file and hash for {mart}")
         out[mart] = (name, sha)
+    missing = [m for m in REQUIRED_MARTS if m not in out]
+    if missing:
+        raise SyncError(f"manifest.json lists no {', '.join(missing)}; the site needs it")
     return out
 
 
@@ -254,19 +267,88 @@ def _read_manifest(folder):
         raise SyncError(f"cannot read manifest.json: {e}") from None
 
 
-def sync(data_dir=DEFAULT_DATA_DIR, tag=None, from_dir=None, http=None):
+ARCHIVES = (".tar.gz", ".tgz", ".zip")
+
+
+def _safe_member(name, root):
+    target = (root / name).resolve()
+    if name.startswith(("/", "\\")) or not target.is_relative_to(root):
+        raise SyncError(f"archive has an unsafe path: {name!r}")
+
+
+def _extract(archive, data_dir):
+    """Unpack an archive of a `release build` folder into a staging folder in data_dir."""
+    staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=data_dir))
+    root = staging.resolve()
+    try:
+        if archive.name.endswith(".zip"):
+            with zipfile.ZipFile(archive) as z:
+                for name in z.namelist():
+                    _safe_member(name, root)
+                z.extractall(staging)  # noqa: S202 (every member was checked by _safe_member above)
+        else:
+            with tarfile.open(archive, "r:gz") as tar:
+                for member in tar.getmembers():
+                    _safe_member(member.name, root)
+                    if not (member.isfile() or member.isdir()):
+                        raise SyncError(f"archive has a link or special file: {member.name!r}")
+                tar.extractall(staging, filter="data")
+    except (OSError, tarfile.TarError, zipfile.BadZipFile) as e:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise SyncError(f"cannot unpack {archive.name}: {e}") from None
+    except SyncError:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
+    return staging
+
+
+def _find_manifest_folder(staging, archive):
+    """The folder holding manifest.json: the archive root or its single top folder."""
+    if (staging / "manifest.json").is_file():
+        return staging
+    tops = [p for p in staging.iterdir() if p.is_dir()]
+    if len(tops) == 1 and (tops[0] / "manifest.json").is_file():
+        return tops[0]
+    raise SyncError(f"{archive.name} has no manifest.json at its top or in a single top folder")
+
+
+def _local(source, data_dir):
+    """(folder holding manifest.json, staging folder to remove or None) for a local source."""
+    path = Path(source)
+    if not path.exists():
+        raise SyncError(f"{path} does not exist")
+    if path.is_dir():
+        return path, None
+    if path.name == "manifest.json":
+        return path.parent, None
+    if path.name.endswith(ARCHIVES):
+        staging = _extract(path, data_dir)
+        try:
+            return _find_manifest_folder(staging, path), staging
+        except SyncError:
+            shutil.rmtree(staging, ignore_errors=True)
+            raise
+    raise SyncError(f"{path.name} is not a release build folder, manifest.json or {', '.join(ARCHIVES)} archive")
+
+
+def sync(data_dir=DEFAULT_DATA_DIR, tag=None, source=None, from_dir=None, http=None):
+    """Build and swap in a release. `source` is a local build (folder, manifest.json or
+    archive); `from_dir` is its older name. Without one, the release comes from GitHub."""
+    if source and from_dir:
+        raise SyncError("give one local source, not both source and from_dir")
+    source = source or from_dir
     data_dir = Path(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
     live = live_tag(data_dir)
     staging = None
     building = None
     try:
-        if from_dir:
-            folder = Path(from_dir)
+        if source:
+            folder, staging = _local(source, data_dir)
             manifest = _read_manifest(folder)
             found = _check_tag(manifest.get("tag"))
             if tag and found != tag:
-                raise SyncError(f"asked for {tag}, {folder} holds {found}")
+                raise SyncError(f"asked for {tag}, {source} holds {found}")
             if found == live:
                 return Result(tag=found, changed=False)
         else:
@@ -302,3 +384,10 @@ def sync(data_dir=DEFAULT_DATA_DIR, tag=None, from_dir=None, http=None):
                 wal.unlink()
         if staging is not None:
             shutil.rmtree(staging, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    # `python -m fiscaliza_data.sync [options]` is the same command as `python -m fiscaliza_data sync`.
+    from fiscaliza_data.__main__ import main
+
+    sys.exit(main(["sync", *sys.argv[1:]]))
