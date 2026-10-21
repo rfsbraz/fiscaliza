@@ -42,8 +42,22 @@ def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema
         "create table deputies as select i::bigint as cadastro_id, 'Deputado ' || i as name from range(?) t(i)",
         [SEATS + extra_rows],
     )
+    # The site views (views.sql) also read these; empty is enough here.
+    con.execute(
+        "create table group_memberships (legislature varchar, cadastro_id bigint, group_id integer, "
+        "group_acronym varchar, start_date date, end_date date, is_open boolean)"
+    )
+    con.execute("create table electoral_circles (legislature varchar, circle_id integer, name varchar)")
+    con.execute("create table parliamentary_groups (legislature varchar, group_acronym varchar, name varchar)")
     marts = {}
-    for mart in ("legislatures", "mandates", "deputies"):
+    for mart in (
+        "legislatures",
+        "mandates",
+        "deputies",
+        "group_memberships",
+        "electoral_circles",
+        "parliamentary_groups",
+    ):
         path = out / f"{mart}.parquet"
         con.execute(f"copy {mart} to '{path}' (format parquet)")
         rows = con.execute(f"select count(*) from {mart}").fetchone()[0]  # noqa: S608

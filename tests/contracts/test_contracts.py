@@ -59,7 +59,7 @@ def test_every_frontend_call_has_a_contract():
 def test_contract_route_exists(name):
     route = CONTRACTS[name]["route"].removeprefix("/api")
     sources = "".join(p.read_text() for p in ROUTES.glob("*.py"))
-    assert f".route('{route}'" in sources
+    assert f".route('{route}'" in sources or f'.route("{route}"' in sources
 
 
 @pytest.mark.parametrize("name", sorted(CONTRACTS))
