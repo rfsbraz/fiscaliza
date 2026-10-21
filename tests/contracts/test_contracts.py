@@ -101,4 +101,4 @@ def test_approved_drops_are_recorded():
 
 
 def test_there_is_one_contract_per_frontend_endpoint():
-    assert len(CONTRACTS) == 19
+    assert len(CONTRACTS) == 20

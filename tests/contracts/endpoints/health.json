@@ -1,0 +1,25 @@
+{
+  "endpoint": "health",
+  "route": "/api/health",
+  "keys": [
+    {
+      "path": "data",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/DataAttribution.jsx:26"
+    },
+    {
+      "path": "data.source_updated",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DataAttribution.jsx:30"
+    },
+    {
+      "path": "data.tag",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/DataAttribution.jsx:31"
+    }
+  ],
+  "dropped": []
+}

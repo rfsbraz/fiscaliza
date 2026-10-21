@@ -1,8 +1,9 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ExternalLink, AlertTriangle, X } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import Navigation from './components/Navigation'
+import DataAttribution from './components/DataAttribution'
 
 const Dashboard = lazy(() => import('./components/Dashboard'))
 const DeputadosPage = lazy(() => import('./components/DeputadosPage'))
@@ -17,7 +18,6 @@ import './App.css'
 const AppContent = () => {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [showBanner, setShowBanner] = useState(true)
 
   useEffect(() => {
     fetchStats()
@@ -72,107 +72,6 @@ const AppContent = () => {
       }}
     >
       <Navigation />
-
-      {/* Editorial Notice Banner */}
-      {showBanner && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          style={{
-            backgroundColor: '#FFFFFF',
-            borderBottom: '1px solid #E5E5E5',
-          }}
-        >
-          <div
-            style={{
-              maxWidth: '1280px',
-              margin: '0 auto',
-              padding: '0.75rem 1.5rem',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '1rem',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '0.75rem',
-                }}
-              >
-                <div
-                  style={{
-                    width: '3px',
-                    height: '100%',
-                    minHeight: '2.5rem',
-                    backgroundColor: '#9B2335',
-                    borderRadius: '2px',
-                    flexShrink: 0,
-                  }}
-                />
-                <div>
-                  <p
-                    style={{
-                      fontFamily: "'Source Sans 3', sans-serif",
-                      fontSize: '0.8125rem',
-                      fontWeight: 600,
-                      color: '#1A1A1A',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      marginBottom: '0.125rem',
-                    }}
-                  >
-                    Nota Editorial
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: "'Source Sans 3', sans-serif",
-                      fontSize: '0.875rem',
-                      color: '#4A4A4A',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    Este portal encontra-se em fase de desenvolvimento. Os dados apresentados são demonstrativos e não devem ser considerados oficiais.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowBanner(false)}
-                style={{
-                  padding: '0.375rem',
-                  background: 'none',
-                  border: '1px solid #E5E5E5',
-                  borderRadius: '2px',
-                  cursor: 'pointer',
-                  color: '#6B6B6B',
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 150ms ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#1B4332';
-                  e.currentTarget.style.color = '#1B4332';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#E5E5E5';
-                  e.currentTarget.style.color = '#6B6B6B';
-                }}
-                aria-label="Fechar aviso"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
 
       <main
         style={{
@@ -296,6 +195,8 @@ const AppContent = () => {
               </a>
             </div>
           </div>
+
+          <DataAttribution />
 
           {/* Bottom section with branding */}
           <div

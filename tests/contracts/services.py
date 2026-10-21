@@ -12,6 +12,7 @@ Endpoints not listed are expected failures until they are ported.
 from app.services import core
 
 PORTED = {
+    "health": core.health,
     "legislaturas": core.legislaturas,
     "estatisticas": core.estatisticas,
     "deputados": lambda con: core.deputados(con, page=1, per_page=20, active_only=False),
