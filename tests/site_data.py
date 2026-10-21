@@ -7,8 +7,9 @@ Ids and made-up names only, no real people. Two legislatures:
   known split (KNOWN_SPLIT). Person 231 sat for PS until 2025-12-31 and resigned; person 232 took
   the seat on 2026-01-01. Person 500 is a substitute who never sat.
 
-Person 1 sat for PS in XVI and for PSD in XVII. Coalitions: AD (PSD, CDS-PP) and CDU (PCP)
-in both legislatures, and FRS (PS) in XVI only.
+Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) and every
+tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP) in both legislatures, and
+FRS (PS) in XVI only.
 
 Activity (ACTIVITY below): person 1 authored initiatives in both legislatures, one of them with
 person 90 (CH), and spoke in both; person 2 (PSD) and person 90 have a little activity in XVII.
@@ -52,6 +53,11 @@ XVI = ("XVI", 107, "2024-03-26", "2025-06-02")
 XVII = ("XVII", 108, "2025-06-03", None)
 
 
+def _born(cad):
+    """A made-up birth date; every tenth person has none, as when the register has no biography."""
+    return None if cad % 10 == 0 else f"{1940 + cad % 50}-{1 + cad % 12:02d}-01"
+
+
 def _xvii_seats():
     """[(cadastro_id, group)] for the 230 seats on the extract date, PS's last one being 232."""
     seats, cad = [], 1
@@ -92,7 +98,15 @@ def _rows():
 
     people = sorted({m[1] for m in mandates})
     deputies = [
-        (cad, f"Nome Completo {cad}", f"Deputado {cad}", "F" if cad % 2 else "M", None, f"Profissão {cad % 5}", "XVII")
+        (
+            cad,
+            f"Nome Completo {cad}",
+            f"Deputado {cad}",
+            "F" if cad % 2 else "M",
+            _born(cad),
+            f"Profissão {cad % 5}",
+            "XVII",
+        )
         for cad in people
     ]
     coalitions = []
