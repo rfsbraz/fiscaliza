@@ -262,6 +262,13 @@ def deputy_bundle(con, svc, cadastro_id):
             except _not_found(svc):
                 pass
         bundle["voting_analytics"] = found
+        if legs[-1] not in found:
+            # The default (no legislatura) is the latest legislature served, which the service
+            # finds even where it refuses that legislature by name (the Constituinte).
+            try:
+                bundle["voting_analytics_atual"] = voting.deputado_voting_analytics(con, cadastro_id)
+            except _not_found(svc):
+                pass
     return bundle
 
 

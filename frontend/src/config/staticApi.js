@@ -125,7 +125,8 @@ function deputyList(index, params) {
 }
 
 function activities(bundle, params) {
-  const leg = params.get('legislatura') ? legislatureName(params.get('legislatura')) : bundle.legislatura_atual;
+  // The activities endpoint takes the legislature exactly as the data names it.
+  const leg = params.get('legislatura') || bundle.legislatura_atual;
   const found = bundle.atividades?.[leg];
   if (!found) return notFound();
   const page = Math.max(intArg(params, 'page', 1), 1);
@@ -213,8 +214,10 @@ export function createStaticApi({ load }) {
       if (bundle === null) return notFound();
       if (what === 'atividades') return activities(bundle, params);
       if (what === 'voting-analytics' && only(params, ['legislatura'])) {
-        const leg = params.get('legislatura') ? legislatureName(params.get('legislatura')) : bundle.legislatura_atual;
-        const found = bundle.voting_analytics?.[leg];
+        const leg = params.get('legislatura');
+        const found = leg
+          ? bundle.voting_analytics?.[legislatureName(leg)]
+          : (bundle.voting_analytics?.[bundle.legislatura_atual] ?? bundle.voting_analytics_atual);
         return found ? answer(200, found) : notFound();
       }
       const section = { detalhes: 'detalhes', 'conflitos-interesse': 'conflitos_interesse' }[what];

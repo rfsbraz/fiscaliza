@@ -38,6 +38,12 @@ const FILES = {
     },
     voting_analytics: { XVII: { legislatura: 'XVII' } },
   },
+  'deputados/8.json': {
+    legislatura_atual: 'Constituinte',
+    atividades: { Constituinte: { intervencoes: [] } },
+    voting_analytics: {},
+    voting_analytics_atual: { legislatura: 'Constituinte' },
+  },
   'partidos/mdp-cde/deputados.json': { partido: 'MDP/CDE' },
   'partidos/ps/voting-analytics/xvii.json': { legislatura: 'XVII' },
 };
@@ -105,6 +111,16 @@ test('one file per deputy, fetched once for all their endpoints', async () => {
   assert.deepEqual(calls, ['deputados/7.json']);
   assert.equal((await a.get('deputados/7/voting-analytics?legislatura=17')).body.legislatura, 'XVII');
   assert.equal((await a.get('deputados/7/conflitos-interesse')).status, 404);
+});
+
+test('legislatures are looked up the way each endpoint takes them', async () => {
+  const a = api();
+  // Voting analytics takes "17" or a numeral in any case; with none it is the latest served.
+  assert.equal((await a.get('deputados/8/voting-analytics')).body.legislatura, 'Constituinte');
+  assert.equal((await a.get('deputados/8/voting-analytics?legislatura=Constituinte')).status, 404);
+  // Activities take the name exactly as the data has it.
+  assert.equal((await a.get('deputados/8/atividades?legislatura=Constituinte')).status, 200);
+  assert.equal((await a.get('deputados/7/atividades?legislatura=17')).status, 404);
 });
 
 test('party names with slashes map to one path', async () => {
