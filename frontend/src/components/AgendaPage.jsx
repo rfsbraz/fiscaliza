@@ -970,47 +970,6 @@ const AgendaPage = () => {
           )}
         </div>
       </motion.div>
-
-      {/* Aviso sobre dados simulados */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '0.75rem',
-          padding: '1rem',
-          backgroundColor: tokens.colors.bgSecondary,
-          border: `1px solid ${tokens.colors.border}`,
-          borderLeft: `3px solid ${tokens.colors.accent}`,
-          borderRadius: '4px',
-        }}
-      >
-        <AlertCircle size={18} style={{ color: tokens.colors.accent, flexShrink: 0, marginTop: '0.125rem' }} />
-        <div>
-          <h4
-            style={{
-              fontFamily: tokens.fonts.body,
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              color: tokens.colors.textPrimary,
-              marginBottom: '0.25rem',
-            }}
-          >
-            Dados Demonstrativos
-          </h4>
-          <p
-            style={{
-              fontFamily: tokens.fonts.body,
-              fontSize: '0.8125rem',
-              color: tokens.colors.textSecondary,
-            }}
-          >
-            Os dados apresentados são simulados para demonstração. A integração com dados reais será implementada em futuras versões.
-          </p>
-        </div>
-      </motion.div>
     </div>
   );
 };
