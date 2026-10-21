@@ -1,5 +1,4 @@
--- Copied unchanged from rfsbraz/parlamento-aberto src/parlamento_aberto/models/macros.sql
--- at main 5980ed2. Once releases publish macros.sql, the sync uses that file instead.
+-- Fiscaliza's seating rule, owned and tested in this repo.
 
 -- The seating rule, in one place. The vote_group_positions mart uses seated_during, so
 -- build.py creates these macros right after the mandates table, before the marts.
