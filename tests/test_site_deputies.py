@@ -411,6 +411,18 @@ def test_coverage_of_the_ar_declarations(con):
         }
 
 
+def test_no_recognition_badges_red_flags_or_activity_trend():
+    # #105: the badges and warnings were decided from the interventions on the page, and the
+    # trend compared raw counts across legislatures of different lengths. All gone.
+    source = COMPONENT.read_text()
+    for text in ("Reconhecimentos", "AchievementBadge", "RedFlagIndicator", "crescente", "decrescente"):
+        assert text not in source, text
+    assert not (ROOT / "frontend" / "src" / "components" / "deputy" / "AchievementBadge.jsx").exists()
+    frontend = "".join(p.read_text() for p in (ROOT / "frontend" / "src").rglob("*.js*"))
+    for text in ("Sem perguntas recentes", "Atividade reduzida", "Questionador Ativo", "Participante Ativo"):
+        assert text not in frontend, text
+
+
 def test_component_uses_the_neutral_interest_labels():
     source = COMPONENT.read_text()
     assert "has_conflict_potential" not in source
