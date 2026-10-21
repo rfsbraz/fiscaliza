@@ -12,6 +12,7 @@ const PartidosPage = lazy(() => import('./components/PartidosPage'))
 const PartidoDetalhes = lazy(() => import('./components/PartidoDetalhes'))
 const ColigacaoDetalhes = lazy(() => import('./components/ColigacaoDetalhes'))
 const AgendaPage = lazy(() => import('./components/AgendaPage'))
+const NotFound = lazy(() => import('./components/NotFound'))
 import { apiFetch } from './config/api'
 import './App.css'
 
@@ -99,6 +100,7 @@ const AppContent = () => {
             <Route path="/partidos/:partidoId" element={<PartidoDetalhes />} />
             <Route path="/coligacoes/:coligacaoId" element={<ColigacaoDetalhes />} />
             <Route path="/agenda" element={<AgendaPage />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </main>

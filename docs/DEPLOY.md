@@ -72,8 +72,12 @@ This runs, in order:
 3. `python -m fiscaliza_data.export --out frontend/public/api` (the static export, see
    [STATIC_EXPORT.md](STATIC_EXPORT.md)).
 4. `npm ci` and `npm run build` in `frontend/`.
-5. The Pages step on `frontend/dist`: it deletes `404.html` and copies `deploy/_headers` in, and
-   checks the Pages limits (fewer than 20,000 files, every file under 25 MiB).
+5. The Pages step on `frontend/dist`: it copies `deploy/_headers` and `deploy/_redirects` in, keeps
+   the build's `404.html` (the app again), and checks the Pages limits (fewer than 20,000 files,
+   every file under 25 MiB). `_redirects` answers the app's routes with the app and status 200.
+   Any other path with no file gets `404.html` and status 404, and the app shows its "Página não
+   encontrada" view. A new route in `frontend/src/App.jsx` needs a line in `_redirects`, and
+   `tests/test_pages_deploy.py` checks that.
 6. `wrangler pages deploy dist --project-name fiscaliza --branch <branch>`.
 
 The scratch folder and the parlamento-aberto worktree are removed at the end. CI clones
@@ -105,13 +109,18 @@ and never creates tokens.
 
 ## Deep links
 
-The app routes in the browser. On Pages, a build without a top-level `404.html` is treated as a
-single-page app: any path with no file of its own gets `index.html` with status 200. The Pages step
-deletes `404.html` for that reason. The plain `npm run build` keeps writing it, because GitHub
-Pages, S3 and nginx with `error_page` need it.
+The app routes in the browser. `deploy/_redirects` rewrites each of the app's routes
+(`/deputados`, `/deputados/*`, `/partidos`, `/partidos/*`, `/coligacoes/*`, `/agenda`) to `/`
+with status 200, so a deep link loads the app. The rewrite goes to `/`, not `/index.html`, because
+Pages turns `/index.html` into `/` and the rewrite would loop. `/` itself is `index.html`.
 
-A data file that doesn't exist under `/api` then answers with `index.html` too. The frontend
-reads anything that isn't JSON as not found.
+Every other path with no file, such as `/sobre` or `/sitemap.xml`, gets the top-level `404.html`
+with status 404. That file is the app again, written by the build, and the app shows its "Página
+não encontrada" view with `noindex`. `/robots.txt` is a real file from `frontend/public`. There's
+no sitemap.
+
+A data file that doesn't exist under `/api` also answers 404. The frontend reads anything that
+isn't JSON as not found.
 
 ## Headers
 
