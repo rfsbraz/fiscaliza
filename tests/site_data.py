@@ -220,14 +220,19 @@ def _activity():
         ("XVI", "XVI-13", 301, 13, None, True, "Deputado", "ar_open_data"),
     ]
     interests = [
-        # legislature, declaration_key, item_number, cadastro_id, category, description, entity, share
-        ("XV", "XV-10", 1, 1, "activity", "Atividade antiga", "Entidade Antiga", None),
-        ("XV", "XV-11", 1, 1, "activity", "Consultor", "Empresa Exemplo", None),
-        ("XV", "XV-11", 2, 1, "society", "Sócio", "Sociedade Exemplo", "10"),
-        ("XV", "XV-11", 3, 1, "social_position", "Vogal", "Associação Exemplo", None),
-        ("XV", "XV-11", 4, 1, "activity", "Deputado", "Assembleia da República", None),
-        ("XV", "XV-12", 1, 2, "activity", "Deputada à Assembleia da República", None, None),
-        ("XVI", "XVI-13", 1, 301, "activity", "Deputado", "Assembleia da República", None),
+        # legislature, declaration_key, item_number, cadastro_id, category, description, entity, share,
+        # location, start_date_raw, end_date_raw
+        ("XV", "XV-10", 1, 1, "activity", "Atividade antiga", "Entidade Antiga", None, None, None, None),
+        ("XV", "XV-11", 1, 1, "activity", "Consultor", "Empresa Exemplo", None, "Lisboa", "2019-01-01", "2021-06-30"),
+        ("XV", "XV-11", 2, 1, "society", "Sócio", "Sociedade Exemplo", "10", "Porto", None, None),
+        ("XV", "XV-11", 3, 1, "social_position", "Vogal", "Associação Exemplo", None, None, None, None),
+        ("XV", "XV-11", 4, 1, "activity", "Deputado", "Assembleia da República", None, "Lisboa", "2022-03-29", None),
+        # The same post again for a later period, and an exact repeat of item 1 as published.
+        ("XV", "XV-11", 5, 1, "activity", "Consultor", "Empresa Exemplo", None, "Lisboa", "2021-07-01", None),
+        ("XV", "XV-11", 6, 1, "activity", "Consultor", "Empresa Exemplo", None, "Lisboa", "2019-01-01", "2021-06-30"),
+        # An older declaration: the whole sentence is in the description, with no entity.
+        ("XV", "XV-12", 1, 2, "activity", "Deputada à Assembleia da República", None, None, None, "2011", None),
+        ("XVI", "XVI-13", 1, 301, "activity", "Deputado", "Assembleia da República", None, None, None, None),
     ]
     return {
         "initiatives": (
@@ -259,7 +264,8 @@ def _activity():
         ),
         "interests": (
             "legislature varchar, declaration_key varchar, item_number integer, cadastro_id bigint, "
-            "category varchar, description varchar, entity varchar, share varchar",
+            "category varchar, description varchar, entity varchar, share varchar, location varchar, "
+            "start_date_raw varchar, end_date_raw varchar",
             interests,
         ),
     }

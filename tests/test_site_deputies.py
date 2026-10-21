@@ -322,15 +322,74 @@ def test_latest_declaration_with_activities_and_shareholdings(con):
     assert c["tem_declaracao"] is True
     assert (c["full_name"], c["legislatura"]) == ("Nome Completo 1", "XV")
     assert c["professional_activities"] == [
-        {"entity_name": "Empresa Exemplo", "function_type": "Consultor"},
-        {"entity_name": "Assembleia da República", "function_type": "Deputado"},
+        {
+            "function_type": "Consultor",
+            "entity_name": "Empresa Exemplo",
+            "location": "Lisboa",
+            "start_date": "2019-01-01",
+            "end_date": "2021-06-30",
+        },
+        {
+            "function_type": "Deputado",
+            "entity_name": "Assembleia da República",
+            "location": "Lisboa",
+            "start_date": "2022-03-29",
+            "end_date": None,
+        },
+        {
+            "function_type": "Consultor",
+            "entity_name": "Empresa Exemplo",
+            "location": "Lisboa",
+            "start_date": "2021-07-01",
+            "end_date": None,
+        },
     ]
-    assert c["shareholdings"] == [{"entity_name": "Sociedade Exemplo", "share_percentage": "10"}]
+    assert c["shareholdings"] == [{"entity_name": "Sociedade Exemplo", "share_percentage": "10", "location": "Porto"}]
     assert c["is_exclusive"] is False
     assert (c["declara_outras_atividades"], c["declara_participacoes"]) == (True, True)
     assert "has_conflict_potential" not in c
-    # No sector or legislation matching in the release: the page must not claim any overlap.
-    assert c["regulated_sector_count"] is None
+
+
+def test_repeated_items_are_shown_once_and_other_periods_keep_their_dates(con):
+    # Item 6 repeats item 1 as published; item 5 is the same post for a later period. Without the
+    # dates the two periods looked like duplicate rows.
+    activities = deputies.conflitos_interesse(con, 1)["professional_activities"]
+    consultor = [(a["start_date"], a["end_date"]) for a in activities if a["function_type"] == "Consultor"]
+    assert consultor == [("2019-01-01", "2021-06-30"), ("2021-07-01", None)]
+
+
+def test_a_declaration_without_an_entity_keeps_the_text_in_one_field(con):
+    [activity] = deputies.conflitos_interesse(con, 2)["professional_activities"]
+    assert activity["function_type"] == "Deputada à Assembleia da República"
+    assert activity["entity_name"] is None
+    assert activity["start_date"] == "2011"
+
+
+def test_no_sector_or_legislation_figures_without_a_source(con):
+    # The release has no sector classification and no legislation matching, so neither the
+    # payload nor the page claims any.
+    c = deputies.conflitos_interesse(con, 1)
+    assert "regulated_sector_count" not in c and "total_sectors" not in c
+    source = COMPONENT.read_text()
+    for gone in (
+        "SectorHeatmap",
+        "SectorOverlapSummary",
+        "legislationCount",
+        "noLegislation",
+        "regulated_sector_count",
+    ):
+        assert gone not in source, gone
+
+
+def test_interest_table_shows_only_the_columns_with_data():
+    source = COMPONENT.read_text()
+    assert "activity.entity_name || activity.function_type" not in source
+    assert "<InterestTable" in source
+    table = (ROOT / "frontend" / "src" / "components" / "deputy" / "InterestTable.jsx").read_text()
+    for column in ("Cargo ou função", "Entidade", "Local", "Período", "Participação"):
+        assert column in table, column
+    # A column is drawn only when at least one row has a value for it.
+    assert "columns.filter((column) => rows.some((row) => hasValue(row[column.key])))" in table
 
 
 def test_the_mandate_itself_is_not_another_activity_and_blank_exclusivity_stays_blank(con):
