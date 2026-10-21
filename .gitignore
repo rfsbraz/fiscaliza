@@ -128,3 +128,6 @@ data/*.duckdb
 data/*.duckdb.wal
 data/.staging-*
 data/.*.building
+
+# Static export rendered for the Vite dev server (python -m fiscaliza_data.export --out frontend/public/api)
+frontend/public/api/
