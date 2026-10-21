@@ -70,5 +70,7 @@ def test_deploy_is_time_boxed_and_the_export_capped():
     t = text()
     job = int(re.search(r"\n    timeout-minutes: (\d+)", t).group(1))
     step = int(re.search(r"\n        timeout-minutes: (\d+)", t).group(1))
-    assert step < job <= 60
-    assert "      EXPORT_WORKERS: 2\n" in t
+    assert (step, job) == (80, 90)
+    # The export takes its workers from the cgroup CPU limit (cpu.max), so the runner's
+    # current CPU cap applies without a hardcoded count.
+    assert "EXPORT_WORKERS" not in t
