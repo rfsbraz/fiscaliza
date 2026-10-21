@@ -65,7 +65,7 @@
     {
       "path": "career_info.latest_completed_mandate",
       "type": "object",
-      "nullable": false,
+      "nullable": true,
       "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1515"
     },
     {
@@ -150,19 +150,19 @@
       "path": "estatisticas.evolucao_legislaturas",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2098"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2073"
     },
     {
       "path": "estatisticas.evolucao_legislaturas[].iniciativas",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2129"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2104"
     },
     {
       "path": "estatisticas.evolucao_legislaturas[].intervencoes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2129"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2104"
     },
     {
       "path": "estatisticas.iniciativas_aprovadas",
@@ -174,25 +174,25 @@
       "path": "estatisticas.iniciativas_por_tipo",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1977"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1952"
     },
     {
       "path": "estatisticas.iniciativas_por_tipo[].codigo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2016"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1991"
     },
     {
       "path": "estatisticas.iniciativas_por_tipo[].descricao",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2035"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2010"
     },
     {
       "path": "estatisticas.iniciativas_por_tipo[].total",
       "type": "number",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:2000"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1975"
     },
     {
       "path": "estatisticas.iniciativas_propostas",
@@ -201,10 +201,16 @@
       "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1684"
     },
     {
+      "path": "estatisticas.intervencoes_legislatura",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1781"
+    },
+    {
       "path": "estatisticas.intervencoes_parlamentares",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1789"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1762"
     },
     {
       "path": "estatisticas.legislaturas_servidas",
@@ -213,16 +219,16 @@
       "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1629"
     },
     {
-      "path": "estatisticas.media_partido_iniciativas",
+      "path": "estatisticas.media_partido_intervencoes",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1803"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1780"
     },
     {
       "path": "estatisticas.nivel_experiencia",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1933"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1908"
     },
     {
       "path": "estatisticas.taxa_aprovacao",
@@ -233,8 +239,8 @@
     {
       "path": "estatisticas.taxa_assiduidade",
       "type": "number",
-      "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1839"
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1803"
     },
     {
       "path": "estatisticas.tempo_servico_anos",
@@ -270,13 +276,13 @@
       "path": "legislatura",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3696"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3686"
     },
     {
       "path": "legislatura.numero",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3696"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3686"
     },
     {
       "path": "legislatura_numero",
@@ -312,7 +318,7 @@
       "path": "mandatos_historico[].circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4724"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4596"
     },
     {
       "path": "mandatos_historico[].deputado_id",
@@ -324,13 +330,13 @@
       "path": "mandatos_historico[].is_current",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4656"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4528"
     },
     {
       "path": "mandatos_historico[].legislatura_nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4673"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4545"
     },
     {
       "path": "mandatos_historico[].legislatura_numero",
@@ -341,20 +347,20 @@
     {
       "path": "mandatos_historico[].mandato_fim",
       "type": "scalar",
-      "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4709"
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4581"
     },
     {
       "path": "mandatos_historico[].mandato_inicio",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4708"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4580"
     },
     {
       "path": "mandatos_historico[].partido_sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4735"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4607"
     },
     {
       "path": "nome",

@@ -9,6 +9,10 @@ Ids and made-up names only, no real people. Two legislatures:
 
 Person 1 sat for PS in XVI and for PSD in XVII. Coalitions: AD (PSD, CDS-PP) and CDU (PCP)
 in both legislatures, and FRS (PS) in XVI only.
+
+Activity (ACTIVITY below): person 1 authored initiatives in both legislatures, one of them with
+person 90 (CH), and spoke in both; person 2 (PSD) and person 90 have a little activity in XVII.
+Person 1 has two interest declarations from XV, an older and a newer one.
 """
 
 import hashlib
@@ -97,6 +101,134 @@ def _rows():
     return mandates, memberships, deputies, coalitions
 
 
+def _activity():
+    """Initiatives with their authors and decisive votes, interventions and interest
+    declarations. Returns {table: (create sql, rows)}."""
+    initiatives = [
+        # legislature, initiative_id, number, type_code, type, title, first_event_date, text_url
+        ("XVII", 1, 1, "J", "Projeto de Lei", "Iniciativa 1", "2025-07-01", "https://example.org/1.pdf"),
+        ("XVII", 2, 2, "R", "Projeto de Resolução", "Iniciativa 2", "2025-08-01", None),
+        ("XVII", 3, 3, "J", "Projeto de Lei", "Iniciativa 3", "2025-09-01", None),
+        ("XVII", 4, 4, "J", "Projeto de Lei", "Iniciativa 4", "2025-10-01", None),
+        ("XVII", 6, 6, "J", "Projeto de Lei", "Iniciativa 6", "2025-11-01", None),
+        ("XVI", 5, 5, "J", "Projeto de Lei", "Iniciativa 5", "2024-06-01", None),
+    ]
+    authors = [
+        # legislature, initiative_id, author_type, cadastro_id, group_code, name
+        ("XVII", 1, "deputy", 1, "PSD", "Deputado 1"),
+        ("XVII", 2, "deputy", 1, "PSD", "Deputado 1"),
+        ("XVII", 3, "deputy", 1, "PSD", "Deputado 1"),
+        ("XVII", 4, "deputy", 1, "PSD", "Deputado 1"),
+        ("XVII", 4, "deputy", 90, "CH", "Deputado 90"),
+        ("XVII", 6, "deputy", 2, "PSD", "Deputado 2"),
+        ("XVII", 6, "group", None, "PSD", "PSD"),
+        ("XVI", 5, "deputy", 1, "PS", "Deputado 1"),
+    ]
+    initiative_votes = [
+        # vote_id, initiative_id, initiative_legislature, body, phase
+        (101, 1, "XVII", "plenary", "Votação na generalidade"),
+        (102, 1, "XVII", "plenary", "Votação final global"),
+        (103, 2, "XVII", "plenary", "Votação Deliberação"),
+        (104, 4, "XVII", "plenary", "Votação na generalidade"),
+        (105, 5, "XVI", "plenary", "Votação final global"),
+        (106, 6, "XVII", "Comissão de Saúde", "Votação final global"),
+    ]
+    votes = [
+        # vote_id, legislature, date, body, result
+        (101, "XVII", "2025-07-10", "plenary", "Aprovado"),
+        (102, "XVII", "2025-12-10", "plenary", "Aprovado"),
+        (103, "XVII", "2025-08-10", "plenary", "Rejeitado"),
+        (104, "XVII", "2025-10-10", "plenary", "Aprovado"),
+        (105, "XVI", "2024-07-10", "plenary", "Aprovado"),
+        (106, "XVII", "2025-11-10", "Comissão de Saúde", "Aprovado"),
+    ]
+    interventions = []
+    for i, (leg, cad, day, kind) in enumerate(
+        [
+            ("XVII", 1, "2026-09-16", "Intervenção"),
+            ("XVII", 1, "2026-09-17", "Pedido de esclarecimento"),
+            ("XVII", 1, "2026-09-18", "Declaração politica"),
+            ("XVII", 90, "2026-09-18", "Intervenção"),
+            ("XVI", 1, "2024-04-10", "Intervenção"),
+            ("XVI", 1, "2024-05-10", "Intervenção"),
+            ("XVI", 1, "2024-06-10", "Pergunta"),
+            ("XVI", 1, "2024-07-10", "Intervenção"),
+            ("XVI", 1, "2024-08-10", "Interpelação à mesa"),
+        ],
+        start=1,
+    ):
+        interventions.append(
+            (
+                leg,
+                1000 + i,
+                1,
+                day,
+                kind,
+                "Período da ordem do dia",
+                f"Debate {i}",
+                f"Sumário {i}",
+                None,
+                "deputy",
+                cad,
+                "Deputado",
+                "DAR I série",
+                i,
+                day,
+                [str(i), str(i + 1)],
+                f"https://example.org/dar/{i}",
+            )
+        )
+    declarations = [
+        # legislature, declaration_key, cadastro_id, declaration_id, version_date, is_exclusive, position
+        ("XV", "XV-10", 1, 10, None, True, "Deputado"),
+        ("XV", "XV-11", 1, 11, None, False, "Deputado"),
+    ]
+    interests = [
+        # legislature, declaration_key, item_number, cadastro_id, category, description, entity, share
+        ("XV", "XV-10", 1, 1, "activity", "Atividade antiga", "Entidade Antiga", None),
+        ("XV", "XV-11", 1, 1, "activity", "Consultor", "Empresa Exemplo", None),
+        ("XV", "XV-11", 2, 1, "society", "Sócio", "Sociedade Exemplo", "10"),
+        ("XV", "XV-11", 3, 1, "social_position", "Vogal", "Associação Exemplo", None),
+    ]
+    return {
+        "initiatives": (
+            "legislature varchar, initiative_id bigint, number integer, type_code varchar, type varchar, "
+            "title varchar, first_event_date date, text_url varchar",
+            initiatives,
+        ),
+        "initiative_authors": (
+            "legislature varchar, initiative_id bigint, author_type varchar, cadastro_id bigint, "
+            "group_code varchar, name varchar",
+            authors,
+        ),
+        "initiative_votes": (
+            "vote_id bigint, initiative_id bigint, initiative_legislature varchar, body varchar, phase varchar",
+            initiative_votes,
+        ),
+        "votes": ("vote_id bigint, legislature varchar, date date, body varchar, result varchar", votes),
+        "interventions": (
+            "legislature varchar, intervention_id bigint, session_number integer, meeting_date date, "
+            "intervention_type varchar, session_phase varchar, debate varchar, summary varchar, abstract varchar, "
+            "speaker_kind varchar, cadastro_id bigint, speaker_role varchar, publication_type varchar, "
+            "publication_number integer, publication_date date, pages varchar[], diary_url varchar",
+            interventions,
+        ),
+        "interest_declarations": (
+            "legislature varchar, declaration_key varchar, cadastro_id bigint, declaration_id bigint, "
+            "version_date date, is_exclusive boolean, position varchar",
+            declarations,
+        ),
+        "interests": (
+            "legislature varchar, declaration_key varchar, item_number integer, cadastro_id bigint, "
+            "category varchar, description varchar, entity varchar, share varchar",
+            interests,
+        ),
+    }
+
+
+ACTIVITY = _activity()
+
+
 def build_release(root):
     """Write the release folder (Parquet files and manifest.json) and return its path."""
     out = Path(root) / TAG
@@ -142,6 +274,9 @@ def build_release(root):
         "election_url varchar, note varchar)"
     )
     con.executemany("insert into coalitions values (?, ?, ?, ?, ?, ?, ?, ?, ?)", coalitions)
+    for table, (columns, rows) in ACTIVITY.items():
+        con.execute(f"create table {table} ({columns})")
+        con.executemany(f"insert into {table} values ({', '.join('?' * len(rows[0]))})", rows)  # noqa: S608
     marts = {}
     for mart in (
         "legislatures",
@@ -151,6 +286,7 @@ def build_release(root):
         "electoral_circles",
         "parliamentary_groups",
         "coalitions",
+        *ACTIVITY,
     ):
         path = out / f"{mart}.parquet"
         con.execute(f"copy {mart} to '{path}' (format parquet)")

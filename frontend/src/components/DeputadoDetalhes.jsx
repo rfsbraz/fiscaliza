@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, User, MapPin, Calendar, Briefcase, Activity, FileText, Vote, MessageSquare, Play, Clock, ExternalLink, Mail, Shield, AlertTriangle, Heart, Users, TrendingUp, TrendingDown, Minus, Info, ChevronRight, ChevronDown, Target, Award, Globe, CheckCircle2, BarChart3, GraduationCap, Building2, BookOpen, Medal } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Calendar, Briefcase, Activity, FileText, Vote, MessageSquare, Play, Clock, ExternalLink, Mail, Shield, AlertTriangle, Users, TrendingUp, TrendingDown, Minus, Info, ChevronRight, ChevronDown, Target, Award, Globe, CheckCircle2, BarChart3, GraduationCap, Building2, BookOpen, Medal } from 'lucide-react';
 import VotingAnalytics from './VotingAnalytics';
 import LegislatureDropdown from './LegislatureDropdown';
 import { apiFetch } from '../config/api';
@@ -1714,33 +1714,6 @@ const DeputadoDetalhes = () => {
                 </span>
               </div>
 
-              {/* Context Frame - Shows for opposition deputies */}
-              {deputado.estatisticas.contexto_oposicao?.is_oposicao && deputado.estatisticas.taxa_aprovacao < 20 && (
-                <aside style={{
-                  display: 'flex',
-                  gap: '10px',
-                  padding: '14px 12px',
-                  marginTop: '12px',
-                  background: `linear-gradient(135deg, ${tokens.colors.bgWarm || '#F8F6F0'} 0%, #FAF8F3 100%)`,
-                  border: `1px solid ${tokens.colors.borderWarm || '#E8E4DA'}`,
-                  borderLeft: `3px solid ${tokens.colors.ouroConstitucional || '#C9A227'}`,
-                  borderRadius: '0 4px 4px 0',
-                  fontSize: '0.8125rem',
-                  lineHeight: 1.5,
-                  color: tokens.colors.infoPrimary || '#1E3A5F',
-                }}>
-                  <Info style={{
-                    flexShrink: 0,
-                    width: '16px',
-                    height: '16px',
-                    color: tokens.colors.ouroConstitucional || '#C9A227',
-                    marginTop: '2px',
-                  }} />
-                  <p style={{ margin: 0 }}>
-                    <strong style={{ color: tokens.colors.primary }}>Contexto:</strong> Deputados da oposição têm taxas de aprovação estruturalmente baixas (~{deputado.estatisticas.contexto_oposicao.media_aprovacao_oposicao}%).
-                  </p>
-                </aside>
-              )}
             </article>
 
             {/* INTERVENÇÕES CARD */}
@@ -1796,16 +1769,16 @@ const DeputadoDetalhes = () => {
               {/* Comparison bar vs party average */}
               <div style={{ paddingTop: '12px', borderTop: `1px solid ${tokens.colors.border}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '0.75rem', color: tokens.colors.textMuted }}>vs. média do partido</span>
+                  <span style={{ fontSize: '0.75rem', color: tokens.colors.textMuted }}>vs. média do partido na {deputado.legislatura_numero}</span>
                   <span style={{
                     fontSize: '0.75rem',
                     fontWeight: 600,
-                    color: deputado.estatisticas.intervencoes_parlamentares > deputado.estatisticas.media_partido_iniciativas * 10
+                    color: deputado.estatisticas.intervencoes_legislatura > deputado.estatisticas.media_partido_intervencoes
                       ? tokens.colors.success
                       : tokens.colors.textSecondary,
                   }}>
-                    {deputado.estatisticas.media_partido_iniciativas > 0
-                      ? `${Math.round((deputado.estatisticas.intervencoes_parlamentares / (deputado.estatisticas.media_partido_iniciativas * 10) - 1) * 100)}%`
+                    {deputado.estatisticas.media_partido_intervencoes > 0
+                      ? `${Math.round((deputado.estatisticas.intervencoes_legislatura / deputado.estatisticas.media_partido_intervencoes - 1) * 100)}%`
                       : 'N/A'}
                   </span>
                 </div>
@@ -1826,7 +1799,8 @@ const DeputadoDetalhes = () => {
               </div>
             </article>
 
-            {/* PRESENÇA CARD */}
+            {/* PRESENÇA CARD - hidden until attendance data is available */}
+            {deputado.estatisticas.taxa_assiduidade != null && (
             <article style={{
               backgroundColor: tokens.colors.bgSecondary,
               border: `1px solid ${tokens.colors.border}`,
@@ -1906,6 +1880,7 @@ const DeputadoDetalhes = () => {
                 Assiduidade às sessões plenárias
               </p>
             </article>
+            )}
 
             {/* CARREIRA CARD */}
             <article style={{
@@ -2236,9 +2211,6 @@ const DeputadoDetalhes = () => {
             <div>
               <strong style={{ color: tokens.colors.primary }}>Nota metodológica:</strong>{' '}
               Os dados apresentados são baseados em registos oficiais da Assembleia da República.
-              {deputado.estatisticas.contexto_oposicao?.is_oposicao && (
-                <> A comparação mais relevante para deputados da oposição é com outros líderes de oposição, não com a média geral do parlamento.</>
-              )}
             </div>
           </aside>
         </div>
@@ -2454,13 +2426,31 @@ const DeputadoDetalhes = () => {
                   </div>
                 </div>
 
+                {atividades?.nota_intervencoes && (
+                  <div style={{
+                    display: 'flex',
+                    gap: '10px',
+                    padding: '12px 14px',
+                    marginBottom: '20px',
+                    backgroundColor: tokens.colors.warningBg,
+                    border: '1px solid #FDE68A',
+                    borderRadius: '4px',
+                    fontSize: '0.8125rem',
+                    color: tokens.colors.textSecondary,
+                    fontFamily: tokens.fonts.body,
+                  }}>
+                    <Info style={{ flexShrink: 0, width: '16px', height: '16px', color: tokens.colors.warning, marginTop: '2px' }} />
+                    <p style={{ margin: 0 }}>{atividades.nota_intervencoes}</p>
+                  </div>
+                )}
+
                 {/* Activity Summary Bar */}
                 {atividades && totalInterventions > 0 && (
                   <InterventionsSummaryBar
                     totalInterventions={totalInterventions}
-                    interventionsThisYear={atividades.intervencoes?.length || 0}
-                    partyAverage={25} // TODO: Calculate from actual party data
-                    parliamentAverage={30} // TODO: Calculate from actual parliament data
+                    interventionsThisYear={totalInterventions}
+                    partyAverage={atividades.medias_intervencoes?.partido || 0}
+                    parliamentAverage={atividades.medias_intervencoes?.parlamento || 0}
                     videoCount={atividades.intervencoes?.filter(i => i.url_video)?.length || 0}
                     lastInterventionDate={atividades.intervencoes?.[0]?.data}
                     typeBreakdown={(() => {
@@ -3730,9 +3720,45 @@ const DeputadoDetalhes = () => {
                   </div>
                 </div>
 
-                {conflitosInteresse ? (
+                {conflitosInteresse?.ept?.pendente && (
+                  <div style={{
+                    display: 'flex',
+                    gap: '10px',
+                    padding: '1rem',
+                    marginBottom: '1.5rem',
+                    backgroundColor: tokens.colors.infoBg,
+                    border: '1px solid #BFDBFE',
+                    borderRadius: '4px',
+                    fontFamily: tokens.fonts.body,
+                    fontSize: '0.875rem',
+                    color: tokens.colors.info,
+                  }}>
+                    <Clock style={{ flexShrink: 0, width: '20px', height: '20px', marginTop: '2px' }} />
+                    <p style={{ margin: 0 }}>
+                      {(() => {
+                        const legs = conflitosInteresse.ept.legislaturas;
+                        return legs.length > 1
+                          ? `As declarações de interesses das ${legs.slice(0, -1).join(', ')} e ${legs[legs.length - 1]} Legislaturas`
+                          : `As declarações de interesses da ${legs[0]} Legislatura`;
+                      })()}{' '}
+                      estão na Entidade para a Transparência e aguardam autorização da EpT para serem
+                      publicadas aqui. Pode consultá-las no{' '}
+                      <a href={conflitosInteresse.ept.url} target="_blank" rel="noopener noreferrer" style={{ color: tokens.colors.info, fontWeight: 600 }}>
+                        site da EpT
+                      </a>.
+                    </p>
+                  </div>
+                )}
+
+                {conflitosInteresse && conflitosInteresse.tem_declaracao !== false ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {/* Interest Status Card - Factual, non-accusatory */}
+                    {conflitosInteresse.legislatura && (
+                      <p style={{ margin: 0, fontSize: '0.8125rem', color: tokens.colors.textMuted, fontFamily: tokens.fonts.body }}>
+                        Última declaração publicada nos dados abertos do Parlamento: {conflitosInteresse.legislatura} Legislatura.
+                      </p>
+                    )}
+                    {/* Interest Status Card - only with sector matching data, which the release does not have yet */}
+                    {conflitosInteresse.regulated_sector_count != null && (
                     <InterestStatusCard
                       data={{
                         hasDeclaration: true,
@@ -3744,10 +3770,11 @@ const DeputadoDetalhes = () => {
                       }}
                       showDetails={true}
                     />
+                    )}
 
                     {/* Exclusivity Status */}
                     <ExclusivityBadge
-                      isExclusive={!conflitosInteresse.has_conflict_potential}
+                      isExclusive={conflitosInteresse.is_exclusive ?? !conflitosInteresse.has_conflict_potential}
                       showExplanation={true}
                     />
 
@@ -3885,164 +3912,9 @@ const DeputadoDetalhes = () => {
                               {conflitosInteresse.full_name}
                             </p>
                           </div>
-
-                          {conflitosInteresse.dgf_number && (
-                            <div>
-                              <label style={{
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.75rem',
-                                fontWeight: '600',
-                                color: tokens.colors.textSecondary,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em'
-                              }}>
-                                Número DGF
-                              </label>
-                              <p style={{
-                                fontFamily: tokens.fonts.mono,
-                                color: tokens.colors.textPrimary,
-                                marginTop: '0.25rem'
-                              }}>
-                                {conflitosInteresse.dgf_number}
-                              </p>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
-
-                    {/* Marital Status and Regime */}
-                    {(conflitosInteresse.marital_status || conflitosInteresse.matrimonial_regime || conflitosInteresse.spouse_name) && (
-                      <div style={{
-                        backgroundColor: tokens.colors.bgSecondary,
-                        borderRadius: '4px',
-                        border: `1px solid ${tokens.colors.border}`
-                      }}>
-                        <div style={{
-                          padding: '1rem 1.5rem',
-                          borderBottom: `1px solid ${tokens.colors.border}`
-                        }}>
-                          <h4 style={{
-                            fontFamily: tokens.fonts.headline,
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            color: tokens.colors.textPrimary,
-                            display: 'flex',
-                            alignItems: 'center',
-                            margin: 0
-                          }}>
-                            <Heart style={{ height: '20px', width: '20px', color: tokens.colors.accent, marginRight: '0.5rem' }} />
-                            Estado Civil e Regime Matrimonial
-                          </h4>
-                        </div>
-                        <div style={{ padding: '1rem 1.5rem' }}>
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                            gap: '1.5rem'
-                          }}>
-                            {conflitosInteresse.marital_status && (
-                              <div>
-                                <label style={{
-                                  fontFamily: tokens.fonts.body,
-                                  fontSize: '0.75rem',
-                                  fontWeight: '600',
-                                  color: tokens.colors.textSecondary,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em'
-                                }}>
-                                  Estado Civil
-                                </label>
-                                <p style={{
-                                  fontFamily: tokens.fonts.body,
-                                  color: tokens.colors.textPrimary,
-                                  marginTop: '0.25rem'
-                                }}>
-                                  {conflitosInteresse.marital_status}
-                                </p>
-                              </div>
-                            )}
-
-                            {conflitosInteresse.matrimonial_regime && (
-                              <div>
-                                <label style={{
-                                  fontFamily: tokens.fonts.body,
-                                  fontSize: '0.75rem',
-                                  fontWeight: '600',
-                                  color: tokens.colors.textSecondary,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em'
-                                }}>
-                                  Regime Matrimonial
-                                </label>
-                                <p style={{
-                                  fontFamily: tokens.fonts.body,
-                                  color: tokens.colors.textPrimary,
-                                  marginTop: '0.25rem'
-                                }}>
-                                  {conflitosInteresse.matrimonial_regime}
-                                </p>
-                              </div>
-                            )}
-
-                            {conflitosInteresse.spouse_name && (
-                              <div>
-                                <label style={{
-                                  fontFamily: tokens.fonts.body,
-                                  fontSize: '0.75rem',
-                                  fontWeight: '600',
-                                  color: tokens.colors.textSecondary,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em'
-                                }}>
-                                  Nome do Cônjuge
-                                </label>
-                                <div style={{ marginTop: '0.25rem' }}>
-                                  {conflitosInteresse.spouse_deputy ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                      <Link
-                                        to={getDeputadoUrl(conflitosInteresse.spouse_deputy.cad_id || conflitosInteresse.spouse_deputy.id)}
-                                        style={{
-                                          fontFamily: tokens.fonts.body,
-                                          color: tokens.colors.primary,
-                                          fontWeight: '500',
-                                          textDecoration: 'none'
-                                        }}
-                                      >
-                                        {conflitosInteresse.spouse_name}
-                                      </Link>
-                                      <span style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        padding: '0.25rem 0.5rem',
-                                        borderRadius: '2px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: '500',
-                                        backgroundColor: colorSchemes.blue.bg,
-                                        color: colorSchemes.blue.text,
-                                        border: `1px solid ${colorSchemes.blue.border}`,
-                                        width: 'fit-content'
-                                      }}>
-                                        <Users style={{ height: '12px', width: '12px', marginRight: '0.25rem' }} />
-                                        Também Deputado/a ({conflitosInteresse.spouse_deputy.partido_sigla})
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <p style={{
-                                      fontFamily: tokens.fonts.body,
-                                      color: tokens.colors.textPrimary,
-                                      fontWeight: '500'
-                                    }}>
-                                      {conflitosInteresse.spouse_name}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Transparency Note */}
                     <div style={{
@@ -4076,7 +3948,7 @@ const DeputadoDetalhes = () => {
                       </div>
                     </div>
                   </div>
-                ) : (
+                ) : conflitosInteresse?.ept?.pendente ? null : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {/* Missing Declaration Status */}
                     <InterestStatusCard

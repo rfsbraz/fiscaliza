@@ -103,3 +103,24 @@ from m
 join legislature_days l on l.legislature = m.legislature
 left join electoral_circles c on c.legislature = m.legislature and c.circle_id = m.circle_id
 left join g on g.legislature = m.legislature and g.cadastro_id = m.cadastro_id;
+
+-- deputy_initiatives: one row per initiative and deputy who signed it.
+create or replace view deputy_initiatives as
+select distinct legislature, initiative_id, cadastro_id
+from initiative_authors
+where author_type = 'deputy' and cadastro_id is not null;
+
+-- initiative_outcome: each initiative's latest decisive plenary vote (final global vote, the
+-- final global vote on a decree after a veto, global vote or deliberation vote) and its result.
+-- Votes on the generality, on the details or in committee do not decide an initiative.
+create or replace view initiative_outcome as
+select
+    iv.initiative_legislature as legislature,
+    iv.initiative_id,
+    arg_max(v.result, struct_pack(d := v.date, id := v.vote_id)) as result,
+    max(v.date) as decided_on
+from initiative_votes iv
+join votes v on v.vote_id = iv.vote_id
+where iv.body = 'plenary'
+  and iv.phase in ('Votação final global', 'Votação final global decreto', 'Votação global', 'Votação Deliberação')
+group by all;

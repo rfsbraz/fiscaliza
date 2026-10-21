@@ -6,91 +6,91 @@
       "path": "codes_legend",
       "type": "mapping",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4579"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4451"
     },
     {
       "path": "summary",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4142"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4014"
     },
     {
       "path": "summary.institutional_absence",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4204"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4076"
     },
     {
       "path": "summary.justified_absence",
       "type": "number",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4230"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4102"
     },
     {
       "path": "summary.present",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4143"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4015"
     },
     {
       "path": "summary.total_sessions",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4142"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4014"
     },
     {
       "path": "summary.unjustified_absence",
       "type": "number",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4256"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4128"
     },
     {
       "path": "timeline",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4431"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4303"
     },
     {
       "path": "timeline[].attendance_description",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4498"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4370"
     },
     {
       "path": "timeline[].date",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4485"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4357"
     },
     {
       "path": "timeline[].justification",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4521"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4393"
     },
     {
       "path": "timeline[].observations",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4532"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4404"
     },
     {
       "path": "timeline[].reason",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4510"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4382"
     },
     {
       "path": "timeline[].session_type",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4506"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4378"
     },
     {
       "path": "timeline[].status",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4452"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:4324"
     }
   ],
   "dropped": []
