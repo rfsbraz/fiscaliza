@@ -3,8 +3,8 @@
  * Central configuration for API base URL
  */
 
-// Use environment variable if available, otherwise use production API
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fiscaliza.pt/api';
+// The API is served on the same origin as the site; the Vite dev server proxies /api to Flask.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 
 /**

@@ -5,6 +5,37 @@ import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner, Section } from './common';
 
+const PainelIndisponivel = ({ titulo, mensagem }) => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '0.75rem',
+      padding: '1.5rem',
+      border: `1px dashed ${tokens.colors.border}`,
+      borderRadius: '4px',
+    }}
+  >
+    <AlertCircle size={18} style={{ color: tokens.colors.textMuted, flexShrink: 0, marginTop: '0.125rem' }} />
+    <div>
+      <h3
+        style={{
+          fontFamily: tokens.fonts.body,
+          fontSize: '0.875rem',
+          fontWeight: 600,
+          color: tokens.colors.textPrimary,
+          marginBottom: '0.25rem',
+        }}
+      >
+        {titulo}
+      </h3>
+      <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.8125rem', color: tokens.colors.textSecondary }}>
+        {mensagem}
+      </p>
+    </div>
+  </div>
+);
+
 const AgendaPage = () => {
   const [agendaHoje, setAgendaHoje] = useState(null);
   const [agendaSemana, setAgendaSemana] = useState(null);
@@ -17,42 +48,29 @@ const AgendaPage = () => {
     fetchDados();
   }, []);
 
+  // Each panel loads and fails on its own. Today and the week still come from the old
+  // agenda code until the agenda mart lands, so a failed request there must not take the
+  // votes and the stats down with it.
   const fetchDados = async () => {
-    try {
-      setLoading(true);
-
-      const [agendaHojeRes, agendaSemanaRes, votacoesRes, estatisticasRes] = await Promise.all([
-        apiFetch('agenda/hoje'),
-        apiFetch('agenda/semana'),
-        apiFetch('votacoes/recentes?limite=5'),
-        apiFetch('estatisticas/atividade')
-      ]);
-
-      if (agendaHojeRes.ok) {
-        const agendaHojeData = await agendaHojeRes.json();
-        setAgendaHoje(agendaHojeData);
+    setLoading(true);
+    const pedidos = [
+      ['agenda/hoje', () => apiFetch('agenda/hoje'), setAgendaHoje],
+      ['agenda/semana', () => apiFetch('agenda/semana'), setAgendaSemana],
+      ['votacoes/recentes', () => apiFetch('votacoes/recentes?limite=5'), setVotacoesRecentes],
+      ['estatisticas/atividade', () => apiFetch('estatisticas/atividade'), setEstatisticas],
+    ];
+    const resultados = await Promise.allSettled(
+      pedidos.map(([, pedido]) => pedido().then((res) => res.json()))
+    );
+    resultados.forEach((resultado, i) => {
+      const [nome, , setter] = pedidos[i];
+      if (resultado.status === 'fulfilled') {
+        setter(resultado.value);
+      } else {
+        console.error(`Erro ao carregar ${nome}:`, resultado.reason);
       }
-
-      if (agendaSemanaRes.ok) {
-        const agendaSemanaData = await agendaSemanaRes.json();
-        setAgendaSemana(agendaSemanaData);
-      }
-
-      if (votacoesRes.ok) {
-        const votacoesData = await votacoesRes.json();
-        setVotacoesRecentes(votacoesData);
-      }
-
-      if (estatisticasRes.ok) {
-        const estatisticasData = await estatisticasRes.json();
-        setEstatisticas(estatisticasData);
-      }
-
-    } catch (error) {
-      console.error('Erro ao carregar dados da agenda:', error);
-    } finally {
-      setLoading(false);
-    }
+    });
+    setLoading(false);
   };
 
   const formatarHora = (hora) => {
@@ -131,15 +149,15 @@ const AgendaPage = () => {
           transition={{ delay: 0.1 }}
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: '1rem',
           }}
         >
           {[
             { icon: Users, label: 'SESSÕES PLENÁRIAS', value: estatisticas.estatisticas.sessoes_plenarias?.total_ano || 0, sublabel: 'este ano', color: tokens.colors.primary },
-            { icon: Vote, label: 'VOTAÇÕES', value: estatisticas.estatisticas.votacoes?.total_ano || 0, sublabel: `${estatisticas.estatisticas.votacoes?.taxa_aprovacao || 0}% aprovadas`, color: tokens.colors.primary },
+            { icon: Vote, label: 'VOTAÇÕES', value: estatisticas.estatisticas.votacoes?.total_ano || 0, sublabel: estatisticas.estatisticas.votacoes?.taxa_aprovacao != null ? `${estatisticas.estatisticas.votacoes.taxa_aprovacao}% aprovadas` : 'em plenário', color: tokens.colors.primary },
             { icon: FileText, label: 'INICIATIVAS', value: estatisticas.estatisticas.iniciativas?.apresentadas || 0, sublabel: 'apresentadas', color: '#7C3AED' },
-            { icon: Activity, label: 'ASSIDUIDADE', value: `${estatisticas.estatisticas.assiduidade?.media_presencas || 0}%`, sublabel: 'média', color: '#D97706' },
+            ...(estatisticas.estatisticas.assiduidade?.media_presencas != null ? [{ icon: Activity, label: 'ASSIDUIDADE', value: `${estatisticas.estatisticas.assiduidade.media_presencas}%`, sublabel: 'média', color: '#D97706' }] : []),
           ].map((stat) => (
             <div
               key={stat.label}
@@ -241,6 +259,8 @@ const AgendaPage = () => {
 
         {/* Tab Content */}
         <div style={{ padding: '1.5rem' }}>
+          {activeTab === 'hoje' && !agendaHoje && <PainelIndisponivel titulo="Agenda de hoje indisponível" mensagem="A agenda do Parlamento ainda não está disponível nos dados abertos que usamos. Vai aparecer aqui quando for publicada." />}
+
           {activeTab === 'hoje' && agendaHoje && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -484,6 +504,8 @@ const AgendaPage = () => {
             </div>
           )}
 
+          {activeTab === 'semana' && !agendaSemana && <PainelIndisponivel titulo="Agenda da semana indisponível" mensagem="A agenda do Parlamento ainda não está disponível nos dados abertos que usamos. Vai aparecer aqui quando for publicada." />}
+
           {activeTab === 'semana' && agendaSemana && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -683,6 +705,8 @@ const AgendaPage = () => {
             </div>
           )}
 
+          {activeTab === 'votacoes' && !votacoesRecentes && <PainelIndisponivel titulo="Votações indisponíveis" mensagem="Não foi possível carregar as votações recentes. Tente novamente mais tarde." />}
+
           {activeTab === 'votacoes' && votacoesRecentes && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -757,6 +781,7 @@ const AgendaPage = () => {
                           }}
                         >
                           {new Date(votacao.data).toLocaleDateString('pt-PT')}
+                          {votacao.unanime && ' · unanimidade'}
                         </span>
                       </div>
                       <span
@@ -767,8 +792,8 @@ const AgendaPage = () => {
                           fontWeight: 600,
                           borderRadius: '2px',
                           textTransform: 'uppercase',
-                          color: votacao.resultado === 'aprovado' ? tokens.colors.primary : tokens.colors.accent,
-                          backgroundColor: votacao.resultado === 'aprovado' ? '#F0F7F4' : '#FEF2F2',
+                          color: votacao.resultado?.toLowerCase().startsWith('aprovad') ? tokens.colors.primary : tokens.colors.accent,
+                          backgroundColor: votacao.resultado?.toLowerCase().startsWith('aprovad') ? '#F0F7F4' : '#FEF2F2',
                         }}
                       >
                         {votacao.resultado}
@@ -780,12 +805,12 @@ const AgendaPage = () => {
                         <div
                           style={{
                             fontFamily: tokens.fonts.mono,
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
                             color: tokens.colors.primary,
                           }}
                         >
-                          {votacao.votos_favor}
+                          {votacao.favor.join(', ') || '-'}
                         </div>
                         <div
                           style={{
@@ -802,12 +827,12 @@ const AgendaPage = () => {
                         <div
                           style={{
                             fontFamily: tokens.fonts.mono,
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
                             color: tokens.colors.accent,
                           }}
                         >
-                          {votacao.votos_contra}
+                          {votacao.contra.join(', ') || '-'}
                         </div>
                         <div
                           style={{
@@ -824,12 +849,12 @@ const AgendaPage = () => {
                         <div
                           style={{
                             fontFamily: tokens.fonts.mono,
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
                             color: '#D97706',
                           }}
                         >
-                          {votacao.abstencoes}
+                          {votacao.abstencao.join(', ') || '-'}
                         </div>
                         <div
                           style={{
@@ -839,19 +864,19 @@ const AgendaPage = () => {
                             textTransform: 'uppercase',
                           }}
                         >
-                          Abstenções
+                          Abstenção
                         </div>
                       </div>
                       <div>
                         <div
                           style={{
                             fontFamily: tokens.fonts.mono,
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
                             color: tokens.colors.textMuted,
                           }}
                         >
-                          {votacao.ausencias}
+                          {votacao.ausentes.join(', ') || '-'}
                         </div>
                         <div
                           style={{
@@ -861,7 +886,7 @@ const AgendaPage = () => {
                             textTransform: 'uppercase',
                           }}
                         >
-                          Ausências
+                          Ausentes
                         </div>
                       </div>
                     </div>
@@ -943,47 +968,6 @@ const AgendaPage = () => {
               )}
             </div>
           )}
-        </div>
-      </motion.div>
-
-      {/* Aviso sobre dados simulados */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '0.75rem',
-          padding: '1rem',
-          backgroundColor: tokens.colors.bgSecondary,
-          border: `1px solid ${tokens.colors.border}`,
-          borderLeft: `3px solid ${tokens.colors.accent}`,
-          borderRadius: '4px',
-        }}
-      >
-        <AlertCircle size={18} style={{ color: tokens.colors.accent, flexShrink: 0, marginTop: '0.125rem' }} />
-        <div>
-          <h4
-            style={{
-              fontFamily: tokens.fonts.body,
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              color: tokens.colors.textPrimary,
-              marginBottom: '0.25rem',
-            }}
-          >
-            Dados Demonstrativos
-          </h4>
-          <p
-            style={{
-              fontFamily: tokens.fonts.body,
-              fontSize: '0.8125rem',
-              color: tokens.colors.textSecondary,
-            }}
-          >
-            Os dados apresentados são simulados para demonstração. A integração com dados reais será implementada em futuras versões.
-          </p>
         </div>
       </motion.div>
     </div>

@@ -9,7 +9,8 @@ Ids and made-up names only, no real people. Two legislatures:
 
 Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) and every
 tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP)
-in both legislatures, and FRS (PS) in XVI only.
+in both legislatures, and FRS (PS) in XVI only. Votes, initiatives and interventions for the
+agenda page are in tests/site_agenda.py.
 """
 
 import hashlib
@@ -19,6 +20,7 @@ from pathlib import Path
 import duckdb
 
 from fiscaliza_data import sync
+from tests.site_agenda import agenda_tables
 
 TAG = "data-2026-10-20"
 EXTRACT = "2026-10-19"
@@ -156,6 +158,10 @@ def build_release(root):
         "election_url varchar, note varchar)"
     )
     con.executemany("insert into coalitions values (?, ?, ?, ?, ?, ?, ?, ?, ?)", coalitions)
+    agenda = agenda_tables()
+    for table, (columns, rows) in agenda.items():
+        con.execute(f"create table {table} ({columns})")
+        con.executemany(f"insert into {table} values ({', '.join('?' * len(rows[0]))})", rows)  # noqa: S608
     marts = {}
     for mart in (
         "legislatures",
@@ -165,6 +171,7 @@ def build_release(root):
         "electoral_circles",
         "parliamentary_groups",
         "coalitions",
+        *agenda,
     ):
         path = out / f"{mart}.parquet"
         con.execute(f"copy {mart} to '{path}' (format parquet)")

@@ -197,6 +197,7 @@ const Dashboard = ({ stats }) => {
                   innerRadius={50}
                   outerRadius={90}
                   dataKey="deputados"
+                  nameKey="sigla"
                   stroke="#FFFFFF"
                   strokeWidth={2}
                 >
