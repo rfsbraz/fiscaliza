@@ -146,6 +146,7 @@ def plan(args, work, commit=None):
                 str(FRONTEND / "public" / "api"),
                 "--data-dir",
                 str(data_dir),
+                *(["--jobs", str(args.export_jobs)] if args.export_jobs else []),
             ],
         ),
         Step("install", ["npm", "ci"], cwd=FRONTEND),
@@ -221,6 +222,7 @@ def parse_args(argv=None):
     source.add_argument("--release", metavar="DIR", help="a `release build` output folder (previews only)")
     d.add_argument("--branch", help=f"Pages branch to deploy (default {PREVIEW_BRANCH})")
     d.add_argument("--production", action="store_true", help=f"deploy production ({PRODUCTION_BRANCH})")
+    d.add_argument("--export-jobs", type=int, help="processes for the export (default: one per CPU)")
     d.add_argument("--work", help="scratch folder (default: a temporary one, removed afterwards)")
     d.add_argument("--keep", action="store_true", help="keep the temporary scratch folder")
     d.add_argument("--dry-run", action="store_true", help="print the steps and run nothing")

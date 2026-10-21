@@ -76,6 +76,8 @@ Options:
   `--production` with `--release`.
 - `--release DIR` takes a `release build` folder you already have, for a preview only: it can be
   older than what is live.
+- `--export-jobs N` caps the export's processes (default: one per CPU the machine reports). CI
+  uses 2, and the deploy step stops after 45 minutes; a deploy takes about 5 minutes on 8 cores.
 - `--work DIR` keeps the scratch files in that folder instead of a temporary one.
 - `--dry-run` fetches main, prints every command and runs nothing else.
 - `WRANGLER` overrides the wrangler command. The default is `npx --yes wrangler@4.151.3`, pinned
