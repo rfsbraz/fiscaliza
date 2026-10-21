@@ -142,6 +142,12 @@ test('attendance and agenda say not available until S11 and S13', async () => {
   assert.equal((await a.get('agenda/semana')).status, 503);
 });
 
+test('attendance is served as soon as the export adds it to the deputy file', async () => {
+  const files = { ...FILES, 'deputados/7.json': { ...FILES['deputados/7.json'], attendance: { taxa: 0.9 } } };
+  assert.deepEqual((await api(files).get('deputados/7/attendance')).body, { taxa: 0.9 });
+  assert.equal((await api(files).get('deputados/8/attendance')).status, 503);
+});
+
 test('requests the export does not render are not found', async () => {
   const a = api();
   assert.equal((await a.get('estatisticas?legislatura=XVI')).status, 404);

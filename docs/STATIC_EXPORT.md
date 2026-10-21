@@ -53,9 +53,14 @@ deputy's activities in a legislature they never served in) are not rendered and 
 
 Attendance (`deputados/{id}/attendance`, S11) and the agenda for today and this week
 (`agenda/hoje`, `agenda/semana`, S13) wait on their parlamento-aberto marts. The browser answers
-them 503 "not available" with the step that brings them, and the pages show their notice. When
-those steps land they are rendered the same way: attendance into each deputy's file, the agenda
-into a file per week, with "today" picked in the browser in Europe/Lisbon time.
+them 503 "not available" with the step that brings them, and the pages show their notice.
+
+Adding attendance in S11 is a registration: one `DeputySection` in `DEPUTY_SECTIONS`
+(`fiscaliza_data/export.py`) that renders its service into an `attendance` field of each
+deputy's file. The browser side already maps `deputados/{id}/attendance` to that field and
+serves it as soon as it is there; its `PENDING` entry in `staticApi.js` can then go. The agenda
+(S13) gets a file per week in the same way, with "today" picked in the browser in
+Europe/Lisbon time.
 
 The deputy and party endpoints render once S5 (#68), S6 (#79) and S7 (#81) are on master; the
 export picks their services up on its own.

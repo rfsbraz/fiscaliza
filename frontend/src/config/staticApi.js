@@ -10,7 +10,6 @@
  */
 
 const MAX_PER_PAGE = 100;
-const DEPUTY = /^deputados\/(\d+)\/(detalhes|atividades|conflitos-interesse|voting-analytics|attendance)$/;
 const ROMAN = [
   [10, 'X'],
   [9, 'IX'],
@@ -143,6 +142,32 @@ function activities(bundle, params) {
   });
 }
 
+function votingAnalytics(bundle, params) {
+  if (!only(params, ['legislatura'])) return notFound();
+  const leg = params.get('legislatura');
+  const found = leg
+    ? bundle.voting_analytics?.[legislatureName(leg)]
+    : (bundle.voting_analytics?.[bundle.legislatura_atual] ?? bundle.voting_analytics_atual);
+  return found ? answer(200, found) : notFound();
+}
+
+// A field of the deputy's file, for an endpoint that takes no parameters.
+const field = (name) => (bundle, params) =>
+  only(params, []) && bundle[name] !== undefined ? answer(200, bundle[name]) : null;
+
+// Every endpoint of the deputy page and how it is answered from the deputy's file
+// (fiscaliza_data/export.py, DEPUTY_SECTIONS). A section missing from the file answers 404,
+// or 503 "not available" while it is in PENDING. Attendance (S11) is wired already: once the
+// export adds an `attendance` field it is served, and its PENDING entry can go.
+const DEPUTY_SECTIONS = {
+  detalhes: field('detalhes'),
+  'conflitos-interesse': field('conflitos_interesse'),
+  atividades: activities,
+  'voting-analytics': votingAnalytics,
+  attendance: field('attendance'),
+};
+const DEPUTY = new RegExp(`^deputados/(\\d+)/(${Object.keys(DEPUTY_SECTIONS).join('|')})$`);
+
 /**
  * createStaticApi({ load }) where load(path) resolves to { ok, status, text } for a file path
  * relative to the export root. get(endpoint) resolves to { status, body }.
@@ -208,20 +233,11 @@ export function createStaticApi({ load }) {
     }
     const deputy = route.match(DEPUTY);
     if (deputy) {
-      const [, id, what] = deputy;
-      if (what === 'attendance') return pending('attendance');
+      const [, id, endpoint] = deputy;
       const bundle = await file(`deputados/${id}.json`);
-      if (bundle === null) return notFound();
-      if (what === 'atividades') return activities(bundle, params);
-      if (what === 'voting-analytics' && only(params, ['legislatura'])) {
-        const leg = params.get('legislatura');
-        const found = leg
-          ? bundle.voting_analytics?.[legislatureName(leg)]
-          : (bundle.voting_analytics?.[bundle.legislatura_atual] ?? bundle.voting_analytics_atual);
-        return found ? answer(200, found) : notFound();
-      }
-      const section = { detalhes: 'detalhes', 'conflitos-interesse': 'conflitos_interesse' }[what];
-      return section && none && bundle[section] ? answer(200, bundle[section]) : notFound();
+      const found = bundle === null ? null : DEPUTY_SECTIONS[endpoint](bundle, params);
+      if (found !== null && found.status !== 404) return found;
+      return endpoint in PENDING ? pending(endpoint) : found || notFound();
     }
     const party = route.match(/^partidos\/(.+)\/(deputados|voting-analytics)$/);
     if (party) {

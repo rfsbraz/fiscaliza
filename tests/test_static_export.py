@@ -176,6 +176,19 @@ def test_a_new_render_replaces_the_old_one(data_dir, tmp_path):
     assert result.bytes == sum(p.stat().st_size for p in _files(target))
 
 
+def test_a_new_deputy_endpoint_is_one_registration(data_dir, tmp_path, monkeypatch):
+    # How attendance (S11) gets in: one DeputySection here, one entry in staticApi.js (there
+    # already). Any existing module stands in for its service.
+    section = export.DeputySection(
+        "attendance", "fiscaliza_data.sync", lambda s, con, cad, legs: {"attendance": {"id": cad, "legs": legs}}
+    )
+    monkeypatch.setattr(export, "DEPUTY_SECTIONS", (*export.DEPUTY_SECTIONS, section))
+    out = tmp_path / "api"
+    export.export(data_dir, out, jobs=1)
+    [answer] = _static_answers(out, ["deputados/1/attendance"])
+    assert answer == {"status": 200, "body": {"id": 1, "legs": ["XVI", "XVII"]}}
+
+
 def test_cli_renders_and_reports(data_dir, tmp_path):
     run = subprocess.run(
         [sys.executable, "-m", "fiscaliza_data.export", "--data-dir", str(data_dir), "--out", str(tmp_path / "api")],

@@ -20,7 +20,8 @@ fails before swapping if it reaches MAX_FILES files or any file reaches MAX_FILE
 that fit the common static hosts.
 
 Not rendered yet: attendance (S11) and the agenda for today and this week (S13). The browser
-answers them "not available" until their marts land; then they get files here the same way.
+answers them "not available" until their marts land. Attendance then is one more entry in
+DEPUTY_SECTIONS below (and one in staticApi.js); the agenda gets its files in _site_files.
 The deputy and party endpoints of S5, S6 and S7 render once their services are on master
 (app.services.deputies, voting and parties); until then their files are left out.
 """
@@ -34,6 +35,7 @@ import shutil
 import sys
 import tempfile
 import unicodedata
+from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from decimal import Decimal
@@ -84,7 +86,7 @@ def slugs(names):
 
 
 def _optional(name):
-    """A service module that is not on master yet (S5 to S7), or None."""
+    """A service module that may not be on master yet, or None."""
     try:
         return importlib.import_module(name)
     except ModuleNotFoundError as e:
@@ -99,7 +101,6 @@ def _services():
     return {
         "core": core,
         "activity": activity,
-        "deputies": _optional("app.services.deputies"),
         "voting": _optional("app.services.voting"),
         "parties": _optional("app.services.parties"),
     }
@@ -220,14 +221,29 @@ def _party_files(con, svc, w):
 # One file per deputy
 
 
+@dataclass(frozen=True)
+class DeputySection:
+    """One deputy endpoint, kept in the deputy's file.
+
+    ``endpoint`` is the path after ``deputados/{id}/``. ``module`` is the service module behind
+    it; the section is left out while that module does not exist. ``render(service, con,
+    cadastro_id, legislatures)`` returns the fields it adds to the file (legislatures: the ones
+    the person served in, oldest first). The browser side (frontend/src/config/staticApi.js,
+    DEPUTY_SECTIONS) reads the same fields.
+    """
+
+    endpoint: str
+    module: str
+    render: Callable
+
+
 def _activities(deputies, con, cadastro_id, legislature):
     """The activities answer for a legislature with every intervention, newest first; the
     browser filters, sorts and pages them."""
-    per_page = deputies.MAX_PER_PAGE
     first, items = _all_pages(
         lambda page, n: deputies.atividades(con, cadastro_id, legislatura=legislature, page=page, per_page=n),
         "intervencoes",
-        per_page,
+        deputies.MAX_PER_PAGE,
     )
     first = dict(first)
     first.pop("intervention_metadata")
@@ -235,9 +251,56 @@ def _activities(deputies, con, cadastro_id, legislature):
     return first
 
 
-def deputy_bundle(con, svc, cadastro_id):
+def _voting(voting, con, cadastro_id, legislatures):
+    from app.services.core import NotFound
+
+    found = {}
+    for leg in legislatures:
+        try:
+            found[leg] = voting.deputado_voting_analytics(con, cadastro_id, leg)
+        except NotFound:
+            pass
+    fields = {"voting_analytics": found}
+    if legislatures[-1] not in found:
+        # The default (no legislatura) is the latest legislature served, which the service
+        # finds even where it refuses that legislature by name (the Constituinte).
+        try:
+            fields["voting_analytics_atual"] = voting.deputado_voting_analytics(con, cadastro_id)
+        except NotFound:
+            pass
+    return fields
+
+
+# Every endpoint of the deputy page. A new one (attendance in S11) is one more entry here and
+# one in DEPUTY_SECTIONS in staticApi.js.
+DEPUTY_SECTIONS = (
+    DeputySection("detalhes", "app.services.deputies", lambda s, con, cad, legs: {"detalhes": s.detalhes(con, cad)}),
+    DeputySection(
+        "conflitos-interesse",
+        "app.services.deputies",
+        lambda s, con, cad, legs: {"conflitos_interesse": s.conflitos_interesse(con, cad)},
+    ),
+    DeputySection(
+        "atividades",
+        "app.services.deputies",
+        lambda s, con, cad, legs: {"atividades": {leg: _activities(s, con, cad, leg) for leg in legs}},
+    ),
+    DeputySection("voting-analytics", "app.services.voting", _voting),
+)
+
+
+def _deputy_sections():
+    """[(section, service module)] for the sections whose service exists."""
+    found = []
+    for section in DEPUTY_SECTIONS:
+        module = _optional(section.module)
+        if module is not None:
+            found.append((section, module))
+    return found
+
+
+def deputy_bundle(con, sections, cadastro_id):
     """Everything the deputy page reads about one person."""
-    deputies, voting = svc["deputies"], svc["voting"]
     legs = [
         r[0]
         for r in con.execute(
@@ -250,43 +313,26 @@ def deputy_bundle(con, svc, cadastro_id):
         ).fetchall()
     ]
     bundle = {"id_cadastro": cadastro_id, "legislatura_atual": legs[-1]}
-    if deputies is not None:
-        bundle["detalhes"] = deputies.detalhes(con, cadastro_id)
-        bundle["conflitos_interesse"] = deputies.conflitos_interesse(con, cadastro_id)
-        bundle["atividades"] = {leg: _activities(deputies, con, cadastro_id, leg) for leg in legs}
-    if voting is not None:
-        found = {}
-        for leg in legs:
-            try:
-                found[leg] = voting.deputado_voting_analytics(con, cadastro_id, leg)
-            except _not_found(svc):
-                pass
-        bundle["voting_analytics"] = found
-        if legs[-1] not in found:
-            # The default (no legislatura) is the latest legislature served, which the service
-            # finds even where it refuses that legislature by name (the Constituinte).
-            try:
-                bundle["voting_analytics_atual"] = voting.deputado_voting_analytics(con, cadastro_id)
-            except _not_found(svc):
-                pass
+    for section, module in sections:
+        bundle.update(section.render(module, con, cadastro_id, legs))
     return bundle
 
 
 def _deputy_chunk(args):
     db, root, ids = args
-    svc = _services()
+    sections = _deputy_sections()
     w = _Writer(root)
     con = duckdb.connect(db, read_only=True)
     try:
         for cadastro_id in ids:
-            w.write(f"deputados/{cadastro_id}.json", deputy_bundle(con, svc, cadastro_id))
+            w.write(f"deputados/{cadastro_id}.json", deputy_bundle(con, sections, cadastro_id))
     finally:
         con.close()
     return w.files
 
 
-def _deputy_files(db, con, svc, root, jobs):
-    if svc["deputies"] is None and svc["voting"] is None:
+def _deputy_files(db, con, root, jobs):
+    if not _deputy_sections():
         return []
     ids = [r[0] for r in con.execute("select distinct cadastro_id from deputy_legislatures order by 1").fetchall()]
     chunks = [(db, str(root), ids[i : i + CHUNK]) for i in range(0, len(ids), CHUNK)]
@@ -323,7 +369,7 @@ def export(data_dir=DEFAULT_DATA_DIR, out="static/api", jobs=1):
         con = duckdb.connect(str(db), read_only=True)
         try:
             _site_files(con, svc, w)
-            files = w.files + _deputy_files(str(db), con, svc, work, jobs)
+            files = w.files + _deputy_files(str(db), con, work, jobs)
         finally:
             con.close()
         largest = _check(files)
