@@ -12,13 +12,13 @@
       "path": "distribuicao_circulos[].circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:437"
+      "read_at": "frontend/src/components/Dashboard.jsx:438"
     },
     {
       "path": "distribuicao_circulos[].deputados",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:461"
+      "read_at": "frontend/src/components/Dashboard.jsx:462"
     },
     {
       "path": "distribuicao_partidos",
@@ -36,13 +36,13 @@
       "path": "distribuicao_partidos[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:586"
+      "read_at": "frontend/src/components/Dashboard.jsx:587"
     },
     {
       "path": "distribuicao_partidos[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:614"
+      "read_at": "frontend/src/components/Dashboard.jsx:615"
     },
     {
       "path": "distribuicao_partidos[].sigla",
