@@ -3,33 +3,79 @@ name: Deploy
 # Fiscaliza on Cloudflare Pages, project fiscaliza (docs/DEPLOY.md). Every run builds the
 # parlamento-aberto commit in deploy/data-pin with deploy/pages.py:
 # - a push to master deploys production (Pages branch master);
-# - a pull request from this repo deploys a preview on a Pages branch named after its head ref.
+# - a pull request from this repo deploys a preview on a Pages branch named after its head ref,
+#   when it changes the site (PREVIEW_PATHS) or has the preview label.
 # The data moves when a PR moves the pin, so there is no schedule.
 on:
   push:
     branches: [master]
+  # labeled, so that adding the preview label deploys a PR that changes nothing in PREVIEW_PATHS.
   pull_request:
     branches: [master]
+    types: [opened, synchronize, reopened, labeled]
 
 permissions:
   contents: read
 
-# One deploy at a time across every trigger, and none cancelled halfway through an upload.
-concurrency:
-  group: pages-deploy
-  cancel-in-progress: false
-
 jobs:
-  deploy:
-    name: Pages Deploy
+  # Pull requests only: does this one need a preview? A paths filter on pull_request would also
+  # filter the labeled event, so a labeled PR outside those paths would never deploy.
+  changes:
+    name: Preview Needed
     # A fork's pull request gets no secrets and no deploy. Neither does Dependabot's: it doesn't
-    # get the Actions secrets either, and its bumps don't need a preview each.
+    # get the Actions secrets either, and its bumps don't need a preview each. Adding any label
+    # other than preview starts nothing.
     if: >-
-      github.event_name != 'pull_request' || (
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        github.event.pull_request.user.login != 'dependabot[bot]')
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      (github.event.action != 'labeled' || github.event.label.name == 'preview')
     # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
     runs-on: [self-hosted, homeberry]
+    timeout-minutes: 5
+    outputs:
+      preview: ${{ steps.check.outputs.preview }}
+    steps:
+      # The PR's merge commit and its base, trees only: enough for git diff --name-only.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout: .github
+      - id: check
+        env:
+          LABELED: ${{ contains(github.event.pull_request.labels.*.name, 'preview') }}
+          # What the site is built from, plus this workflow.
+          PREVIEW_PATHS: '^(frontend|fiscaliza_data|app|deploy)/|^\.github/workflows/deploy\.yml$'
+        run: |
+          # A failed diff fails the step, so the run goes red instead of quietly skipping.
+          changed=$(git diff --name-only HEAD^1 HEAD)
+          if [ "$LABELED" = true ]; then
+            echo "preview label"; preview=true
+          elif grep -E "$PREVIEW_PATHS" <<< "$changed"; then
+            preview=true
+          else
+            echo "nothing in PREVIEW_PATHS changed and no preview label"; preview=false
+          fi
+          echo "preview=$preview" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Pages Deploy
+    needs: changes
+    # Every push to master. A pull request only when the changes job says it needs a preview;
+    # !cancelled() lets the push run go ahead with the changes job skipped.
+    if: >-
+      !cancelled() && (
+        github.event_name == 'push' ||
+        needs.changes.outputs.preview == 'true')
+    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
+    runs-on: [self-hosted, homeberry]
+    # One deploy at a time across every trigger, and none cancelled halfway through an upload.
+    # On this job and not the workflow, so a run whose changes job says no never waits its turn.
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
     # A deploy takes about 5 minutes on 8 cores and over 45 on the runner's current 1 CPU; this
     # stops a stuck one from holding the runner.
     timeout-minutes: 90

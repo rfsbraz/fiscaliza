@@ -28,8 +28,12 @@ def test_skips_pull_requests_from_forks_and_dependabot():
 
 def test_one_deploy_at_a_time_and_none_cancelled():
     t = text()
-    block = re.search(r"\nconcurrency:\n((?:  .*\n)+)", t).group(1)
-    assert re.search(r"group: [^$\n]+\n", block), "one fixed group, not one per ref"
+    # On the deploy job, not the workflow: a run the changes job skips then never queues.
+    assert "\nconcurrency:" not in t
+    changes, deploy = re.search(r"\n  changes:\n(.*)\n  deploy:\n(.*)", t, re.S).groups()
+    assert "concurrency:" not in changes
+    block = re.search(r"\n    concurrency:\n((?:      .*\n)+)", deploy).group(1)
+    assert re.search(r"group: pages-deploy\n", block), "one fixed group, not one per ref"
     assert "${{" not in block
     assert "cancel-in-progress: false" in block
 
@@ -67,10 +71,59 @@ def test_wrangler_gets_node_22():
 
 
 def test_deploy_is_time_boxed_and_the_export_capped():
-    t = text()
+    t = text().split("\n  deploy:\n", 1)[1]
     job = int(re.search(r"\n    timeout-minutes: (\d+)", t).group(1))
     step = int(re.search(r"\n        timeout-minutes: (\d+)", t).group(1))
     assert (step, job) == (80, 90)
     # The export takes its workers from the cgroup CPU limit (cpu.max), so the runner's
     # current CPU cap applies without a hardcoded count.
     assert "EXPORT_WORKERS" not in t
+
+
+def preview_paths():
+    """The ERE the changes job matches each changed file against."""
+    return re.compile(re.search(r"PREVIEW_PATHS: '([^']+)'", text()).group(1))
+
+
+def test_pull_requests_also_trigger_on_labeled():
+    assert re.search(
+        r"pull_request:\s*\n\s*branches: \[master\]\s*\n\s*types: \[opened, synchronize, reopened, labeled\]",
+        text(),
+    )
+
+
+def test_only_site_paths_need_a_preview():
+    pattern = preview_paths()
+    for path in [
+        "frontend/src/App.jsx",
+        "fiscaliza_data/export.py",
+        "app/main.py",
+        "deploy/pages.py",
+        "deploy/data-pin",
+        ".github/workflows/deploy.yml",
+    ]:
+        assert pattern.search(path), path
+    for path in [
+        "README.md",
+        "docs/DEPLOY.md",
+        "tests/test_deploy_workflow.py",
+        ".github/workflows/ci.yml",
+        "scripts/frontend/x.py",
+        "myapp/main.py",
+    ]:
+        assert not pattern.search(path), path
+
+
+def test_the_preview_label_forces_a_preview_and_other_labels_start_nothing():
+    t = text()
+    # Adding some other label must not even start the changes job on the runner.
+    assert "github.event.action != 'labeled' || github.event.label.name == 'preview'" in t
+    assert "contains(github.event.pull_request.labels.*.name, 'preview')" in t
+
+
+def test_deploy_waits_for_the_changes_job_on_pull_requests_only():
+    t = text()
+    deploy = t.split("\n  deploy:\n", 1)[1]
+    assert "needs: changes" in deploy
+    assert "github.event_name == 'push'" in deploy
+    assert "needs.changes.outputs.preview == 'true'" in deploy
