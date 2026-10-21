@@ -9,7 +9,8 @@ Ids and made-up names only, no real people. Two legislatures:
 
 Person 1 sat for PS in XVI and for PSD in XVII. Coalitions: AD (PSD, CDS-PP) and CDU (PCP)
 in both legislatures, and FRS (PS) in XVI only. Votes, initiatives and interventions are in
-tests/site_votes.py.
+tests/site_votes.py, and the agenda page's in tests/site_agenda.py; both go into the same tables
+(ACTIVITY_SETS below).
 """
 
 import hashlib
@@ -19,6 +20,7 @@ from pathlib import Path
 import duckdb
 
 from fiscaliza_data import sync
+from tests.site_agenda import agenda_tables
 from tests.site_votes import voting_tables
 
 TAG = "data-2026-10-20"
@@ -99,7 +101,24 @@ def _rows():
     return mandates, memberships, deputies, coalitions
 
 
-def build_release(root):
+ACTIVITY_SETS = {"votes": voting_tables, "agenda": agenda_tables}
+
+
+def _tables(sets):
+    """The tables of every activity set, with rows from the sets named in ``sets`` only. A table
+    in more than one set must have the same columns in each."""
+    tables = {}
+    for name, build in ACTIVITY_SETS.items():
+        for table, (columns, rows) in build().items():
+            rows = list(rows) if name in sets else []
+            if table in tables:
+                assert columns == tables[table][0], f"{table}: {name} columns differ from another set"
+                rows = tables[table][1] + rows
+            tables[table] = (columns, rows)
+    return tables
+
+
+def build_release(root, sets=tuple(ACTIVITY_SETS)):
     """Write the release folder (Parquet files and manifest.json) and return its path."""
     out = Path(root) / TAG
     out.mkdir(parents=True)
@@ -144,10 +163,11 @@ def build_release(root):
         "election_url varchar, note varchar)"
     )
     con.executemany("insert into coalitions values (?, ?, ?, ?, ?, ?, ?, ?, ?)", coalitions)
-    voting = voting_tables()
-    for table, (columns, rows) in voting.items():
+    tables = _tables(sets)
+    for table, (columns, rows) in tables.items():
         con.execute(f"create table {table} ({columns})")
-        con.executemany(f"insert into {table} values ({', '.join('?' * len(rows[0]))})", rows)  # noqa: S608
+        if rows:
+            con.executemany(f"insert into {table} values ({', '.join('?' * len(rows[0]))})", rows)  # noqa: S608
     marts = {}
     for mart in (
         "legislatures",
@@ -157,7 +177,7 @@ def build_release(root):
         "electoral_circles",
         "parliamentary_groups",
         "coalitions",
-        *voting,
+        *tables,
     ):
         path = out / f"{mart}.parquet"
         con.execute(f"copy {mart} to '{path}' (format parquet)")
@@ -175,9 +195,11 @@ def build_release(root):
     return out
 
 
-def build_site_data(root):
-    """Sync the synthetic release into root/data and return that data folder."""
+def build_site_data(root, sets=tuple(ACTIVITY_SETS)):
+    """Sync the synthetic release into root/data and return that data folder. ``sets`` picks the
+    activity rows (ACTIVITY_SETS) to load; the tables are always there. The page tests load only
+    their own set so each keeps its hand-checked figures; the contracts load both."""
     root = Path(root)
     data_dir = root / "data"
-    sync.sync(data_dir, from_dir=build_release(root / "release"))
+    sync.sync(data_dir, from_dir=build_release(root / "release", sets))
     return data_dir

@@ -324,7 +324,7 @@ def votes_by_id(con, vote_ids):
     )
 
 
-def group_positions(con, vote_ids):
+def whole_group_positions(con, vote_ids):
     """Each group's position as a whole on the given votes."""
     if not vote_ids:
         return []
@@ -538,4 +538,73 @@ def group_activity(con, legislature, group_acronym):
                and position <> 'absent') as votes
         """,  # noqa: S608 - a fixed SQL fragment, values are bound
         {"legislature": legislature, "group": group_acronym},
+    )
+
+
+# Agenda page (S8)
+def recent_plenary_votes(con, legislature, limit):
+    """The latest plenary votes of a legislature, newest first, with the initiatives they
+    decided (lowest id first) and the phase."""
+    return _rows(
+        con,
+        """
+        with latest as (
+            select vote_id, date, result, unanimous, description
+            from votes
+            where legislature = ? and body = 'plenary'
+            order by date desc, vote_id desc
+            limit ?
+        )
+        select l.*,
+               list(i.title order by i.initiative_id) filter (where i.title is not null) as titles,
+               min(iv.phase) as phase
+        from latest l
+        left join initiative_votes iv on iv.vote_id = l.vote_id and iv.body = 'plenary'
+        left join initiatives i
+          on i.initiative_id = iv.initiative_id and i.legislature = iv.initiative_legislature
+        group by all
+        order by l.date desc, l.vote_id desc
+        """,
+        [legislature, limit],
+    )
+
+
+def group_positions(con, vote_ids):
+    """Published group positions of the given plenary votes, by group and then whole groups
+    before counts."""
+    if not vote_ids:
+        return []
+    return _rows(
+        con,
+        """
+        select vote_id, group_code, position, deputies
+        from vote_group_positions
+        where body = 'plenary' and list_contains(?, vote_id)
+        order by vote_id, group_code, deputies nulls first
+        """,
+        [list(vote_ids)],
+    )
+
+
+def activity_counts(con, start, end):
+    """Plenary meeting days (with a vote or an intervention), plenary votes by result,
+    initiatives presented and interventions between two days, both included."""
+    return _one(
+        con,
+        """
+        select
+            (select count(*) from (
+                select date from votes where body = 'plenary' and date between $start and $end
+                union
+                select meeting_date from interventions where meeting_date between $start and $end
+            )) as plenary_days,
+            (select count(*) from votes where body = 'plenary' and date between $start and $end) as votes,
+            (select count(*) from votes
+             where body = 'plenary' and date between $start and $end and result ilike 'aprovad%') as approved,
+            (select count(*) from votes
+             where body = 'plenary' and date between $start and $end and result ilike 'rejeitad%') as rejected,
+            (select count(*) from initiatives where first_event_date between $start and $end) as initiatives,
+            (select count(*) from interventions where meeting_date between $start and $end) as interventions
+        """,
+        {"start": start, "end": end},
     )

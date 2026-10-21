@@ -46,7 +46,7 @@ def _vote_items(con, votes):
     """{vote_id: (vote row, {group: position})} for the given vote ids."""
     ids = list(votes)
     breakdown = defaultdict(dict)
-    for row in repository.group_positions(con, ids):
+    for row in repository.whole_group_positions(con, ids):
         breakdown[row["vote_id"]][row["group_code"]] = POSITIONS[row["position"]]
     return {v["vote_id"]: (v, breakdown[v["vote_id"]]) for v in repository.votes_by_id(con, ids)}
 

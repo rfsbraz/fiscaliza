@@ -1,5 +1,5 @@
 -- Site views over a parlamento-aberto release. sync.py runs this file right after the
--- seating macros (the release's macros.sql, or seating.sql), so seated_on exists. Requests
+-- seating macros (seating.sql), so seated_on exists. Requests
 -- read these instead of repeating the rules.
 
 -- The day each legislature is read on: its last day once it has ended, the AR extract

@@ -17,6 +17,7 @@ if parent_dir not in sys.path:
 from config.settings import FLASK_CONFIG
 from database.models import db
 from app.routes.core import core_bp
+from app.routes.activity import activity_bp
 from app.routes.parlamento import parlamento_bp
 from app.routes.agenda import agenda_bp
 from app.routes.health import health_bp
@@ -90,6 +91,7 @@ app.debug = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
 CORS(app)
 
 app.register_blueprint(core_bp, url_prefix='/api')
+app.register_blueprint(activity_bp, url_prefix='/api')
 app.register_blueprint(parlamento_bp, url_prefix='/api')
 app.register_blueprint(agenda_bp, url_prefix='/api')
 app.register_blueprint(health_bp, url_prefix='/api')
