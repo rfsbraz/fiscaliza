@@ -179,7 +179,7 @@ def _deputy_index(con, core, w):
         "deputados",
         core.MAX_PER_PAGE,
     )
-    counts = dict(con.execute("select cadastro_id, count(*) from deputy_legislatures group by 1").fetchall())
+    counts = dict(con.execute("select cadastro_id, count(*) from deputy_elections group by 1").fetchall())
     w.write(
         "deputados.json",
         {
@@ -230,7 +230,7 @@ class DeputySection:
     ``endpoint`` is the path after ``deputados/{id}/``. ``module`` is the service module behind
     it; the section is left out while that module does not exist. ``render(service, con,
     cadastro_id, legislatures)`` returns the fields it adds to the file (legislatures: the ones
-    the person served in, oldest first). The browser side (frontend/src/config/staticApi.js,
+    the person was elected or seated in, oldest first). The browser side (frontend/src/config/staticApi.js,
     DEPUTY_SECTIONS) reads the same fields.
     """
 
@@ -312,7 +312,7 @@ def deputy_bundle(con, sections, cadastro_id):
         r[0]
         for r in con.execute(
             """
-            select dl.legislature from deputy_legislatures dl
+            select dl.legislature from deputy_elections dl
             join legislature_days l using (legislature)
             where dl.cadastro_id = ? order by l.start_date
             """,
@@ -364,7 +364,7 @@ def _deputy_chunk(args):
 def _deputy_files(db, con, root, jobs):
     if not _deputy_sections():
         return []
-    ids = [r[0] for r in con.execute("select distinct cadastro_id from deputy_legislatures order by 1").fetchall()]
+    ids = [r[0] for r in con.execute("select distinct cadastro_id from deputy_elections order by 1").fetchall()]
     if jobs <= 1:
         return _render_deputies(con, str(root), ids)
     chunks = [(db, str(root), ids[i : i + CHUNK]) for i in range(0, len(ids), CHUNK)]

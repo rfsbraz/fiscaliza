@@ -72,8 +72,9 @@ const LegislatureDropdown = ({
           legislaturesToShow = deputyData.mandatos_historico.map(mandate => ({
             numero: mandate.legislatura_numero,
             designacao: mandate.legislatura_nome,
-            data_inicio: mandate.mandato_inicio,
-            data_fim: mandate.mandato_fim,
+            // A legislature the person was elected in but held no seat: the dates of the situation.
+            data_inicio: mandate.mandato_inicio ?? mandate.situacao_inicio,
+            data_fim: mandate.mandato_inicio ? mandate.mandato_fim : mandate.situacao_fim,
             is_current: mandate.is_current
           }));
         }

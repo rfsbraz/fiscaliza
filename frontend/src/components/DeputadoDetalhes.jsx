@@ -379,6 +379,27 @@ const StatisticsError = ({ error, onRetry }) => (
   </section>
 );
 
+const formatDay = (iso) => new Date(iso).toLocaleDateString('pt-PT');
+
+// The latest AR situation of a mandate, in words, with its dates. Suspenso(Eleito) and the other
+// suspensions read "Mandato suspenso"; the rest are shown as the AR publishes them.
+const situationLabel = (situacao) => (situacao && situacao.startsWith('Suspenso') ? 'Mandato suspenso' : situacao);
+
+const situationLine = (situacao, inicio, fim) => {
+  if (!situacao || !inicio) return null;
+  const label = situationLabel(situacao);
+  return fim ? `${label}: ${formatDay(inicio)} a ${formatDay(fim)}` : `${label} desde ${formatDay(inicio)}`;
+};
+
+// Header line: a suspended mandate says so with its date, never a reason the data does not give.
+const mandateLine = (mandato, isSeated, legislatura) => {
+  if (!isSeated && mandato?.situacao?.startsWith('Suspenso') && mandato.situacao_inicio) {
+    return situationLine(mandato.situacao, mandato.situacao_inicio, mandato.situacao_fim);
+  }
+  if (mandato?.inicio) return `Mandato desde ${formatDay(mandato.inicio)}`;
+  return `Eleito na ${legislatura} Legislatura`;
+};
+
 /**
  * Mandate Timeline Component - Visual horizontal timeline showing career progression
  */
@@ -423,6 +444,7 @@ const MandateTimeline = ({ mandatos, currentLegislature }) => {
         }}>
           {sortedMandatos.map((mandato, index) => {
             const isCurrent = mandato.legislatura_numero === currentLegislature;
+            const notSeated = mandato.em_exercicio === false;
             return (
               <div
                 key={mandato.deputado_id || index}
@@ -434,13 +456,13 @@ const MandateTimeline = ({ mandatos, currentLegislature }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   position: 'relative',
-                  opacity: isCurrent ? 1 : 0.7,
+                  opacity: notSeated ? 0.35 : isCurrent ? 1 : 0.7,
                   transition: 'opacity 0.15s ease',
                   cursor: 'default',
                 }}
-                title={`${mandato.legislatura_nome} · ${mandato.partido_sigla} · ${mandato.circulo}`}
+                title={[mandato.legislatura_nome, mandato.partido_sigla, mandato.circulo, notSeated ? situationLabel(mandato.situacao) : null].filter(Boolean).join(' · ')}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = isCurrent ? '1' : '0.7'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = notSeated ? '0.35' : isCurrent ? '1' : '0.7'}
               >
                 <span style={{
                   color: '#FFFFFF',
@@ -1183,7 +1205,7 @@ const DeputadoDetalhes = () => {
 
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <Calendar style={{ width: '16px', height: '16px', marginRight: '8px' }} />
-                    <span>Mandato desde {new Date(deputado.mandato.inicio).toLocaleDateString('pt-PT')}</span>
+                    <span>{mandateLine(deputado.mandato, deputado.is_seated, deputado.legislatura_numero)}</span>
                   </div>
                 </div>
 
@@ -1451,7 +1473,9 @@ const DeputadoDetalhes = () => {
               color: tokens.colors.textSecondary,
               margin: 0,
             }}>
-              {deputado.estatisticas.total_mandatos} mandatos • {deputado.estatisticas.tempo_servico_anos} anos de serviço • Legislaturas {deputado.estatisticas.legislaturas_servidas}
+              {deputado.estatisticas.total_mandatos > 0
+                ? `${deputado.estatisticas.total_mandatos} mandatos • ${deputado.estatisticas.tempo_servico_anos} anos de serviço • Legislaturas ${deputado.estatisticas.legislaturas_servidas}`
+                : 'Sem período em exercício registado'}
             </p>
           </header>
 
@@ -3749,11 +3773,12 @@ const DeputadoDetalhes = () => {
                               }}>
                                 <Calendar style={{ height: '16px', width: '16px', marginRight: '0.5rem' }} />
                                 <span>
-                                  {new Date(mandato.mandato_inicio).toLocaleDateString('pt-PT')} - {' '}
-                                  {mandato.mandato_fim
-                                    ? new Date(mandato.mandato_fim).toLocaleDateString('pt-PT')
-                                    : 'Presente'
-                                  }
+                                  {mandato.mandato_inicio ? (
+                                    <>
+                                      {formatDay(mandato.mandato_inicio)} - {' '}
+                                      {mandato.mandato_fim ? formatDay(mandato.mandato_fim) : 'Presente'}
+                                    </>
+                                  ) : 'Sem período em exercício registado nesta legislatura'}
                                 </span>
                               </div>
 
@@ -3768,17 +3793,30 @@ const DeputadoDetalhes = () => {
                                 <span>{mandato.circulo}</span>
                               </div>
 
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.875rem',
-                                color: tokens.colors.textSecondary
-                              }}>
-                                <Briefcase style={{ height: '16px', width: '16px', marginRight: '0.5rem' }} />
-                                <span>{mandato.partido_sigla}</span>
-                              </div>
+                              {mandato.partido_sigla && (
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  fontFamily: tokens.fonts.body,
+                                  fontSize: '0.875rem',
+                                  color: tokens.colors.textSecondary
+                                }}>
+                                  <Briefcase style={{ height: '16px', width: '16px', marginRight: '0.5rem' }} />
+                                  <span>{mandato.partido_sigla}</span>
+                                </div>
+                              )}
                             </div>
+
+                            {situationLine(mandato.situacao, mandato.situacao_inicio, mandato.situacao_fim) && (
+                              <p style={{
+                                fontFamily: tokens.fonts.body,
+                                fontSize: '0.8125rem',
+                                color: tokens.colors.textMuted,
+                                margin: 0
+                              }}>
+                                Última situação registada: {situationLine(mandato.situacao, mandato.situacao_inicio, mandato.situacao_fim)}
+                              </p>
+                            )}
                           </div>
 
                           {mandato.is_current && (

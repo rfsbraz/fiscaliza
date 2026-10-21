@@ -131,7 +131,7 @@
     {
       "path": "deputados[].partido_sigla",
       "type": "scalar",
-      "nullable": false,
+      "nullable": true,
       "read_at": "frontend/src/components/DeputadosPage.jsx:261"
     },
     {

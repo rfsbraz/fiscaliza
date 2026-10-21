@@ -28,16 +28,19 @@ OPEN_LEGISLATURE = "A {} Legislatura ainda está em curso; sem comparação de i
 
 
 def _person(con, cadastro_id):
-    """The person and their seats, oldest legislature first. Only people who held a seat have
-    a page, the same as in the deputies list."""
+    """The person and every legislature they were elected or held a seat in, oldest first
+    (``seated`` tells them apart). Only those people have a page, the same as in the deputies
+    list; a substitute who never sat has none."""
     person = repository.deputy(con, cadastro_id)
-    career = repository.careers(con, [cadastro_id]) if person else []
+    career = repository.elections(con, [cadastro_id]) if person else []
     if not career:
         raise NotFound(f"deputy {cadastro_id} not found")
     return person, career
 
 
 def _experience(mandates):
+    if not mandates:
+        return None
     if mandates >= 4:
         return "Veterano"
     if mandates >= 2:
@@ -122,13 +125,16 @@ def _interventions_comparison(con, cadastro_id, legislature, is_open):
 def detalhes(con, cadastro_id):
     from app.services import attendance
 
-    person, career = _person(con, cadastro_id)
+    person, elected = _person(con, cadastro_id)
     current = _legislature(con)
-    latest = career[-1]
+    # The header and the history show every legislature the person was elected in, with the
+    # situation; the figures count the legislatures they held a seat in.
+    career = [c for c in elected if c["seated"]]
+    latest = elected[-1]
     leg = latest["legislature"]
     seated = repository.is_seated(con, cadastro_id)
     periods = {p["legislature"]: p for p in repository.seat_periods(con, cadastro_id)}
-    names = repository.group_names(con, [c["legislature"] for c in career])
+    names = repository.group_names(con, [c["legislature"] for c in elected])
     completed = [c for c in career if not c["is_open"]]
 
     activity = {a["legislature"]: a for a in repository.deputy_activity_by_legislature(con, cadastro_id)}
@@ -155,8 +161,13 @@ def detalhes(con, cadastro_id):
         "legislatura": {"numero": leg, "designacao": f"{leg} Legislatura", "ativa": latest["is_open"]},
         "legislatura_numero": leg,
         "mandato": {
-            "inicio": _iso(periods[leg]["seat_start"]) if leg in periods else _iso(latest["legislature_start"]),
-            "fim": _iso(periods[leg]["seat_end"]) if leg in periods else _iso(latest["legislature_end"]),
+            "inicio": _iso(periods[leg]["seat_start"]) if leg in periods else None,
+            "fim": _iso(periods[leg]["seat_end"]) if leg in periods else None,
+            # The latest situation in the AR record, as published, and its dates.
+            "situacao": latest["situation"],
+            "situacao_inicio": _iso(latest["situation_start"]),
+            "situacao_fim": _iso(latest["situation_end"]),
+            "em_exercicio": latest["seated"],
             "partido_sigla": group,
             "circulo_eleitoral": latest["circle"],
         },
@@ -196,7 +207,9 @@ def detalhes(con, cadastro_id):
             # F08: within the group only. Initiatives on restricted lists in the latest
             # legislature; interventions in the latest closed one.
             "comparacao": {
-                "iniciativas_subscricao_restrita": _comparison(con, cadastro_id, leg, "restricted_initiatives"),
+                "iniciativas_subscricao_restrita": _comparison(
+                    con, cadastro_id, career[-1]["legislature"] if career else None, "restricted_initiatives"
+                ),
                 "intervencoes": interventions_comparison,
             },
         },
@@ -212,9 +225,13 @@ def detalhes(con, cadastro_id):
                 "circulo": c["circle"],
                 "partido_sigla": c["group_acronym"],
                 "partido_nome": names.get((c["legislature"], c["group_acronym"])),
+                "situacao": c["situation"],
+                "situacao_inicio": _iso(c["situation_start"]),
+                "situacao_fim": _iso(c["situation_end"]),
+                "em_exercicio": c["seated"],
                 "is_current": c["legislature"] == current["legislature"],
             }
-            for c in reversed(career)
+            for c in reversed(elected)
         ],
     }
 
@@ -285,7 +302,7 @@ def atividades(con, cadastro_id, legislatura=None, tipo=None, ordem="newest", pa
     name = leg["legislature"]
     page = max(page, 1)
     per_page = min(max(per_page, 1), MAX_PER_PAGE)
-    served = any(c["legislature"] == name for c in career)
+    served = any(c["legislature"] == name and c["seated"] for c in career)
     rows = repository.interventions_page(
         con, cadastro_id, name, kind=tipo, order=ordem, limit=per_page, offset=(page - 1) * per_page
     )
