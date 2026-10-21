@@ -58,8 +58,8 @@ without it is refused.
 
 The app routes in the browser. On Pages, a build without a top-level `404.html` is treated as a
 single-page app: any path with no file of its own gets `index.html` with status 200. The Pages step
-deletes `404.html` for that reason. The plain `npm run build` keeps writing it (once the static
-export is in), because GitHub Pages, S3 and nginx with `error_page` need it.
+deletes `404.html` for that reason. The plain `npm run build` keeps writing it, because GitHub
+Pages, S3 and nginx with `error_page` need it.
 
 A data file that doesn't exist under `/api` then answers with `index.html` too. The frontend
 reads anything that isn't JSON as not found.

@@ -94,11 +94,11 @@ def test_prepare_refuses_a_file_over_the_pages_size_limit(tmp_path, monkeypatch)
         pages.prepare(dist)
 
 
-def test_default_build_is_left_alone():
-    # The Pages mode is a step after the build. Other hosts keep the plain `npm run build`.
+def test_default_build_still_writes_404_html_for_other_hosts():
+    # The Pages mode is a step after the build; the plain `npm run build` stays generic.
     vite = (FRONTEND / "vite.config.js").read_text()
+    assert "'404.html'" in vite
     assert "_headers" not in vite
-    assert "pages" not in (FRONTEND / "package.json").read_text().lower()
 
 
 # The _headers file
