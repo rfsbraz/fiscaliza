@@ -2093,13 +2093,16 @@ const DeputadoDetalhes = () => {
                 position: 'relative',
               }}>
                 {(() => {
+                  // Pixel heights out of a fixed track: a percentage height inside a column
+                  // with no height of its own resolves to auto and every bar looked the same.
+                  const EVOLUTION_TRACK_PX = 96;
                   const maxValue = Math.max(...deputado.estatisticas.evolucao_legislaturas.map(e => e.iniciativas + e.intervencoes));
                   // Reverse to show oldest first (left to right)
                   const sortedEvolution = [...deputado.estatisticas.evolucao_legislaturas].reverse();
 
                   return sortedEvolution.map((leg, index) => {
                     const total = leg.iniciativas + leg.intervencoes;
-                    const height = maxValue > 0 ? (total / maxValue) * 100 : 0;
+                    const barHeight = maxValue > 0 ? Math.max(Math.round((total / maxValue) * EVOLUTION_TRACK_PX), 4) : 4;
                     const isLast = index === sortedEvolution.length - 1;
 
                     return (
@@ -2124,10 +2127,9 @@ const DeputadoDetalhes = () => {
                         </div>
                         <div style={{
                           width: '100%',
-                          height: `${Math.max(height, 8)}%`,
+                          height: `${barHeight}px`,
                           backgroundColor: isLast ? tokens.colors.primary : tokens.colors.infoSecondary || '#3D5A80',
                           borderRadius: '4px 4px 0 0',
-                          minHeight: '8px',
                           transition: 'height 0.5s ease',
                         }} />
                         <div style={{
