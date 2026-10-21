@@ -6,86 +6,109 @@
       "path": "resumo",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:706"
+      "read_at": "frontend/src/components/AgendaPage.jsx:730"
     },
     {
       "path": "resumo.aprovadas",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:906"
+      "read_at": "frontend/src/components/AgendaPage.jsx:931"
     },
     {
       "path": "resumo.periodo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:706"
+      "read_at": "frontend/src/components/AgendaPage.jsx:730"
     },
     {
       "path": "resumo.rejeitadas",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:928"
+      "read_at": "frontend/src/components/AgendaPage.jsx:953"
     },
     {
       "path": "votacoes",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:711"
+      "read_at": "frontend/src/components/AgendaPage.jsx:735"
     },
     {
-      "path": "votacoes[].abstencoes",
-      "type": "scalar",
+      "path": "votacoes[].abstencao",
+      "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:832"
+      "read_at": "frontend/src/components/AgendaPage.jsx:857"
     },
     {
-      "path": "votacoes[].ausencias",
-      "type": "scalar",
+      "path": "votacoes[].ausentes",
+      "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:854"
+      "read_at": "frontend/src/components/AgendaPage.jsx:879"
+    },
+    {
+      "path": "votacoes[].contra",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:835"
     },
     {
       "path": "votacoes[].data",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:759"
+      "read_at": "frontend/src/components/AgendaPage.jsx:783"
     },
     {
       "path": "votacoes[].descricao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:733"
+      "read_at": "frontend/src/components/AgendaPage.jsx:757"
+    },
+    {
+      "path": "votacoes[].favor",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:813"
     },
     {
       "path": "votacoes[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:713"
+      "read_at": "frontend/src/components/AgendaPage.jsx:737"
     },
     {
       "path": "votacoes[].resultado",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:770"
+      "read_at": "frontend/src/components/AgendaPage.jsx:795"
     },
     {
       "path": "votacoes[].titulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:731"
+      "read_at": "frontend/src/components/AgendaPage.jsx:755"
+    },
+    {
+      "path": "votacoes[].unanime",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/AgendaPage.jsx:784"
+    }
+  ],
+  "dropped": [
+    {
+      "path": "votacoes[].abstencoes",
+      "reason": "The release publishes positions by group, with a count only where a group split, not per-deputy tallies; the old API sent zeros. Replaced by the group lists favor, contra, abstencao and ausentes."
+    },
+    {
+      "path": "votacoes[].ausencias",
+      "reason": "The release publishes positions by group, with a count only where a group split, not per-deputy tallies; the old API sent zeros. Replaced by the group lists favor, contra, abstencao and ausentes."
     },
     {
       "path": "votacoes[].votos_contra",
-      "type": "scalar",
-      "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:810"
+      "reason": "The release publishes positions by group, with a count only where a group split, not per-deputy tallies; the old API sent zeros. Replaced by the group lists favor, contra, abstencao and ausentes."
     },
     {
       "path": "votacoes[].votos_favor",
-      "type": "scalar",
-      "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:788"
+      "reason": "The release publishes positions by group, with a count only where a group split, not per-deputy tallies; the old API sent zeros. Replaced by the group lists favor, contra, abstencao and ausentes."
     }
-  ],
-  "dropped": []
+  ]
 }
