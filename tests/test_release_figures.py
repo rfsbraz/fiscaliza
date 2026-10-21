@@ -61,6 +61,60 @@ def test_approval_over_decided_projetos_per_legislature(con):
     }
 
 
+def test_strict_rule_reproduces_the_review_figures(con):
+    # The review's rate B: latest vote of the four original decisive phases by (date, vote_id),
+    # no 'Votação final', plus generality rejections. Same release, same counts, so the gap to
+    # this PR's figures comes only from 'Votação final' and point-by-point days.
+    rows = con.execute(
+        """
+        with plenary as (
+            select iv.initiative_legislature as legislature, iv.initiative_id, iv.phase, v.vote_id, v.date, v.result
+            from initiative_votes iv join votes v on v.vote_id = iv.vote_id
+            where iv.body = 'plenary'
+        ),
+        fin as (
+            select legislature, initiative_id, max(date) as date,
+                   arg_max(result, struct_pack(d := date, id := vote_id)) as result
+            from plenary
+            where phase in ('Votação final global', 'Votação final global decreto', 'Votação global',
+                            'Votação Deliberação')
+            group by all
+        ),
+        gen as (
+            select legislature, initiative_id, max(date) as date,
+                   arg_max(result, struct_pack(d := date, id := vote_id)) as result
+            from plenary
+            where phase in ('Votação na generalidade', 'Votação generalidade decreto')
+            group by all
+        ),
+        o as (
+            select legislature, initiative_id,
+                   case when f.result = 'Aprovado' then 'A'
+                        when f.result = 'Rejeitado' then 'R'
+                        when g.result = 'Rejeitado' and (f.date is null or g.date > f.date) then 'R' end as res
+            from fin f full join gen g using (legislature, initiative_id)
+        )
+        select i.legislature, count(*) filter (o.res = 'A'), count(*) filter (o.res = 'R')
+        from initiatives i
+        join (select distinct legislature, initiative_id from deputy_initiatives) d
+          using (legislature, initiative_id)
+        left join o using (legislature, initiative_id)
+        where i.type_code in ('J', 'R', 'D')
+        group by i.legislature
+        """
+    ).fetchall()
+    rates = {leg: (a, r, round(a / (a + r) * 100, 1)) for leg, a, r in rows}
+    assert {leg: rates[leg] for leg in ("XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII")} == {
+        "XI": (366, 310, 54.1),
+        "XII": (655, 1502, 30.4),
+        "XIII": (1370, 777, 63.8),
+        "XIV": (575, 359, 61.6),
+        "XV": (270, 1095, 19.8),
+        "XVI": (311, 448, 41.0),
+        "XVII": (397, 797, 33.2),
+    }
+
+
 def test_approval_rate_per_type(con):
     rows = con.execute(
         """
