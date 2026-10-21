@@ -326,14 +326,3 @@ def test_a_release_folder_must_come_from_the_pin(tmp_path):
     (rel / "manifest.json").write_text('{"tag": "data-2026-10-20", "data_commit": "' + "b" * 40 + '"}')
     with pytest.raises(pages.DeployError, match="pin"):
         pages.check_release(rel, pages.read_pin())
-
-
-def test_export_processes_can_be_capped():
-    # The export defaults to one process per CPU the machine reports, which on a shared runner
-    # can be far more than it may use.
-    export = next(
-        c for c in commands(["deploy", "--release", "/rel", "--export-jobs", "2"]) if "fiscaliza_data.export" in c
-    )
-    assert export[export.index("--jobs") + 1] == "2"
-    export = next(c for c in commands(["deploy", "--release", "/rel"]) if "fiscaliza_data.export" in c)
-    assert "--jobs" not in export

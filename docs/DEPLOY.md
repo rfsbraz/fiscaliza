@@ -75,8 +75,10 @@ Options:
 - `--release DIR` takes a `release build` folder you already have. Its `manifest.json` must name
   the pinned commit as `data_commit`, or the script stops.
 - With no source and a `tag=` in the pin, the sync downloads that release from GitHub.
-- `--export-jobs N` caps the export's processes (default: one per CPU the machine reports). CI
-  uses 2, and the deploy step stops after 45 minutes; a deploy takes about 5 minutes on 8 cores.
+- `EXPORT_WORKERS` sets the export's processes. Without it the export uses the cgroup CPU limit
+  (`/sys/fs/cgroup/cpu.max`), and without that the CPU count. Each process uses one DuckDB thread.
+  The runner has 2 CPUs and 3 GB of memory but reports the host's 8, so CI sets 2. The deploy step
+  stops after 45 minutes; a deploy takes about 5 minutes on 8 cores.
 - `--work DIR` keeps the scratch files in that folder instead of a temporary one.
 - `--dry-run` prints every command and runs nothing.
 - `WRANGLER` overrides the wrangler command. The default is `npx --yes wrangler@4.151.3`, pinned

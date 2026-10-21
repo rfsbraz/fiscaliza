@@ -34,6 +34,8 @@ jobs:
     timeout-minutes: 60
     env:
       CLOUDFLARE_ACCOUNT_ID: cda49578092f3bc8595c954e1e771ac1
+      # The runner has 2 CPUs and 3 GB of memory but reports the host's 8 (docs/DEPLOY.md).
+      EXPORT_WORKERS: 2
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,10 +71,8 @@ jobs:
           else
             target=(--production)
           fi
-          # Two export processes: the export would otherwise start one per CPU the host reports,
-          # which on the shared runner is more than it can use, each with its own DuckDB.
           python -u deploy/pages.py deploy --parlamento-aberto "$RUNNER_TEMP/parlamento-aberto" \
-            --work "$RUNNER_TEMP/deploy" --export-jobs 2 "${target[@]}"
+            --work "$RUNNER_TEMP/deploy" "${target[@]}"
       - name: Clean up
         if: always()
         run: |

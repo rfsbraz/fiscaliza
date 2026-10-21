@@ -71,4 +71,4 @@ def test_deploy_is_time_boxed_and_the_export_capped():
     job = int(re.search(r"\n    timeout-minutes: (\d+)", t).group(1))
     step = int(re.search(r"\n        timeout-minutes: (\d+)", t).group(1))
     assert step < job <= 60
-    assert re.search(r"--export-jobs \d", t)
+    assert "      EXPORT_WORKERS: 2\n" in t
