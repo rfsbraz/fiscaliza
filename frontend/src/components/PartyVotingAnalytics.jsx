@@ -62,7 +62,9 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
     { id: 'effectiveness', label: 'Iniciativas e Votações', icon: Zap }
   ];
 
-  // Cohesion by initiative type
+  // Votes with no different vote recorded, by initiative type. The record only names deputies
+  // who vote differently from their group, and small groups have few deputies to name, so this
+  // is a count for this group alone and is not compared across groups.
   const CohesionByThemeChart = () => {
     const { cohesion_by_theme } = analytics || {};
 
@@ -70,7 +72,7 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
       return (
         <div className="text-center py-8">
           <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Dados de coesão por tipo de iniciativa não disponíveis</p>
+          <p className="text-gray-500">Sem votações por tipo de iniciativa nesta legislatura</p>
         </div>
       );
     }
@@ -80,26 +82,10 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {cohesion_by_theme.map((theme) => (
             <div key={theme.tema} className="bg-white border rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h5 className="text-sm font-medium text-gray-900">{theme.tema}</h5>
-                <div className="text-xs text-gray-500">{theme.total_votes} votações</div>
-              </div>
-
-              <div className="mb-3">
-                <div className="flex items-center justify-between text-sm mb-1">
-                  <span>Sem votos diferentes no grupo</span>
-                  <span className="font-medium">{(theme.cohesion_score * 100).toFixed(1)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className="h-3 rounded-full transition-all duration-300 bg-blue-500"
-                    style={{ width: `${theme.cohesion_score * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="text-xs text-gray-600">
-                {theme.cohesive_votes} de {theme.total_votes} votações
+              <h5 className="text-sm font-medium text-gray-900 mb-2">{theme.tema}</h5>
+              <div className="text-sm text-gray-700">
+                {theme.cohesive_votes.toLocaleString('pt-PT')} de {theme.total_votes.toLocaleString('pt-PT')} votações
+                sem votos diferentes registados
               </div>
             </div>
           ))}
@@ -110,11 +96,13 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
             <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
             <div>
               <h5 className="text-sm font-medium text-blue-900">
-                Coesão por Tipo de Iniciativa
+                Votações sem votos diferentes registados
               </h5>
               <p className="text-sm text-blue-700 mt-1">
                 Votações em plenário em que o grupo votou como um todo, por tipo de iniciativa, e em quantas
-                nenhum dos seus deputados votou de outra forma. Ausências não contam.
+                o registo da votação não nomeia nenhum dos seus deputados com outro sentido de voto. Ausências
+                não contam. O registo só nomeia quem vota de forma diferente, e um grupo pequeno tem poucos
+                deputados que possam ser nomeados, por isso este número não serve para comparar grupos.
               </p>
             </div>
           </div>
@@ -340,7 +328,7 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Shield className="h-5 w-5 text-blue-600 mr-2" />
-            Coesão por Tipo de Iniciativa
+            Votações sem votos diferentes registados
           </h4>
           <CohesionByThemeChart />
         </div>

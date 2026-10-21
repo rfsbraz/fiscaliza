@@ -89,14 +89,10 @@ def deputado_voting_analytics(con, cadastro_id, legislatura=None):
         if r["position"] != "absent":
             day[r["position"]] += 1
 
+    # No alignment rate with the own group: the AR publishes no per-deputy roll call, so a
+    # deputy's position is the group's unless the record names them (#109). The page counts the
+    # named different votes instead.
     both_cast = [r for r in known if r["position"] in repository.CAST and r["group_position"] in repository.CAST]
-    aligned = [r for r in both_cast if r["position"] == r["group_position"]]
-    months = defaultdict(lambda: {"aligned_votes": 0, "total_votes": 0})
-    for r in both_cast:
-        month = months[r["date"].strftime("%Y-%m")]
-        month["total_votes"] += 1
-        month["aligned_votes"] += r["position"] == r["group_position"]
-
     dissents = [r for r in reversed(both_cast) if r["named"] and r["position"] != r["group_position"]]
     close = repository.deputy_close_votes(con, cadastro_id, leg, CLOSE_MARGIN)
     items = _vote_items(con, {r["vote_id"] for r in dissents} | {c["vote_id"] for c in close})
@@ -106,12 +102,6 @@ def deputado_voting_analytics(con, cadastro_id, legislatura=None):
         "legislatura": leg,
         "deputy_info": {"cadastro_id": cadastro_id, "party": {"sigla": seat["group_acronym"]}},
         "vote_distribution": distribution,
-        "party_discipline": {
-            "overall_alignment": _rate(len(aligned), len(both_cast)),
-            "aligned_votes": len(aligned),
-            "total_votes": len(both_cast),
-            "monthly": [{"month": m, **v} for m, v in sorted(months.items())],
-        },
         "participation_timeline": [
             {
                 "date": _iso(day),
@@ -240,8 +230,9 @@ def partido_voting_analytics(con, sigla, legislatura=None):
                 "type_code": c["type_code"],
                 "tema": c["type"],
                 "total_votes": c["total_votes"],
+                # A count for this group alone: the record only names deputies who vote
+                # differently, and small groups have few to name, so no rate to compare (#109).
                 "cohesive_votes": c["cohesive_votes"],
-                "cohesion_score": _rate(c["cohesive_votes"], c["total_votes"]),
             }
             for c in repository.group_cohesion_by_type(con, leg, sigla)
         ],
