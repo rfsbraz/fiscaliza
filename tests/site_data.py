@@ -7,8 +7,9 @@ Ids and made-up names only, no real people. Two legislatures:
   known split (KNOWN_SPLIT). Person 231 sat for PS until 2025-12-31 and resigned; person 232 took
   the seat on 2026-01-01. Person 500 is a substitute who never sat.
 
-Person 1 sat for PS in XVI and for PSD in XVII. Coalitions: AD (PSD, CDS-PP) and CDU (PCP)
-in both legislatures, and FRS (PS) in XVI only.
+Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) and every
+tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP) in both legislatures, and
+FRS (PS) in XVI only.
 
 Activity comes in sets (ACTIVITY_SETS below) that go into the same tables with their own ids,
 so a page test can load only the set its hand-checked figures come from; the contracts and the
@@ -20,9 +21,9 @@ static export load all of them.
   one more on their own, and person 227 (BE, one seat) one. Person 1 has two interest
   declarations from XV, an older and a newer one; person 2 has one that lists only the mandate
   and leaves exclusivity blank; person 301 has one from XVI.
-- agenda (tests/site_agenda.py): initiative ids 51 to 56 and deputies 150 to 153. The deputy
-  page and agenda tests load deputies and agenda together, so the agenda stats count the deputy
-  set's 4 XVII interventions on 3 days of 2026.
+- agenda (tests/site_agenda.py): initiative ids 51 to 56 and deputies 150 to 153. The deputy,
+  party and agenda tests load deputies and agenda together, so the agenda stats count the
+  deputy set's 4 XVII interventions on 3 days of 2026.
 - votes (tests/site_votes.py): votes 1 to 9 and 20 to 34, initiatives 61 to 68 and 100 to 121,
   interventions 5001 to 5003. The voting tests load it alone.
 """
@@ -55,6 +56,11 @@ XVI_GROUPS = ["PSD", "PS", "CH", "IL", "BE", "PCP", "L", "CDS-PP", "PAN"]
 CIRCLES = 22
 XVI = ("XVI", 107, "2024-03-26", "2025-06-02")
 XVII = ("XVII", 108, "2025-06-03", None)
+
+
+def _born(cad):
+    """A made-up birth date; every tenth person has none, as when the register has no biography."""
+    return None if cad % 10 == 0 else f"{1940 + cad % 50}-{1 + cad % 12:02d}-01"
 
 
 def _xvii_seats():
@@ -97,7 +103,15 @@ def _rows():
 
     people = sorted({m[1] for m in mandates})
     deputies = [
-        (cad, f"Nome Completo {cad}", f"Deputado {cad}", "F" if cad % 2 else "M", None, f"Profissão {cad % 5}", "XVII")
+        (
+            cad,
+            f"Nome Completo {cad}",
+            f"Deputado {cad}",
+            "F" if cad % 2 else "M",
+            _born(cad),
+            f"Profissão {cad % 5}",
+            "XVII",
+        )
         for cad in people
     ]
     coalitions = []

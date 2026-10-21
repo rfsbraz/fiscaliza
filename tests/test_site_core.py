@@ -312,6 +312,7 @@ def test_ported_routes_are_served_by_the_new_blueprint(app):
     "path",
     [
         "app/routes/core.py",
+        "app/routes/parties.py",
         "app/routes/activity.py",
         "app/routes/health.py",
         *sorted(str(p.relative_to(ROOT)) for p in (ROOT / "app" / "data").glob("*.py")),

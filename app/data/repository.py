@@ -542,6 +542,65 @@ def group_activity(con, legislature, group_acronym):
 
 
 # Agenda page (S8)
+def group_name(con, group_acronym):
+    """The group's name in the latest legislature that lists it, or None if no legislature does."""
+    row = _one(
+        con,
+        """
+        select g.name
+        from parliamentary_groups g
+        join legislature_days l on l.legislature = g.legislature
+        where g.group_acronym = ?
+        order by l.start_date desc
+        limit 1
+        """,
+        [group_acronym],
+    )
+    return row["name"] if row else None
+
+
+def group_service(con, group_acronym, legislature=None):
+    """One row per person and legislature in which they held a seat and sat for the group,
+    with their circle in it and their register details. ``legislature`` limits it to one."""
+    return _rows(
+        con,
+        """
+        select dl.legislature, dl.cadastro_id, dl.circle, dl.legislature_start, dl.legislature_end,
+               d.parliamentary_name, d.full_name, d.profession
+        from deputy_legislatures dl
+        join deputies d on d.cadastro_id = dl.cadastro_id
+        where ($legislature is null or dl.legislature = $legislature)
+          and exists (
+            select 1 from group_memberships g
+            where g.legislature = dl.legislature and g.cadastro_id = dl.cadastro_id
+              and g.group_acronym = $group
+          )
+        order by dl.cadastro_id, dl.legislature_start
+        """,
+        {"group": group_acronym, "legislature": legislature},
+    )
+
+
+def group_seated(con, legislature, day, group_acronym):
+    """The group's deputies seated on a day, with sex, birth date, profession, circle and the
+    number of legislatures they held a seat in up to and including this one."""
+    return _rows(
+        con,
+        """
+        select s.cadastro_id, s.circle, d.parliamentary_name, d.sex, d.birth_date, d.profession,
+               (select count(*) from deputy_legislatures dl
+                where dl.cadastro_id = s.cadastro_id
+                  and dl.legislature_start <= (select start_date from legislature_days where legislature = $leg)
+               ) as legislatures_served
+        from seated_detail($day::date) s
+        join deputies d on d.cadastro_id = s.cadastro_id
+        where s.legislature = $leg and s.group_acronym = $group
+        order by s.cadastro_id
+        """,
+        {"leg": legislature, "day": day, "group": group_acronym},
+    )
+
+
 # Deputy page (S5)
 
 

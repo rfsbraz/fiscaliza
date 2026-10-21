@@ -1,0 +1,266 @@
+"""Cloudflare Pages deploy: the pin, the Pages build output, the _headers file and the deploy plan."""
+
+import importlib.util
+import re
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parent.parent
+FRONTEND = ROOT / "frontend"
+
+spec = importlib.util.spec_from_file_location("pages", ROOT / "deploy" / "pages.py")
+pages = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(pages)
+
+
+# The pin
+
+
+def test_pin_is_one_full_parlamento_aberto_commit():
+    pin = pages.read_pin()
+    assert re.fullmatch(r"[0-9a-f]{40}", pin.commit)
+    assert pin.tag is None or re.fullmatch(r"data-\d{4}-\d{2}-\d{2}(\.\d+)?", pin.tag)
+
+
+def test_pin_with_a_tag(tmp_path):
+    f = tmp_path / "data-pin"
+    f.write_text("# comment\ncommit=" + "a" * 40 + "\ntag=data-2026-10-21\n")
+    pin = pages.read_pin(f)
+    assert (pin.commit, pin.tag) == ("a" * 40, "data-2026-10-21")
+
+
+def test_pin_rejects_a_short_commit(tmp_path):
+    f = tmp_path / "data-pin"
+    f.write_text("commit=31f894a\ntag=\n")
+    with pytest.raises(pages.DeployError, match="40"):
+        pages.read_pin(f)
+
+
+# The Pages build output
+
+
+def _dist(tmp_path):
+    dist = tmp_path / "dist"
+    (dist / "assets").mkdir(parents=True)
+    (dist / "api").mkdir()
+    (dist / "index.html").write_text("<!doctype html><div id=root></div>")
+    (dist / "404.html").write_text("<!doctype html><div id=root></div>")
+    (dist / "assets" / "index-abc123.js").write_text("console.log(1)")
+    (dist / "api" / "partidos.json").write_text("[]")
+    return dist
+
+
+def test_prepare_drops_404_html_so_pages_answers_deep_links_200(tmp_path):
+    dist = _dist(tmp_path)
+    pages.prepare(dist)
+    assert not (dist / "404.html").exists()
+    assert (dist / "index.html").exists()
+    assert (dist / "api" / "partidos.json").read_text() == "[]"
+    assert (dist / "assets" / "index-abc123.js").exists()
+
+
+def test_prepare_copies_the_headers_file(tmp_path):
+    dist = _dist(tmp_path)
+    pages.prepare(dist)
+    assert (dist / "_headers").read_text() == pages.HEADERS_FILE.read_text()
+
+
+def test_prepare_works_on_a_build_without_404_html(tmp_path):
+    dist = _dist(tmp_path)
+    (dist / "404.html").unlink()
+    pages.prepare(dist)
+    assert (dist / "_headers").exists()
+
+
+def test_prepare_refuses_a_folder_without_index_html(tmp_path):
+    dist = _dist(tmp_path)
+    (dist / "index.html").unlink()
+    with pytest.raises(pages.DeployError, match="index.html"):
+        pages.prepare(dist)
+
+
+def test_prepare_refuses_more_files_than_pages_allows(tmp_path, monkeypatch):
+    dist = _dist(tmp_path)
+    monkeypatch.setattr(pages, "MAX_FILES", 3)
+    with pytest.raises(pages.DeployError, match="files"):
+        pages.prepare(dist)
+
+
+def test_prepare_refuses_a_file_over_the_pages_size_limit(tmp_path, monkeypatch):
+    dist = _dist(tmp_path)
+    monkeypatch.setattr(pages, "MAX_FILE_BYTES", 5)
+    with pytest.raises(pages.DeployError, match="partidos.json|index"):
+        pages.prepare(dist)
+
+
+def test_default_build_still_writes_404_html_for_other_hosts():
+    # The Pages mode is a step after the build; the plain `npm run build` stays generic.
+    vite = (FRONTEND / "vite.config.js").read_text()
+    assert "'404.html'" in vite
+    assert "_headers" not in vite
+
+
+# The _headers file
+
+
+def parse_headers(text):
+    """Cloudflare's _headers format: a path line, then indented `Name: value` lines."""
+    rules, current = {}, None
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if not line[0].isspace():
+            current = rules.setdefault(line.strip(), {})
+            continue
+        name, _, value = line.strip().partition(":")
+        assert current is not None, line
+        assert name not in current, f"{name} twice under one path"
+        current[name.strip().lower()] = value.strip()
+    return rules
+
+
+@pytest.fixture(scope="module")
+def headers():
+    return parse_headers(pages.HEADERS_FILE.read_text())
+
+
+def csp(headers):
+    policy = headers["/*"]["content-security-policy"]
+    out = {}
+    for directive in policy.split(";"):
+        parts = directive.split()
+        if parts:
+            out[parts[0]] = parts[1:]
+    return out
+
+
+def test_hashed_assets_are_immutable_for_a_year(headers):
+    cache = headers["/assets/*"]["cache-control"]
+    assert "immutable" in cache
+    assert "max-age=31536000" in cache
+
+
+@pytest.mark.parametrize("path", ["/", "/index.html"])
+def test_index_html_is_not_cached(headers, path):
+    assert "no-cache" in headers[path]["cache-control"]
+
+
+def test_api_has_a_short_ttl(headers):
+    cache = headers["/api/*"]["cache-control"]
+    age = int(re.search(r"max-age=(\d+)", cache).group(1))
+    assert 0 < age <= 600
+
+
+def test_catch_all_sets_no_cache_control(headers):
+    # Pages joins a header from every matching rule with a comma, so a Cache-Control on /*
+    # would land on the assets and the API next to their own.
+    assert "cache-control" not in headers["/*"]
+
+
+def test_security_headers(headers):
+    h = headers["/*"]
+    hsts = h["strict-transport-security"]
+    assert int(re.search(r"max-age=(\d+)", hsts).group(1)) >= 31536000
+    assert "preload" not in hsts
+    assert h["x-content-type-options"] == "nosniff"
+    assert h["referrer-policy"] == "strict-origin-when-cross-origin"
+
+
+def test_csp_is_strict_where_it_can_be(headers):
+    policy = csp(headers)
+    assert policy["default-src"] == ["'self'"]
+    assert policy["frame-ancestors"] == ["'none'"]
+    assert policy["object-src"] == ["'none'"]
+    assert "'unsafe-inline'" not in policy["script-src"]
+    assert "'unsafe-eval'" not in policy["script-src"]
+    assert policy["connect-src"] == ["'self'"]
+
+
+def test_csp_allows_what_the_app_loads(headers):
+    policy = csp(headers)
+    assert "https://fonts.googleapis.com" in policy["style-src"]
+    assert "https://fonts.gstatic.com" in policy["font-src"]
+    # Recharts and framer-motion set style attributes.
+    assert "'unsafe-inline'" in policy["style-src"]
+
+    sources = [FRONTEND / "index.html", *FRONTEND.glob("src/**/*.js*")]
+    img_hosts = set()
+    for f in sources:
+        img_hosts |= set(re.findall(r"""src=\{?[`"']https://([^/`"'$]+)""", f.read_text()))
+    stylesheet_hosts = set(
+        re.findall(
+            r'href="https://([^/"]+)/[^"]*"[^>]*rel="stylesheet"|rel="stylesheet"[^>]*href="https://([^/"]+)',
+            (FRONTEND / "index.html").read_text(),
+        )
+    )
+    assert img_hosts, "expected the deputy photos from parlamento.pt"
+    for host in img_hosts:
+        assert f"https://{host}" in policy["img-src"], host
+    for pair in stylesheet_hosts:
+        for host in filter(None, pair):
+            assert f"https://{host}" in policy["style-src"], host
+
+
+def test_csp_allows_the_deputy_photos_the_api_points_to(headers):
+    # picture_url in the API answers, rendered by DeputadosPage, DeputadoDetalhes and PartidoDetalhes.
+    core = (ROOT / "app" / "services" / "core.py").read_text()
+    host = re.search(r'PICTURE_URL = "https://([^/"]+)/', core).group(1)
+    assert f"https://{host}" in csp(headers)["img-src"]
+
+
+# The deploy plan
+
+
+def commands(argv):
+    return [step.argv for step in pages.plan(pages.parse_args(argv), work=Path("/work"))]
+
+
+def wrangler(argv):
+    (cmd,) = [c for c in commands(argv) if "pages" in c and "deploy" in c]
+    return cmd
+
+
+def test_deploys_a_preview_by_default():
+    cmd = wrangler(["deploy", "--release", "/rel"])
+    assert cmd[cmd.index("--project-name") + 1] == "fiscaliza"
+    assert cmd[cmd.index("--branch") + 1] == "preview"
+
+
+def test_production_needs_the_flag():
+    with pytest.raises(pages.DeployError, match="--production"):
+        pages.plan(pages.parse_args(["deploy", "--release", "/rel", "--branch", "master"]), work=Path("/w"))
+    cmd = wrangler(["deploy", "--release", "/rel", "--production"])
+    assert cmd[cmd.index("--branch") + 1] == "master"
+
+
+def test_production_flag_and_another_branch_conflict():
+    with pytest.raises(pages.DeployError):
+        pages.plan(pages.parse_args(["deploy", "--release", "/rel", "--production", "--branch", "x"]), work=Path("/w"))
+
+
+def test_steps_run_in_order():
+    cmds = [" ".join(c) for c in commands(["deploy", "--release", "/rel"])]
+    order = ["fiscaliza_data sync", "fiscaliza_data.export", "npm ci", "npm run build", "pages deploy"]
+    found = [next(i for i, c in enumerate(cmds) if key in c) for key in order]
+    assert found == sorted(found)
+    sync = next(c for c in cmds if "fiscaliza_data sync" in c)
+    assert "--from-dir /rel" in sync
+    export = next(c for c in cmds if "fiscaliza_data.export" in c)
+    assert str(FRONTEND / "public" / "api") in export
+
+
+def test_builds_the_pinned_commit_from_a_parlamento_aberto_checkout():
+    pin = pages.read_pin()
+    cmds = [" ".join(c) for c in commands(["deploy", "--parlamento-aberto", "/pa"])]
+    assert any("worktree add --detach" in c and pin.commit in c for c in cmds)
+    build = next(c for c in cmds if "parlamento_aberto.release build" in c)
+    assert f"--sha {pin.commit}" in build
+
+
+def test_a_release_folder_must_come_from_the_pin(tmp_path):
+    rel = tmp_path / "rel"
+    rel.mkdir()
+    (rel / "manifest.json").write_text('{"tag": "data-2026-10-20", "data_commit": "' + "b" * 40 + '"}')
+    with pytest.raises(pages.DeployError, match="pin"):
+        pages.check_release(rel, pages.read_pin())

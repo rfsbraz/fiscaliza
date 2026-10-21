@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Briefcase, GraduationCap, MapPin, Calendar, UserCheck, RotateCcw, User, ArrowRight } from 'lucide-react';
+import { Users, Briefcase, MapPin, Calendar, UserCheck, RotateCcw, User, ArrowRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../config/api';
@@ -51,7 +51,6 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
   const PROFESSION_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'];
   const AGE_COLORS = ['#1E40AF', '#3B82F6', '#60A5FA', '#93C5FD', '#DBEAFE'];
   const GENDER_COLORS = ['#3B82F6', '#EC4899', '#6B7280'];
-  const EDUCATION_COLORS = ['#059669', '#10B981', '#34D399', '#6EE7B7'];
   const GEOGRAPHIC_COLORS = ['#7C3AED', '#8B5CF6', '#A78BFA', '#C4B5FD'];
 
   // Format data for charts
@@ -68,10 +67,6 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
       name: gender, 
       value: count 
     }));
-
-  const educationData = Object.entries(demographics.educacao?.niveis || {})
-    .map(([level, count]) => ({ name: level, value: count }))
-    .sort((a, b) => b.value - a.value);
 
   const geographicData = Object.entries(demographics.geografia?.regional || {})
     .map(([region, count]) => ({ name: region, value: count }))
@@ -291,7 +286,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <Link 
-                            to={`/deputados/${demographics.idades.oldest_deputy.id}/${demographics.idades.oldest_deputy.ultima_legislatura || '17'}`}
+                            to={`/deputados/${demographics.idades.oldest_deputy.id}`}
                             className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
                           >
                             {demographics.idades.oldest_deputy.nome}
@@ -339,7 +334,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                       </div>
                       
                       <Link 
-                        to={`/deputados/${demographics.idades.oldest_deputy.id}/${demographics.idades.oldest_deputy.ultima_legislatura || '17'}`}
+                        to={`/deputados/${demographics.idades.oldest_deputy.id}`}
                         className="text-blue-600 hover:text-blue-800 font-medium"
                       >
                         Ver Detalhes →
@@ -380,7 +375,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <Link 
-                            to={`/deputados/${demographics.idades.youngest_deputy.id}/${demographics.idades.youngest_deputy.ultima_legislatura || '17'}`}
+                            to={`/deputados/${demographics.idades.youngest_deputy.id}`}
                             className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
                           >
                             {demographics.idades.youngest_deputy.nome}
@@ -428,7 +423,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                       </div>
                       
                       <Link 
-                        to={`/deputados/${demographics.idades.youngest_deputy.id}/${demographics.idades.youngest_deputy.ultima_legislatura || '17'}`}
+                        to={`/deputados/${demographics.idades.youngest_deputy.id}`}
                         className="text-blue-600 hover:text-blue-800 font-medium"
                       >
                         Ver Detalhes →
@@ -512,26 +507,6 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                   </div>
                 ))}
               </div>
-              
-              {demographics.geografia?.urbano_rural && (
-                <div className="mt-4 p-4 bg-indigo-50 rounded-lg">
-                  <h4 className="text-sm font-medium text-indigo-900 mb-2">Distribuição Urbano/Rural</h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="text-center">
-                      <span className="text-indigo-600">Urbano:</span>
-                      <span className="font-bold ml-1">
-                        {demographics.geografia.urbano_rural.Urbano || 0}
-                      </span>
-                    </div>
-                    <div className="text-center">
-                      <span className="text-indigo-600">Rural:</span>
-                      <span className="font-bold ml-1">
-                        {demographics.geografia.urbano_rural.Rural || 0}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <p className="text-gray-500 text-center py-8">Dados geográficos não disponíveis</p>
@@ -539,50 +514,8 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
         </div>
       </div>
 
-      {/* Education and Political Experience */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Educational Attainment */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center mb-6">
-            <GraduationCap className="h-6 w-6 text-emerald-600 mr-3" />
-            <h3 className="text-xl font-semibold text-gray-900">Habilitações Académicas</h3>
-          </div>
-          
-          {educationData.length > 0 ? (
-            <div className="space-y-3">
-              {educationData.map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <div 
-                      className="w-4 h-4 rounded mr-3"
-                      style={{ backgroundColor: EDUCATION_COLORS[index % EDUCATION_COLORS.length] }}
-                    ></div>
-                    <span className="text-sm font-medium text-gray-900">{item.name}</span>
-                  </div>
-                  <span className="text-sm font-bold text-gray-700">{item.value}</span>
-                </div>
-              ))}
-              
-              {demographics.educacao?.niveis && (
-                <div className="mt-4 p-3 bg-emerald-50 rounded-lg text-center">
-                  <p className="text-sm text-emerald-600 font-medium">Ensino Superior</p>
-                  <p className="text-lg font-bold text-emerald-900">
-                    {Object.entries(demographics.educacao.niveis)
-                      .filter(([key]) => key.includes('Superior') || key.includes('Doutoramento') || key.includes('Pós-Graduação'))
-                      .reduce((sum, [, value]) => sum + value, 0)}
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-2">Dados educacionais em desenvolvimento</p>
-              <p className="text-xs text-gray-400">TODO: Estruturar dados de habilitações académicas</p>
-            </div>
-          )}
-        </div>
-
-        {/* Political Experience */}
+      {/* Political Experience */}
+      <div>
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center mb-6">
             <RotateCcw className="h-6 w-6 text-orange-600 mr-3" />
@@ -719,7 +652,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
           <div className="ml-3">
             <h3 className="text-sm font-medium text-yellow-800">Qualidade dos Dados</h3>
             <div className="mt-2 text-sm text-yellow-700">
-              <p>Esta análise demográfica combina dados reais disponíveis com estimativas estatísticas para categorias onde os dados detalhados não estão completos. Algumas categorias utilizam projeções baseadas em padrões históricos típicos do parlamento português, que serão refinadas à medida que dados adicionais ficarem disponíveis.</p>
+              <p>Contam os deputados do grupo em funções no dia de referência da legislatura. A idade e a profissão só contam para quem tem registo biográfico publicado pela Assembleia da República. As habilitações académicas ainda não estão nos dados abertos.</p>
             </div>
           </div>
         </div>
