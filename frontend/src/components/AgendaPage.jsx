@@ -54,20 +54,20 @@ const AgendaPage = () => {
   const fetchDados = async () => {
     setLoading(true);
     const pedidos = [
-      ['agenda/hoje', setAgendaHoje],
-      ['agenda/semana', setAgendaSemana],
-      ['votacoes/recentes?limite=5', setVotacoesRecentes],
-      ['estatisticas/atividade', setEstatisticas],
+      ['agenda/hoje', () => apiFetch('agenda/hoje'), setAgendaHoje],
+      ['agenda/semana', () => apiFetch('agenda/semana'), setAgendaSemana],
+      ['votacoes/recentes', () => apiFetch('votacoes/recentes?limite=5'), setVotacoesRecentes],
+      ['estatisticas/atividade', () => apiFetch('estatisticas/atividade'), setEstatisticas],
     ];
     const resultados = await Promise.allSettled(
-      pedidos.map(([endpoint]) => apiFetch(endpoint).then((res) => res.json()))
+      pedidos.map(([, pedido]) => pedido().then((res) => res.json()))
     );
     resultados.forEach((resultado, i) => {
-      const [endpoint, setter] = pedidos[i];
+      const [nome, , setter] = pedidos[i];
       if (resultado.status === 'fulfilled') {
         setter(resultado.value);
       } else {
-        console.error(`Erro ao carregar ${endpoint}:`, resultado.reason);
+        console.error(`Erro ao carregar ${nome}:`, resultado.reason);
       }
     });
     setLoading(false);
