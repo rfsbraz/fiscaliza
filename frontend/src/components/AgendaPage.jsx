@@ -154,7 +154,7 @@ const AgendaPage = () => {
           }}
         >
           {[
-            { icon: Users, label: 'SESSÕES PLENÁRIAS', value: estatisticas.estatisticas.sessoes_plenarias?.total_ano || 0, sublabel: 'este ano', color: tokens.colors.primary },
+            { icon: Users, label: 'SESSÕES PLENÁRIAS', value: estatisticas.estatisticas.sessoes_plenarias?.total_ano || 0, sublabel: 'este ano', note: estatisticas.estatisticas.sessoes_plenarias?.fonte, color: tokens.colors.primary },
             { icon: Vote, label: 'VOTAÇÕES', value: estatisticas.estatisticas.votacoes?.total_ano || 0, sublabel: estatisticas.estatisticas.votacoes?.taxa_aprovacao != null ? `${estatisticas.estatisticas.votacoes.taxa_aprovacao}% aprovadas` : 'em plenário', color: tokens.colors.primary },
             { icon: FileText, label: 'INICIATIVAS', value: estatisticas.estatisticas.iniciativas?.apresentadas || 0, sublabel: 'apresentadas', color: '#7C3AED' },
             ...(estatisticas.estatisticas.assiduidade?.media_presencas != null ? [{ icon: Activity, label: 'ASSIDUIDADE', value: `${estatisticas.estatisticas.assiduidade.media_presencas}%`, sublabel: 'média', color: '#D97706' }] : []),
@@ -203,6 +203,18 @@ const AgendaPage = () => {
                   >
                     {stat.sublabel}
                   </p>
+                  {stat.note && (
+                    <p
+                      style={{
+                        fontFamily: tokens.fonts.body,
+                        fontSize: '0.625rem',
+                        color: tokens.colors.textMuted,
+                        marginTop: '0.25rem',
+                      }}
+                    >
+                      {stat.note}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

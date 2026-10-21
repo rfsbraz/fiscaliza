@@ -1021,17 +1021,16 @@ def group_positions(con, vote_ids):
 
 
 def activity_counts(con, start, end):
-    """Plenary meeting days (with a vote or an intervention), plenary votes by result,
-    initiatives presented and interventions between two days, both included."""
+    """Plenary sittings, plenary votes by result, initiatives presented and interventions
+    between two days, both included. Sittings come from the plenary attendance lists
+    (plenary_attendance), without solemn or commemorative sittings (is_ceremonial), so the
+    figure matches what the AR calls sessões plenárias (#98)."""
     return _one(
         con,
         """
         select
-            (select count(*) from (
-                select date from votes where body = 'plenary' and date between $start and $end
-                union
-                select meeting_date from interventions where meeting_date between $start and $end
-            )) as plenary_days,
+            (select count(distinct meeting_id) from plenary_attendance
+             where not is_ceremonial and meeting_date between $start and $end) as plenary_sittings,
             (select count(*) from votes where body = 'plenary' and date between $start and $end) as votes,
             (select count(*) from votes
              where body = 'plenary' and date between $start and $end and result ilike 'aprovad%') as approved,
