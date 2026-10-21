@@ -5,6 +5,37 @@ import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner, Section } from './common';
 
+const PainelIndisponivel = ({ titulo, mensagem }) => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '0.75rem',
+      padding: '1.5rem',
+      border: `1px dashed ${tokens.colors.border}`,
+      borderRadius: '4px',
+    }}
+  >
+    <AlertCircle size={18} style={{ color: tokens.colors.textMuted, flexShrink: 0, marginTop: '0.125rem' }} />
+    <div>
+      <h3
+        style={{
+          fontFamily: tokens.fonts.body,
+          fontSize: '0.875rem',
+          fontWeight: 600,
+          color: tokens.colors.textPrimary,
+          marginBottom: '0.25rem',
+        }}
+      >
+        {titulo}
+      </h3>
+      <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.8125rem', color: tokens.colors.textSecondary }}>
+        {mensagem}
+      </p>
+    </div>
+  </div>
+);
+
 const AgendaPage = () => {
   const [agendaHoje, setAgendaHoje] = useState(null);
   const [agendaSemana, setAgendaSemana] = useState(null);
@@ -17,42 +48,29 @@ const AgendaPage = () => {
     fetchDados();
   }, []);
 
+  // Each panel loads and fails on its own. Today and the week still come from the old
+  // agenda code until the agenda mart lands, so a failed request there must not take the
+  // votes and the stats down with it.
   const fetchDados = async () => {
-    try {
-      setLoading(true);
-
-      const [agendaHojeRes, agendaSemanaRes, votacoesRes, estatisticasRes] = await Promise.all([
-        apiFetch('agenda/hoje'),
-        apiFetch('agenda/semana'),
-        apiFetch('votacoes/recentes?limite=5'),
-        apiFetch('estatisticas/atividade')
-      ]);
-
-      if (agendaHojeRes.ok) {
-        const agendaHojeData = await agendaHojeRes.json();
-        setAgendaHoje(agendaHojeData);
+    setLoading(true);
+    const pedidos = [
+      ['agenda/hoje', setAgendaHoje],
+      ['agenda/semana', setAgendaSemana],
+      ['votacoes/recentes?limite=5', setVotacoesRecentes],
+      ['estatisticas/atividade', setEstatisticas],
+    ];
+    const resultados = await Promise.allSettled(
+      pedidos.map(([endpoint]) => apiFetch(endpoint).then((res) => res.json()))
+    );
+    resultados.forEach((resultado, i) => {
+      const [endpoint, setter] = pedidos[i];
+      if (resultado.status === 'fulfilled') {
+        setter(resultado.value);
+      } else {
+        console.error(`Erro ao carregar ${endpoint}:`, resultado.reason);
       }
-
-      if (agendaSemanaRes.ok) {
-        const agendaSemanaData = await agendaSemanaRes.json();
-        setAgendaSemana(agendaSemanaData);
-      }
-
-      if (votacoesRes.ok) {
-        const votacoesData = await votacoesRes.json();
-        setVotacoesRecentes(votacoesData);
-      }
-
-      if (estatisticasRes.ok) {
-        const estatisticasData = await estatisticasRes.json();
-        setEstatisticas(estatisticasData);
-      }
-
-    } catch (error) {
-      console.error('Erro ao carregar dados da agenda:', error);
-    } finally {
-      setLoading(false);
-    }
+    });
+    setLoading(false);
   };
 
   const formatarHora = (hora) => {
@@ -241,6 +259,8 @@ const AgendaPage = () => {
 
         {/* Tab Content */}
         <div style={{ padding: '1.5rem' }}>
+          {activeTab === 'hoje' && !agendaHoje && <PainelIndisponivel titulo="Agenda de hoje indisponível" mensagem="A agenda do Parlamento ainda não está disponível nos dados abertos que usamos. Vai aparecer aqui quando for publicada." />}
+
           {activeTab === 'hoje' && agendaHoje && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -484,6 +504,8 @@ const AgendaPage = () => {
             </div>
           )}
 
+          {activeTab === 'semana' && !agendaSemana && <PainelIndisponivel titulo="Agenda da semana indisponível" mensagem="A agenda do Parlamento ainda não está disponível nos dados abertos que usamos. Vai aparecer aqui quando for publicada." />}
+
           {activeTab === 'semana' && agendaSemana && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -682,6 +704,8 @@ const AgendaPage = () => {
               )}
             </div>
           )}
+
+          {activeTab === 'votacoes' && !votacoesRecentes && <PainelIndisponivel titulo="Votações indisponíveis" mensagem="Não foi possível carregar as votações recentes. Tente novamente mais tarde." />}
 
           {activeTab === 'votacoes' && votacoesRecentes && (
             <div>
