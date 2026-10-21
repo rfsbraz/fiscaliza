@@ -10,7 +10,7 @@ lxml==4.9.3
 python-dateutil==2.8.2
 python-dotenv==1.0.0
 gunicorn==21.2.0
-Werkzeug==3.0.1
+Werkzeug==3.1.9
 # Async pipeline dependencies
 aiohttp>=3.9.0
 aiofiles>=23.2.0
