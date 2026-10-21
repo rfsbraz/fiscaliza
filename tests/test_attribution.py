@@ -38,6 +38,14 @@ def test_footer_is_on_every_page():
     assert app.index("</Routes>") < app.index("<footer")
 
 
+def test_no_site_wide_note_that_the_data_is_demonstrative():
+    # The data is the real AR release now, so the "Nota Editorial" strip under the nav goes.
+    app = (FRONTEND / "src" / "App.jsx").read_text()
+    assert "Nota Editorial" not in app
+    assert "demonstrativos" not in app
+    assert "showBanner" not in app
+
+
 def test_frontend_calls_the_api_on_its_own_origin():
     api = (FRONTEND / "src" / "config" / "api.js").read_text()
     assert "import.meta.env.VITE_API_BASE_URL || '/api'" in api
