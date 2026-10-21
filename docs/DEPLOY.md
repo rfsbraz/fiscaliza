@@ -1,24 +1,59 @@
 # Deploy
 
 Fiscaliza is a static site on Cloudflare Pages, project `fiscaliza`, uploaded with
-`wrangler pages deploy` (direct upload, no Git integration). The production branch is `master`;
-anything else is a preview at `<branch>.fiscaliza.pages.dev`.
+`wrangler pages deploy` (direct upload, no Git integration). The production branch is `master`, at
+`fiscaliza-ceg.pages.dev`; anything else is a preview at `<branch>.fiscaliza-ceg.pages.dev` (Pages
+turns `/` and other characters in the branch name into `-`).
+
+Deploys run in CI, in `.github/workflows/deploy.yml`, on my Homeberry runner. The workflow only
+calls `deploy/pages.py`; everything a deploy does is in that script.
+
+## When it deploys
+
+| Trigger | Deploys |
+|---|---|
+| Push to `master` | production |
+| Pull request from this repo | a preview on a Pages branch named after the PR's head branch |
+
+There is no schedule: the data only changes when the pin moves, and moving the pin is a pull
+request, which deploys production when it merges.
+
+Pull requests from forks don't deploy, and neither do Dependabot's: neither gets the repository
+secrets.
+
+There is one concurrency group for every trigger, with `cancel-in-progress: false`: a deploy
+waits for the one before it to finish and is never cancelled halfway through an upload.
+
+The workflow needs:
+
+- the `CLOUDFLARE_API_TOKEN` secret, a Cloudflare API token with Pages: Edit on the account;
+- `CLOUDFLARE_ACCOUNT_ID`, set in the workflow as plain env (an account id isn't a secret).
+
+The project already exists. Nothing creates it, and nothing prints the token.
 
 ## The data pin
 
 `deploy/data-pin` holds the parlamento-aberto commit the site is built from, and its release tag
-when there is one. It is the only place the data version is set. Moving it is a reviewed commit
-of its own, after checking the new data.
+when there is one. It is the only place the data version is set, and every deploy, production and
+preview, builds exactly that commit.
 
-## Deploy a preview
+Production is pinned because CI starts from an empty data folder each time: the sync's check that
+no table lost more than 5% of its rows has nothing to compare against, so a bad commit on
+parlamento-aberto `main` would go straight to production. Moving the pin is a small pull request of
+its own, after checking the new data; its preview shows the new data before it merges.
+
+When parlamento-aberto turns on data releases (`DATA_RELEASES`), the pin moves to a release tag.
+
+## What a deploy runs
 
 ```bash
-python deploy/pages.py deploy --parlamento-aberto ~/src/parlamento-aberto
+python deploy/pages.py deploy --parlamento-aberto ~/src/parlamento-aberto --branch my-preview
 ```
 
 This runs, in order:
 
-1. `git worktree add --detach` of the pinned commit in that checkout, and
+1. A fetch of the pinned SHA when the clone doesn't have it (one commit deep in a shallow clone),
+   then `git worktree add --detach` of the pinned commit, and
    `uv run python -m parlamento_aberto.release build` there (the same command as its release
    workflow), into a scratch folder.
 2. `python -m fiscaliza_data sync --from-dir <release>` into a scratch DuckDB folder.
@@ -27,32 +62,33 @@ This runs, in order:
 4. `npm ci` and `npm run build` in `frontend/`.
 5. The Pages step on `frontend/dist`: it deletes `404.html` and copies `deploy/_headers` in, and
    checks the Pages limits (fewer than 20,000 files, every file under 25 MiB).
-6. `wrangler pages deploy dist --project-name fiscaliza --branch preview`.
+6. `wrangler pages deploy dist --project-name fiscaliza --branch <branch>`.
 
-The scratch folder and the parlamento-aberto worktree are removed at the end.
+The scratch folder and the parlamento-aberto worktree are removed at the end. CI clones
+parlamento-aberto with `--depth 1 --no-checkout`, so its data is checked out once, by step 1, and
+fetches the pinned commit if `main` has moved past it.
 
-Other ways in:
+Options:
 
+- `--branch NAME` picks the preview branch (default `preview`).
+- `--production` deploys `master`. `--branch master` without it is refused.
 - `--release DIR` takes a `release build` folder you already have. Its `manifest.json` must name
   the pinned commit as `data_commit`, or the script stops.
 - With no source and a `tag=` in the pin, the sync downloads that release from GitHub.
-- `--branch NAME` deploys another preview branch.
+- `EXPORT_WORKERS` sets the export's processes. Without it the export uses the cgroup CPU limit
+  (`/sys/fs/cgroup/cpu.max`), and without that the CPU count. Each process uses one DuckDB thread.
+  The runner has 2 CPUs and 3 GB of memory but reports the host's 8, so CI sets 2. The deploy step
+  stops after 45 minutes; a deploy takes about 5 minutes on 8 cores.
+- `--work DIR` keeps the scratch files in that folder instead of a temporary one.
 - `--dry-run` prints every command and runs nothing.
-- `WRANGLER` overrides the wrangler command (default `npx --yes wrangler@4`, which needs
-  Node 22 or newer).
+- `WRANGLER` overrides the wrangler command. The default is `npx --yes wrangler@4.151.3`, pinned
+  so CI and a local run use the same version. Wrangler 4 needs Node 22 or newer; the workflow sets
+  up Node 22.
 - `python deploy/pages.py prepare frontend/dist` runs only step 5.
 
-Wrangler uses whatever Cloudflare login the machine already has (`wrangler whoami` shows it).
-The script never logs in and never creates tokens.
-
-## Production
-
-```bash
-python deploy/pages.py deploy --parlamento-aberto ~/src/parlamento-aberto --production
-```
-
-Production is the `master` branch on Pages and only deploys with `--production`. `--branch master`
-without it is refused.
+Run by hand, wrangler uses whatever Cloudflare login the machine has (`wrangler whoami` shows it),
+or `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` when they are set. The script never logs in
+and never creates tokens.
 
 ## Deep links
 
@@ -89,9 +125,8 @@ doesn't allow.
 
 If the API files ever move to another origin (`VITE_API_BASE_URL`), add it to `connect-src`.
 
-## Before production
+## Before the custom domain
 
-- #68, #79, #81 and #91 merged, and this deploy run from `master`.
-- A preview checked on `preview.fiscaliza.pages.dev`.
+- A production deploy from `master` checked on `fiscaliza-ceg.pages.dev`.
 - The `fiscaliza.pt` custom domain added to the Pages project (Cloudflare adds the DNS record,
   since the zone is on Cloudflare).

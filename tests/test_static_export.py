@@ -302,3 +302,52 @@ def test_attendance_and_agenda_say_not_available_until_s11_and_s13(out):
     answers = _static_answers(out, ["deputados/1/attendance", "agenda/hoje", "agenda/semana"])
     assert [a["status"] for a in answers] == [503, 503, 503]
     assert [a["body"]["planned"] for a in answers] == ["S11", "S13", "S13"]
+
+
+# Worker count and DuckDB threads: a container reports the host's CPUs, not its own limit.
+
+
+def test_export_workers_env_wins(tmp_path):
+    (tmp_path / "cpu.max").write_text("400000 100000\n")
+    assert export.default_workers({"EXPORT_WORKERS": "2"}, tmp_path / "cpu.max") == 2
+
+
+@pytest.mark.parametrize(
+    ("cpu_max", "expected"),
+    [("200000 100000\n", 2), ("150000 100000\n", 2), ("50000 100000\n", 1)],
+)
+def test_export_workers_follow_the_cgroup_cpu_limit(tmp_path, cpu_max, expected):
+    (tmp_path / "cpu.max").write_text(cpu_max)
+    assert export.default_workers({}, tmp_path / "cpu.max") == expected
+
+
+def test_export_workers_without_a_cgroup_limit(tmp_path):
+    (tmp_path / "cpu.max").write_text("max 100000\n")
+    assert export.default_workers({}, tmp_path / "cpu.max") == (os.cpu_count() or 1)
+    assert export.default_workers({}, tmp_path / "missing") == (os.cpu_count() or 1)
+
+
+def test_worker_connections_use_one_duckdb_thread(tmp_path, monkeypatch):
+    db = tmp_path / "x.duckdb"
+    duckdb.connect(str(db)).close()
+    opened = []
+    real = duckdb.connect
+
+    class Kept:
+        # The worker closes its connection; keep it open to read the setting afterwards.
+        def __init__(self, con):
+            self.con = con
+
+        def __getattr__(self, name):
+            return getattr(self.con, name)
+
+        def close(self):
+            pass
+
+    def spy(*args, **kwargs):
+        opened.append(Kept(real(*args, **kwargs)))
+        return opened[-1]
+
+    monkeypatch.setattr(export.duckdb, "connect", spy)
+    export._deputy_chunk((str(db), str(tmp_path / "out"), []))
+    assert [k.con.execute("select current_setting('threads')").fetchone()[0] for k in opened] == [1]

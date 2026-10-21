@@ -29,6 +29,8 @@ The deputy and party endpoints of S5, S6 and S7 render once their services are o
 import argparse
 import importlib
 import json
+import math
+import multiprocessing
 import os
 import re
 import shutil
@@ -318,27 +320,52 @@ def deputy_bundle(con, sections, cadastro_id):
     return bundle
 
 
-def _deputy_chunk(args):
-    db, root, ids = args
+CPU_MAX = Path("/sys/fs/cgroup/cpu.max")
+
+
+def default_workers(env=os.environ, cpu_max=CPU_MAX):
+    """EXPORT_WORKERS when set; else the cgroup v2 CPU limit, rounded up; else os.cpu_count().
+    A container reports the host's CPUs to os.cpu_count(), not the share it may use."""
+    if env.get("EXPORT_WORKERS"):
+        return max(1, int(env["EXPORT_WORKERS"]))
+    try:
+        quota, period = Path(cpu_max).read_text().split()[:2]
+        if quota != "max":
+            return max(1, math.ceil(int(quota) / int(period)))
+    except (OSError, ValueError):
+        pass
+    return os.cpu_count() or 1
+
+
+def _render_deputies(con, root, ids):
     sections = _deputy_sections()
     w = _Writer(root)
-    con = duckdb.connect(db, read_only=True)
+    for cadastro_id in ids:
+        w.write(f"deputados/{cadastro_id}.json", deputy_bundle(con, sections, cadastro_id))
+    return w.files
+
+
+def _deputy_chunk(args):
+    """One worker process's share. One DuckDB thread each: DuckDB would otherwise start one
+    per CPU the host reports, in every worker."""
+    db, root, ids = args
+    con = duckdb.connect(db, read_only=True, config={"threads": 1})
     try:
-        for cadastro_id in ids:
-            w.write(f"deputados/{cadastro_id}.json", deputy_bundle(con, sections, cadastro_id))
+        return _render_deputies(con, root, ids)
     finally:
         con.close()
-    return w.files
 
 
 def _deputy_files(db, con, root, jobs):
     if not _deputy_sections():
         return []
     ids = [r[0] for r in con.execute("select distinct cadastro_id from deputy_legislatures order by 1").fetchall()]
-    chunks = [(db, str(root), ids[i : i + CHUNK]) for i in range(0, len(ids), CHUNK)]
     if jobs <= 1:
-        return [f for chunk in chunks for f in _deputy_chunk(chunk)]
-    with ProcessPoolExecutor(max_workers=jobs) as pool:
+        return _render_deputies(con, str(root), ids)
+    chunks = [(db, str(root), ids[i : i + CHUNK]) for i in range(0, len(ids), CHUNK)]
+    # Spawned, not forked: a forked worker inherits the parent's open DuckDB database, which then
+    # refuses the worker's own config, and forking a process with DuckDB's threads isn't safe.
+    with ProcessPoolExecutor(max_workers=jobs, mp_context=multiprocessing.get_context("spawn")) as pool:
         return [f for files in pool.map(_deputy_chunk, chunks) for f in files]
 
 
@@ -395,7 +422,12 @@ def main(argv=None):
         default=os.getenv("FISCALIZA_DATA_DIR") or DEFAULT_DATA_DIR,
         help=f"where the live DuckDB file is (default $FISCALIZA_DATA_DIR, else {DEFAULT_DATA_DIR})",
     )
-    parser.add_argument("--jobs", type=int, default=os.cpu_count() or 1, help="processes for the deputy files")
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=default_workers(),
+        help="processes for the deputy files (default $EXPORT_WORKERS, else the cgroup CPU limit, else the CPU count)",
+    )
     args = parser.parse_args(argv)
     try:
         result = export(args.data_dir, args.out, jobs=args.jobs)

@@ -2,7 +2,8 @@
 
     python deploy/pages.py deploy --parlamento-aberto PATH   # build the release from the pin
     python deploy/pages.py deploy --release DIR              # a release folder built from the pin
-    python deploy/pages.py deploy ... --production           # production (master); default: preview
+    python deploy/pages.py deploy ... --branch NAME          # preview branch (default: preview)
+    python deploy/pages.py deploy ... --production           # production (master)
     python deploy/pages.py deploy ... --dry-run              # print the steps, run nothing
     python deploy/pages.py prepare DIST                      # only the Pages step on a built dist/
 
@@ -10,7 +11,6 @@ See docs/DEPLOY.md.
 """
 
 import argparse
-import importlib.util
 import json
 import os
 import shlex
@@ -35,17 +35,12 @@ PREVIEW_BRANCH = "preview"
 # Cloudflare Pages limits per deployment (free plan).
 MAX_FILES = 20_000
 MAX_FILE_BYTES = 25 * 1024 * 1024
-DEFAULT_WRANGLER = "npx --yes wrangler@4"
+# Wrangler 4 needs Node 22 or newer.
+DEFAULT_WRANGLER = "npx --yes wrangler@4.151.3"
 
 
 class DeployError(Exception):
     pass
-
-
-@dataclass(frozen=True)
-class Pin:
-    commit: str
-    tag: str | None
 
 
 @dataclass
@@ -54,6 +49,12 @@ class Step:
     argv: list[str]
     cwd: Path = ROOT
     env: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class Pin:
+    commit: str
+    tag: str | None
 
 
 def read_pin(path=PIN_FILE):
@@ -67,6 +68,30 @@ def read_pin(path=PIN_FILE):
     if len(commit) != 40 or any(c not in "0123456789abcdef" for c in commit):
         raise DeployError(f"{path}: commit must be a full 40 character SHA, got {commit!r}")
     return Pin(commit=commit, tag=values.get("tag") or None)
+
+
+def _git(checkout, *args):
+    return subprocess.run(["git", "-C", str(checkout), *args], check=True, capture_output=True, text=True)
+
+
+def fetch_pin(checkout, commit):
+    """Make sure the pinned commit is in the parlamento-aberto clone, whatever its branches
+    point at. Fetches that exact SHA when it is missing, one commit deep in a shallow clone."""
+    try:
+        _git(checkout, "rev-parse", "--git-dir")
+    except subprocess.CalledProcessError as e:
+        raise DeployError(f"{checkout} is not a parlamento-aberto git clone") from e
+    try:
+        _git(checkout, "cat-file", "-e", f"{commit}^{{commit}}")
+        return
+    except subprocess.CalledProcessError:
+        pass
+    shallow = _git(checkout, "rev-parse", "--is-shallow-repository").stdout.strip() == "true"
+    try:
+        _git(checkout, "fetch", "--quiet", *(["--depth", "1"] if shallow else []), "origin", commit)
+        _git(checkout, "cat-file", "-e", f"{commit}^{{commit}}")
+    except subprocess.CalledProcessError as e:
+        raise DeployError(f"{checkout}: cannot fetch the pinned commit {commit[:9]}: {e.stderr.strip()}") from e
 
 
 def prepare(dist):
@@ -172,18 +197,19 @@ def plan(args, work):
 
 def run(args):
     pin = read_pin()
+    branch_for(args)
     if args.release:
         check_release(args.release, pin)
     if args.dry_run:
         for step in plan(args, Path(args.work or "$WORK")):
             print(f"[{step.name}] (cd {step.cwd} && {shlex.join(step.argv)})")
         return 0
+    if args.parlamento_aberto:
+        fetch_pin(args.parlamento_aberto, pin.commit)
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="fiscaliza-deploy-"))
-    steps = plan(args, work)
-    if importlib.util.find_spec("fiscaliza_data.export") is None:
-        raise DeployError("fiscaliza_data.export is missing; the static export (#91) has to be on this branch")
-    print(f"deploying parlamento-aberto {pin.commit[:9]} to Pages project {PROJECT}, branch {branch_for(args)}")
     try:
+        steps = plan(args, work)
+        print(f"deploying parlamento-aberto {pin.commit[:9]} to Pages project {PROJECT}, branch {branch_for(args)}")
         for step in steps:
             print(f"[{step.name}]", flush=True)
             if step.argv[0] == "prepare":
@@ -216,7 +242,7 @@ def parse_args(argv=None):
     sub = parser.add_subparsers(dest="cmd", required=True)
     d = sub.add_parser("deploy", help="build and upload to Pages")
     source = d.add_mutually_exclusive_group()
-    source.add_argument("--parlamento-aberto", metavar="PATH", help="a parlamento-aberto checkout to build the pin in")
+    source.add_argument("--parlamento-aberto", metavar="PATH", help="a parlamento-aberto clone to build the pin in")
     source.add_argument("--release", metavar="DIR", help="a `release build` output folder built from the pin")
     d.add_argument("--branch", help=f"Pages branch to deploy (default {PREVIEW_BRANCH})")
     d.add_argument("--production", action="store_true", help=f"deploy production ({PRODUCTION_BRANCH})")
