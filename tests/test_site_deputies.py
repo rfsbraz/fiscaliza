@@ -411,6 +411,51 @@ def test_coverage_of_the_ar_declarations(con):
         }
 
 
+def test_no_declaration_in_the_open_data_is_not_a_missing_declaration(con):
+    # #106: 300 sat only in XVI, has no AR declaration and the EpT note covers XVI. The page gets
+    # what it needs to say the open data lacks it, never that it was not submitted.
+    c = deputies.conflitos_interesse(con, 300)
+    assert c["tem_declaracao"] is False
+    assert c["sem_declaracao"] == {
+        "legislatura": "XVI",
+        "antes_da_cobertura": False,
+        "lei_52_2019": True,
+        "url_parlamento": "https://www.parlamento.pt/DeputadoGP/Paginas/RegistoInteressesInfo.aspx?bid=300",
+        "url_ept": "https://entidadetransparencia.pt/",
+    }
+    assert "sem_declaracao" not in deputies.conflitos_interesse(con, 1)
+
+
+@pytest.mark.parametrize(
+    ("start", "before", "law"),
+    [
+        (date(2005, 3, 10), True, False),  # X: before the open data's first declarations (XI)
+        (date(2009, 10, 15), False, False),  # XI: covered, older regime
+        (date(2015, 10, 23), False, False),  # XIII: ended before Lei 52/2019 came into force
+        (date(2019, 10, 25), False, True),  # XIV: first day of the law (art. 26.º)
+        (date(2022, 3, 29), False, True),  # XV
+    ],
+)
+def test_missing_declaration_note_by_legislature(start, before, law):
+    note = deputies.missing_declaration(7, "L", start, date(2009, 10, 15))
+    assert (note["antes_da_cobertura"], note["lei_52_2019"]) == (before, law)
+    assert note["url_parlamento"].endswith("?bid=7")
+
+
+def test_component_never_says_a_declaration_was_not_submitted():
+    source = COMPONENT.read_text()
+    card = (ROOT / "frontend" / "src" / "components" / "deputy" / "InterestStatusCard.jsx").read_text()
+    assert "hasDeclaration: false" not in source
+    for text in (source, card):
+        assert "30 dias" not in text
+    assert "Isso não significa que não tenha sido entregue" in source
+    assert "não cobrem declarações de interesses" in source
+    assert "60 dias" in source and "art. 13.º, n.º 1" in source
+    assert "conflitosInteresse.sem_declaracao.lei_52_2019" in source
+    # The tab covers mandates from before the law too, so its subtitle doesn't cite it.
+    assert "conforme Lei n.º 52/2019" not in source
+
+
 def test_component_uses_the_neutral_interest_labels():
     source = COMPONENT.read_text()
     assert "has_conflict_potential" not in source
