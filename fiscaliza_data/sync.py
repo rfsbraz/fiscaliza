@@ -5,7 +5,7 @@
 3. Get manifest.json and every Parquet file it lists; check each SHA-256.
 4. Refuse a schema_version whose major the site does not support.
 5. Load the Parquet files as tables into a new fiscaliza-<tag>.duckdb, with the seating
-   macros, the site views (views.sql) and a _meta table.
+   macros (seating.sql), the site views (views.sql) and a _meta table.
 6. Smoke checks: the current legislature has 230 seated deputies at its extract date, and
    no table has more than 5% fewer rows than in the live file.
 7. Point current.duckdb at the new file atomically and keep only the last two files.
@@ -143,8 +143,7 @@ def _build(path, folder, manifest, files):
         for mart, (name, _) in files.items():
             # mart names are checked against _MART in _parquet_files
             con.execute(f"create table {mart} as select * from read_parquet(?)", [str(folder / name)])  # noqa: S608
-        macros = folder / "macros.sql"
-        con.execute((macros if macros.is_file() else SEATING_SQL).read_text(encoding="utf-8"))
+        con.execute(SEATING_SQL.read_text(encoding="utf-8"))
         con.execute(VIEWS_SQL.read_text(encoding="utf-8"))
         con.execute(
             "create table _meta as select ?::varchar as tag, ?::varchar as schema_version, "
@@ -245,8 +244,6 @@ def _from_github(tag, http, data_dir, live):
         if name not in assets:
             raise SyncError(f"{name}: missing from the release")
         http.download(assets[name], staging / name)
-    if "macros.sql" in assets:
-        http.download(assets["macros.sql"], staging / "macros.sql")
     return found, staging
 
 
