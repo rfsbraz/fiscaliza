@@ -28,8 +28,12 @@ def test_skips_pull_requests_from_forks_and_dependabot():
 
 def test_one_deploy_at_a_time_and_none_cancelled():
     t = text()
-    block = re.search(r"\nconcurrency:\n((?:  .*\n)+)", t).group(1)
-    assert re.search(r"group: [^$\n]+\n", block), "one fixed group, not one per ref"
+    # On the deploy job, not the workflow: a run the changes job skips then never queues.
+    assert "\nconcurrency:" not in t
+    changes, deploy = re.search(r"\n  changes:\n(.*)\n  deploy:\n(.*)", t, re.S).groups()
+    assert "concurrency:" not in changes
+    block = re.search(r"\n    concurrency:\n((?:      .*\n)+)", deploy).group(1)
+    assert re.search(r"group: pages-deploy\n", block), "one fixed group, not one per ref"
     assert "${{" not in block
     assert "cancel-in-progress: false" in block
 
