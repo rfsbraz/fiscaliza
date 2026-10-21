@@ -67,7 +67,7 @@ def test_wrangler_gets_node_22():
 
 
 def test_deploy_is_time_boxed_and_the_export_capped():
-    t = text()
+    t = text().split("\n  deploy:\n", 1)[1]
     job = int(re.search(r"\n    timeout-minutes: (\d+)", t).group(1))
     step = int(re.search(r"\n        timeout-minutes: (\d+)", t).group(1))
     assert step < job <= 60
