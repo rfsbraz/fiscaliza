@@ -9,7 +9,7 @@ import { LoadingSpinner } from './common';
 // Phase 1 Components - Constitutional Modernism Design System
 import AttendancePanel, { AttendanceCard } from './deputy/AttendancePanel';
 import { EducationalBox, ImportantContextBox, MethodologyNote } from './deputy/ContextBox';
-import InterestStatusCard, { ExclusivityBadge, DeclaredInterestsBadge, SectorInterestRow } from './deputy/InterestStatusCard';
+import { ExclusivityBadge, DeclaredInterestsBadge, SectorInterestRow } from './deputy/InterestStatusCard';
 import InitiativeProcessStepper, { InitiativeOutcomesSummary } from './deputy/InitiativeProcessStepper';
 import InitiativeRecordTable, { SigningCounts, ApprovalLines, GroupComparison } from './deputy/InitiativeRecord';
 import InterventionsSummaryBar, { ActivityBadge, VideoIndicator } from './deputy/InterventionsSummaryBar';
@@ -3439,7 +3439,7 @@ const DeputadoDetalhes = () => {
                       marginTop: '6px',
                       fontFamily: tokens.fonts.body,
                     }}>
-                      Declaração de interesses e atividades conforme Lei n.º 52/2019
+                      Declaração de interesses e atividades publicada nos dados abertos do Parlamento
                     </p>
                   </div>
                 </div>
@@ -3621,28 +3621,39 @@ const DeputadoDetalhes = () => {
                       </div>
                     </div>
                   </div>
-                ) : conflitosInteresse?.ept?.pendente ? null : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {/* Missing Declaration Status */}
-                    <InterestStatusCard
-                      data={{
-                        hasDeclaration: false,
-                        daysOverdue: 0, // Would need to calculate from mandate start date
-                      }}
-                      showDetails={false}
-                    />
-
-                    {/* Educational Context Box */}
-                    <EducationalBox title="Sobre a declaração de interesses">
-                      <p style={{ margin: '0 0 8px 0' }}>
-                        A Lei n.º 52/2019 obriga todos os deputados a submeter uma declaração de interesses
-                        no prazo de <strong>30 dias</strong> após tomada de posse.
+                ) : conflitosInteresse?.ept?.pendente || !conflitosInteresse?.sem_declaracao ? null : (
+                  // No declaration in the AR open data. A gap in the data is not a missing
+                  // declaration, so this never says one was not submitted.
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.6,
+                    color: tokens.colors.textSecondary,
+                    fontFamily: tokens.fonts.body,
+                  }}>
+                    <p style={{ margin: 0 }}>
+                      {conflitosInteresse.sem_declaracao.antes_da_cobertura && conflitosInteresse.cobertura
+                        ? `Os dados abertos do Parlamento não cobrem declarações de interesses antes da ${conflitosInteresse.cobertura.de} Legislatura, por isso não há declaração para a ${conflitosInteresse.sem_declaracao.legislatura} Legislatura.`
+                        : `Os dados abertos do Parlamento não incluem a declaração de interesses deste deputado para a ${conflitosInteresse.sem_declaracao.legislatura} Legislatura. Isso não significa que não tenha sido entregue.`}
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      O registo de interesses pode ser consultado no{' '}
+                      <a href={conflitosInteresse.sem_declaracao.url_parlamento} target="_blank" rel="noopener noreferrer" style={{ color: tokens.colors.info, fontWeight: 600 }}>
+                        site do Parlamento
+                      </a>{' '}
+                      e no{' '}
+                      <a href={conflitosInteresse.sem_declaracao.url_ept} target="_blank" rel="noopener noreferrer" style={{ color: tokens.colors.info, fontWeight: 600 }}>
+                        site da Entidade para a Transparência
+                      </a>.
+                    </p>
+                    {conflitosInteresse.sem_declaracao.lei_52_2019 && (
+                      <p style={{ margin: 0, fontSize: '0.8125rem', color: tokens.colors.textMuted }}>
+                        A Lei n.º 52/2019 (art. 13.º, n.º 1) fixa um prazo de 60 dias, a contar do início de funções,
+                        para entregar a declaração.
                       </p>
-                      <p style={{ margin: 0 }}>
-                        Esta informação pode não estar disponível por diversos motivos: declaração ainda em
-                        processamento, deputado recém-empossado, ou dados ainda não digitalizados pelo Parlamento.
-                      </p>
-                    </EducationalBox>
+                    )}
                   </div>
                 )}
               </div>

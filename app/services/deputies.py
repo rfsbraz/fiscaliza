@@ -7,6 +7,8 @@ context (F09) and the family fields of the interest register (F15). Attendance (
 app.services.attendance; the card here reads its latest rate (``estatisticas.assiduidade``).
 """
 
+from datetime import date
+
 from app.data import repository
 from app.services.core import PICTURE_URL, NotFound, _iso, _legislature, _periodo
 
@@ -16,6 +18,12 @@ MAX_INITIATIVES = 100
 # not authorised publishing it yet; the AR open data stops at XV.
 EPT_FROM = "XVI"
 EPT_URL = "https://entidadetransparencia.pt/"
+# The person's interest register on the AR site.
+AR_INTERESTS_URL = "https://www.parlamento.pt/DeputadoGP/Paginas/RegistoInteressesInfo.aspx?bid={}"
+# Lei n.º 52/2019 came into force on the first day of the XIV Legislature (art. 26.º), and its
+# declarations apply to whoever starts, renews or ends functions from then on (art. 25.º, n.º 2).
+# Its deadline is 60 days from the start of functions (art. 13.º, n.º 1).
+LAW_52_2019_IN_FORCE = date(2019, 10, 25)
 INITIATIVE_URL = "https://www.parlamento.pt/ActividadeParlamentar/Paginas/DetalheIniciativa.aspx?BID={}"
 # An approval rate needs at least this many decided initiatives (passed or failed).
 MIN_DECIDED = 10
@@ -317,8 +325,23 @@ def atividades(con, cadastro_id, legislatura=None, tipo=None, ordem="newest", pa
     }
 
 
+def missing_declaration(cadastro_id, legislature, legislature_start, coverage_start):
+    """What the page needs when the AR open data has no declaration for the person. A record
+    missing from the open data is not evidence that a declaration was not submitted, so the page
+    never says it was. ``legislature`` is the latest the person held a seat in; before the first
+    legislature with open data declarations the data does not cover the period at all. The legal
+    deadline is shown only for mandates under Lei n.º 52/2019."""
+    return {
+        "legislatura": legislature,
+        "antes_da_cobertura": coverage_start is None or legislature_start < coverage_start,
+        "lei_52_2019": legislature_start >= LAW_52_2019_IN_FORCE,
+        "url_parlamento": AR_INTERESTS_URL.format(cadastro_id),
+        "url_ept": EPT_URL,
+    }
+
+
 def conflitos_interesse(con, cadastro_id):
-    person, _ = _person(con, cadastro_id)
+    person, career = _person(con, cadastro_id)
     pending = repository.seated_since(con, cadastro_id, EPT_FROM)
     coverage = repository.declaration_coverage(con)
     out = {
@@ -337,6 +360,13 @@ def conflitos_interesse(con, cadastro_id):
     }
     declaration = repository.latest_declaration(con, cadastro_id)
     if declaration is None:
+        latest = career[-1]
+        out["sem_declaracao"] = missing_declaration(
+            cadastro_id,
+            latest["legislature"],
+            latest["legislature_start"],
+            coverage["first_start"] if coverage else None,
+        )
         return out
     items = repository.declaration_items(
         con, declaration["legislature"], declaration["declaration_key"], ["activity", "society"]

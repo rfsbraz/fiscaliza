@@ -951,6 +951,7 @@ def declaration_coverage(con):
         select
             (select arg_min(legislature, start_date) from legs) as first_legislature,
             (select arg_max(legislature, start_date) from legs) as last_legislature,
+            (select min(start_date) from legs) as first_start,
             count(*) as seated,
             count(d.cadastro_id) as declared
         from seated s
