@@ -33,12 +33,6 @@
       "read_at": "frontend/src/components/PartidosPage.jsx:629"
     },
     {
-      "path": "coligacoes[].data_formacao",
-      "type": "scalar",
-      "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:629"
-    },
-    {
       "path": "coligacoes[].deputy_count",
       "type": "scalar",
       "nullable": true,
