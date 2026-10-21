@@ -3,8 +3,8 @@
 
 Each function takes a DuckDB cursor and returns the payload DeputadoDetalhes.jsx reads; the
 contracts in tests/contracts/endpoints are the spec. Dropped for good: the invented opposition
-context (F09) and the family fields of the interest register (F15). Attendance waits for its
-mart, so ``taxa_assiduidade`` is null and the page hides the card.
+context (F09) and the family fields of the interest register (F15). Attendance (F12) is in
+app.services.attendance; the card here reads its latest rate (``estatisticas.assiduidade``).
 """
 
 from app.data import repository
@@ -120,6 +120,8 @@ def _interventions_comparison(con, cadastro_id, legislature, is_open):
 
 
 def detalhes(con, cadastro_id):
+    from app.services import attendance
+
     person, career = _person(con, cadastro_id)
     current = _legislature(con)
     latest = career[-1]
@@ -176,7 +178,7 @@ def detalhes(con, cadastro_id):
                 for t in repository.deputy_initiative_types(con, cadastro_id)
             ],
             "intervencoes_parlamentares": interventions,
-            "taxa_assiduidade": None,
+            "assiduidade": attendance.latest_rate(con, cadastro_id, career),
             "tempo_servico_anos": round(days / 365.25, 1),
             "nivel_experiencia": _experience(len(career)),
             "total_mandatos": len(career),

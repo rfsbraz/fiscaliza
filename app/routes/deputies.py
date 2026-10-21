@@ -1,10 +1,10 @@
-"""Deputy page on the DuckDB data layer: details, activities and interest register. Each route
+"""Deputy page on the DuckDB data layer: details, activities, interest register and attendance. Each route
 parses its arguments, calls a service and returns JSON."""
 
 from flask import Blueprint, current_app, jsonify, request
 
 from app.data.connection import DataUnavailable, data_source
-from app.services import core, deputies
+from app.services import attendance, core, deputies
 
 deputies_bp = Blueprint("deputies", __name__)
 
@@ -46,3 +46,8 @@ def get_deputado_atividades(cad_id):
 @deputies_bp.route("/deputados/<int:cad_id>/conflitos-interesse", methods=["GET"])
 def get_deputado_conflitos_interesse(cad_id):
     return _serve(deputies.conflitos_interesse, cad_id)
+
+
+@deputies_bp.route("/deputados/<int:cad_id>/attendance", methods=["GET"])
+def get_deputado_attendance(cad_id):
+    return _serve(attendance.deputado_attendance, cad_id)

@@ -1,8 +1,9 @@
 """Agenda page: recent plenary votes and activity stats (F33, F34).
 
 Groups' positions are shown as the release publishes them, by group with a count where a
-group split; the release has no per-deputy tallies. Figures with no source yet (attendance,
-F12; committee meetings and hearings, F32) are left out, not sent as zeros.
+group split; the release has no per-deputy tallies. Attendance (F12) is the share of seats on
+the year's plenary lists that were attended (app.services.attendance). Figures with no source
+yet (committee meetings and hearings, F32) are left out, not sent as zeros.
 """
 
 from datetime import date
@@ -62,9 +63,16 @@ def votacoes_recentes(con, limite=DEFAULT_LIMIT, legislatura=None):
     }
 
 
+def _attendance(average):
+    return {"assiduidade": average} if average else {}
+
+
 def estatisticas_atividade(con):
     """Counts for the calendar year of the current legislature's reference day, up to that day."""
-    day = _legislature(con)["ref_day"]
+    from app.services import attendance
+
+    leg = _legislature(con)
+    day = leg["ref_day"]
     counts = repository.activity_counts(con, date(day.year, 1, 1), day)
     decided = counts["approved"] + counts["rejected"]
     meta = repository.meta(con)
@@ -82,5 +90,6 @@ def estatisticas_atividade(con):
             },
             "iniciativas": {"apresentadas": counts["initiatives"]},
             "intervencoes": {"total": counts["interventions"]},
+            **_attendance(attendance.year_average(con, leg["legislature"], date(day.year, 1, 1), day)),
         },
     }

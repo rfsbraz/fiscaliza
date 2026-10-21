@@ -672,3 +672,85 @@ def activity_counts(con, start, end):
         """,
         {"start": start, "end": end},
     )
+
+
+# Plenary attendance (S11): the plenary_attendance mart, one row per sitting and seat holder.
+
+_ATTENDANCE_COUNTS = """
+    count(*) as meetings,
+    count(*) filter (where category = 'present') as present,
+    count(*) filter (where category = 'other_body_or_mission') as other_body_or_mission,
+    count(*) filter (where category = 'justified') as justified,
+    count(*) filter (where category = 'missed_quorum_vote') as missed_quorum_vote,
+    count(*) filter (where category = 'pending') as pending,
+    count(*) filter (where category = 'unclassified') as unclassified,
+    count(*) filter (where category = 'unjustified') as unjustified
+"""
+
+
+def attendance_by_legislature(con, cadastro_id):
+    """Per legislature and kind of sitting (is_ceremonial), the person's sittings in the lists
+    and how many fall in each category, with the groups they sat for and the first and last
+    sitting."""
+    return _rows(
+        con,
+        f"""
+        select legislature, is_ceremonial, {_ATTENDANCE_COUNTS},
+            list(distinct group_code order by group_code) as groups,
+            min(meeting_date) as first_meeting, max(meeting_date) as last_meeting
+        from plenary_attendance
+        where cadastro_id = ?
+        group by legislature, is_ceremonial
+        """,  # noqa: S608 (a constant, no input)
+        [cadastro_id],
+    )
+
+
+def attendance_legislatures(con, legislatures):
+    """Per legislature, the seats on the lists of its ordinary and extraordinary sittings and
+    how many were present or in another body or on mission. Legislatures with no lists have
+    no row."""
+    if not legislatures:
+        return []
+    return _rows(
+        con,
+        """
+        select legislature,
+            count(*) as seats,
+            count(*) filter (where category = 'present') as present,
+            count(*) filter (where category in ('present', 'other_body_or_mission')) as attended
+        from plenary_attendance
+        where list_contains(?, legislature) and not is_ceremonial
+        group by legislature
+        """,
+        [list(legislatures)],
+    )
+
+
+def attendance_records(con, cadastro_id):
+    """Every sitting where the person was not plainly present, newest first."""
+    return _rows(
+        con,
+        """
+        select legislature, meeting_date, meeting_id, meeting_type, is_ceremonial, code, category, group_code
+        from plenary_attendance
+        where cadastro_id = ? and category <> 'present'
+        order by meeting_date desc, meeting_id desc
+        """,
+        [cadastro_id],
+    )
+
+
+def attendance_between(con, legislature, start, end):
+    """Seats on the lists of the legislature's ordinary and extraordinary sittings between two
+    days (both included), how many attended, and the number of sittings."""
+    return _one(
+        con,
+        """
+        select count(distinct meeting_id) as meetings, count(*) as seats,
+            count(*) filter (where category in ('present', 'other_body_or_mission')) as attended
+        from plenary_attendance
+        where legislature = ? and not is_ceremonial and meeting_date between ? and ?
+        """,
+        [legislature, start, end],
+    )

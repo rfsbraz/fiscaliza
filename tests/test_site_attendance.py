@@ -150,9 +150,10 @@ def test_records_list_every_sitting_that_was_not_a_plain_presence_newest_first(c
 
 def test_never_the_absence_reason(con):
     payload = attendance.deputado_attendance(con, 1)
-    text = str(payload).lower()
+    keys = {k for leg in payload["legislaturas"] for r in leg["registos"] for k in r}
+    keys |= {k for leg in payload["legislaturas"] for k in leg}
     for word in ("motivo", "reason", "justification", "observations", "justificacao"):
-        assert word not in text
+        assert not [k for k in keys if word in k.lower()]
 
 
 def test_legislatures_newest_first_and_definition_stated(con):

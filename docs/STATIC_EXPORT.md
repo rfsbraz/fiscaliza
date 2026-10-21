@@ -36,7 +36,7 @@ as a numeral or a number (`17`), like the API.
 | `coligacoes?include_inactive=false` / `true` | `coligacoes.json` / `coligacoes-todas.json` |
 | `coligacoes/{sigla}`, `/deputados`, `/partidos` | `coligacoes/{slug}.json`, `coligacoes/{slug}/deputados.json`, `coligacoes/{slug}/partidos.json` |
 | `deputados?page&per_page&active_only&search` | `deputados.json`: everyone, in the list's order; search, filter and paging run in the browser |
-| `deputados/{id}/detalhes`, `/conflitos-interesse`, `/atividades`, `/voting-analytics` | `deputados/{id}.json`: one file per person with all of it, for every legislature they served in; interventions are filtered, sorted and paged in the browser |
+| `deputados/{id}/detalhes`, `/conflitos-interesse`, `/atividades`, `/voting-analytics`, `/attendance` | `deputados/{id}.json`: one file per person with all of it, for every legislature they served in; interventions are filtered, sorted and paged in the browser |
 | `partidos/{sigla}/deputados` | `partidos/{slug}/deputados.json` |
 | `partidos/{sigla}/voting-analytics[?legislatura]` | `partidos/{slug}/voting-analytics.json`, `partidos/{slug}/voting-analytics/{legislature slug}.json` |
 
@@ -51,19 +51,17 @@ deputy's activities in a legislature they never served in) are not rendered and 
 
 ## Not rendered yet
 
-Attendance (`deputados/{id}/attendance`, S11) and the agenda for today and this week
-(`agenda/hoje`, `agenda/semana`, S13) wait on their parlamento-aberto marts. The browser answers
-them 503 "not available" with the step that brings them, and the pages show their notice.
+The agenda for today and this week (`agenda/hoje`, `agenda/semana`, S13) waits on its
+parlamento-aberto mart. The browser answers it 503 "not available" with the step that brings
+it, and the page shows its notice. It will get a file per week, with "today" picked in the
+browser in Europe/Lisbon time.
 
-Adding attendance in S11 is a registration: one `DeputySection` in `DEPUTY_SECTIONS`
-(`fiscaliza_data/export.py`) that renders its service into an `attendance` field of each
-deputy's file. The browser side already maps `deputados/{id}/attendance` to that field and
-serves it as soon as it is there; its `PENDING` entry in `staticApi.js` can then go. The agenda
-(S13) gets a file per week in the same way, with "today" picked in the browser in
-Europe/Lisbon time.
+Attendance (`deputados/{id}/attendance`, S11) is the `attendance` field of each deputy's file:
+one `DeputySection` in `DEPUTY_SECTIONS` (`fiscaliza_data/export.py`) and one entry in
+`staticApi.js`. A new deputy endpoint is added the same way.
 
-The deputy and party endpoints render once S5 (#68), S6 (#79) and S7 (#81) are on master; the
-export picks their services up on its own.
+The party endpoints render once S6 (#79) and S7 (#81) are on master; the export picks their
+services up on its own.
 
 ## Deep links
 

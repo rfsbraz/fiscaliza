@@ -135,17 +135,17 @@ test('a host that answers a missing file with index.html still reads as not foun
   assert.equal((await a.get('deputados/8/detalhes')).status, 404);
 });
 
-test('attendance and agenda say not available until S11 and S13', async () => {
+test('the agenda says not available until S13', async () => {
   const a = api();
-  assert.equal((await a.get('deputados/7/attendance')).status, 503);
   assert.equal((await a.get('agenda/hoje')).body.planned, 'S13');
   assert.equal((await a.get('agenda/semana')).status, 503);
 });
 
-test('attendance is served as soon as the export adds it to the deputy file', async () => {
+test('attendance is read from the deputy file, and is not found when the file has none', async () => {
   const files = { ...FILES, 'deputados/7.json': { ...FILES['deputados/7.json'], attendance: { taxa: 0.9 } } };
   assert.deepEqual((await api(files).get('deputados/7/attendance')).body, { taxa: 0.9 });
-  assert.equal((await api(files).get('deputados/8/attendance')).status, 503);
+  assert.equal((await api(files).get('deputados/8/attendance')).status, 404);
+  assert.equal((await api(files).get('deputados/7/attendance?legislatura=XVII')).status, 404);
 });
 
 test('requests the export does not render are not found', async () => {

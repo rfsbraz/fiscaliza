@@ -20,7 +20,6 @@ const ROMAN = [
 // Not in the data release yet: answered "not available" until their step lands, then the
 // export renders them like the rest.
 const PENDING = {
-  attendance: { reason: 'Plenary attendance is not in the parlamento-aberto release yet.', planned: 'S11' },
   agenda: { reason: 'The parliamentary agenda is not in the parlamento-aberto release yet.', planned: 'S13' },
 };
 const INTERVENTION_ORDER = {
@@ -157,8 +156,7 @@ const field = (name) => (bundle, params) =>
 
 // Every endpoint of the deputy page and how it is answered from the deputy's file
 // (fiscaliza_data/export.py, DEPUTY_SECTIONS). A section missing from the file answers 404,
-// or 503 "not available" while it is in PENDING. Attendance (S11) is wired already: once the
-// export adds an `attendance` field it is served, and its PENDING entry can go.
+// or 503 "not available" while it is in PENDING.
 const DEPUTY_SECTIONS = {
   detalhes: field('detalhes'),
   'conflitos-interesse': field('conflitos_interesse'),
