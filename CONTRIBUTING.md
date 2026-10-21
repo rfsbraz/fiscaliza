@@ -6,91 +6,64 @@ Thank you for your interest in contributing to Fiscaliza! This project aims to b
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.12
 - Node.js 20+
-- PostgreSQL 15+ (or Docker)
+- A parlamento-aberto `release build` output, or network access to its GitHub releases
 
-### Option 1: Docker (recommended)
+No database server is needed.
+
+### Backend
 
 ```bash
-docker-compose up -d postgres    # Start PostgreSQL
-docker-compose up backend        # Start Flask API (with hot reload)
-cd frontend && npm run dev       # Start React dev server
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install pytest ruff==0.17.1
 ```
 
-### Option 2: Manual Setup
+### Data
 
-1. **Database**: Install PostgreSQL and create a database:
-   ```bash
-   createdb parliament
-   ```
-
-2. **Backend**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # or venv\Scripts\activate on Windows
-   pip install -r requirements.txt
-   ```
-
-3. **Frontend**:
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-4. **Environment**: Create `.env` with your database credentials:
-   ```
-   DATABASE_TYPE=postgresql
-   PG_HOST=localhost
-   PG_PORT=5432
-   PG_USER=parluser
-   PG_PASSWORD=parliament_dev
-   PG_DATABASE=parliament
-   ```
-
-### Running the Import Pipeline
-
-The data import pipeline downloads and processes XML data from the Portuguese Parliament open data portal:
+The API serves one read-only DuckDB file. Build it with the sync:
 
 ```bash
-# Discover available files
-python -m scripts.data_processing.pipeline_runner discover
+# From a local parlamento-aberto build: the folder, its manifest.json, or an archive of it
+python -m fiscaliza_data.sync --from ../parlamento-aberto/dist --data-dir data
 
-# Import all pending files
-python -m scripts.data_processing.pipeline_runner import
-
-# Retry failed imports
-python -m scripts.data_processing.pipeline_runner import --retry-failed
+# Or from a published release
+python -m fiscaliza_data.sync --tag data-2026-10-20 --data-dir data
 ```
 
-The `ops` CLI provides additional management commands:
+The command exits non-zero when a check fails and leaves the previous file live. Run it again with a newer build to swap the file in; the running API picks it up within a minute.
+
+### Running locally
 
 ```bash
-python -m ops.cli db status      # Check database status
-python -m ops.cli db migrate     # Run pending migrations
-python -m ops.cli pipeline run   # Run full import pipeline
+FISCALIZA_DATA_DIR=data flask --app app.main run --port 5000
+cd frontend && npm install && npm run dev   # proxies /api to :5000
 ```
 
 ## Running Tests
 
 ```bash
-# Backend tests
-pytest
-
-# Frontend tests
-cd frontend && npm test
+pytest                 # everything, including tests/contracts
+pytest tests/contracts # the endpoint contracts only
+cd frontend && npm run build
 ```
+
+The tests build tiny synthetic releases. They need no network and no real data.
 
 ## Code Style
 
 ### Python
 
-We use [ruff](https://docs.astral.sh/ruff/) for linting and formatting:
+We use [ruff](https://docs.astral.sh/ruff/) 0.17.1 for linting and formatting:
 
 ```bash
 ruff check .          # Lint
 ruff format .         # Format
 ```
+
+All SQL lives in `app/data/repository.py` and `fiscaliza_data/*.sql`. Routes parse arguments, call a service in `app/services/`, and return its dict as JSON.
 
 ### JavaScript/React
 
@@ -99,8 +72,6 @@ Follow existing patterns in the codebase. Key conventions:
 - API calls through `apiFetch()` from `config/api.js`
 
 ### Pre-commit Hooks
-
-Install pre-commit hooks to automatically check code before committing:
 
 ```bash
 pip install pre-commit
@@ -111,12 +82,9 @@ pre-commit install
 
 This project is entirely reliant on data accuracy. Key principles:
 
-- **Never generate artificial data** or provide defaults where real data is missing
-- **Map XML to SQL directly** unless instructed otherwise
-- **Document everything** thoroughly
-- **Fix importers, not data** - if data is wrong, fix the import pipeline
-
-See `CLAUDE.md` for detailed data import guidelines.
+- **Never generate artificial data** or provide defaults where real data is missing.
+- If a figure is wrong, fix it where it is computed: in parlamento-aberto for the marts, or in this repo's views and services. Never patch the data file.
+- When a mart does not exist yet, the endpoint says so (503 with a reason) and the page shows a notice. No placeholder numbers.
 
 ## Pull Request Process
 

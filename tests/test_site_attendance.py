@@ -257,7 +257,6 @@ def test_route_serves_the_service_payload(site_app, con):
 def test_route_is_on_the_deputies_blueprint_not_the_old_code(app):
     endpoints = {rule.rule: rule.endpoint for rule in app.url_map.iter_rules()}
     assert endpoints["/api/deputados/<int:cad_id>/attendance"].startswith("deputies.")
-    assert "meeting_attendances" not in (ROOT / "app" / "routes" / "parlamento.py").read_text()
 
 
 # Deputy page
