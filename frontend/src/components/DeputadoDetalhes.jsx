@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, User, MapPin, Calendar, Briefcase, Activity, FileText, Vote, MessageSquare, Play, Clock, ExternalLink, Mail, Shield, AlertTriangle, Heart, Users, TrendingUp, TrendingDown, Minus, Info, ChevronRight, ChevronDown, Target, Award, Globe, CheckCircle2, BarChart3, GraduationCap, Building2, BookOpen, Medal } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Calendar, Briefcase, Activity, FileText, Vote, MessageSquare, Play, Clock, ExternalLink, Mail, Shield, AlertTriangle, Users, TrendingUp, TrendingDown, Minus, Info, ChevronRight, ChevronDown, Target, Award, Globe, CheckCircle2, BarChart3, GraduationCap, Building2, BookOpen, Medal } from 'lucide-react';
 import VotingAnalytics from './VotingAnalytics';
 import LegislatureDropdown from './LegislatureDropdown';
 import { apiFetch } from '../config/api';
@@ -9,15 +9,15 @@ import { LoadingSpinner } from './common';
 // Phase 1 Components - Constitutional Modernism Design System
 import TrafficLightIndicator, { TrafficLightBar, ATTENDANCE_THRESHOLDS } from './deputy/TrafficLightIndicator';
 import { EducationalBox, ImportantContextBox, MethodologyNote } from './deputy/ContextBox';
-import InterestStatusCard, { ExclusivityBadge, SectorInterestRow } from './deputy/InterestStatusCard';
-import InitiativeProcessStepper, { InitiativeOutcomesSummary, AuthorshipPatternIndicator } from './deputy/InitiativeProcessStepper';
+import InterestStatusCard, { ExclusivityBadge, DeclaredInterestsBadge, SectorInterestRow } from './deputy/InterestStatusCard';
+import InitiativeProcessStepper, { InitiativeOutcomesSummary } from './deputy/InitiativeProcessStepper';
+import InitiativeRecordTable, { SigningCounts, ApprovalLines, GroupComparison } from './deputy/InitiativeRecord';
 import InterventionsSummaryBar, { ActivityBadge, VideoIndicator } from './deputy/InterventionsSummaryBar';
 // Phase 2 Components - Enhanced Analytics
 import TimelineSparkline, { ActivityHeatmap, TrendIndicator, BarSparkline } from './charts/TimelineSparkline';
 import AchievementBadge, { BadgeCollection, BadgeSummary, RedFlagIndicator } from './deputy/AchievementBadge';
-import AuthorshipChart, { AuthorshipBreakdown, CollaborationIndicator } from './charts/AuthorshipChart';
 import PolicySpecializationChart, { PolicyRadar, TopicTag } from './charts/PolicySpecializationChart';
-import SectorHeatmap, { SectorOverlapSummary, VotingInterestCrossReference } from './deputy/SectorHeatmap';
+import InterestTable, { ACTIVITY_COLUMNS, SHAREHOLDING_COLUMNS } from './deputy/InterestTable';
 
 // TODO: Deputy mandate linking limitation
 // Current system uses name-based linking to connect same person across legislaturas
@@ -25,6 +25,10 @@ import SectorHeatmap, { SectorOverlapSummary, VotingInterestCrossReference } fro
 // Future enhancement: Implement proper unique person identifiers or create person-linking table
 
 // Enhanced Statistics Components
+
+// Attendance still runs on the old database code. S11 turns this on once the
+// plenary_attendance mart is released; until then the tab is hidden and the endpoint not called.
+const ATTENDANCE_AVAILABLE = false;
 
 /**
  * Calculate trend indicator based on current vs career average
@@ -1068,7 +1072,7 @@ const DeputadoDetalhes = () => {
   // Get active tab from URL hash, default to 'intervencoes'
   const getActiveTabFromUrl = () => {
     const hash = location.hash.replace('#', '');
-    const validTabs = ['intervencoes', 'iniciativas', 'votacoes', 'attendance', 'conflitos-interesse'];
+    const validTabs = ['intervencoes', 'iniciativas', 'votacoes', ...(ATTENDANCE_AVAILABLE ? ['attendance'] : []), 'conflitos-interesse'];
     // Support legacy 'biografia' hash by redirecting to main page (no tab)
     if (hash === 'biografia' || hash === 'mandatos-anteriores') {
       return 'intervencoes';
@@ -1145,7 +1149,7 @@ const DeputadoDetalhes = () => {
           apiFetch(`deputados/${cadId}/detalhes`).then(r => { if (!r.ok) throw new Error('Erro ao carregar dados do deputado'); return r.json(); }),
           apiFetch(`deputados/${cadId}/atividades?${apiParams.toString()}`).then(r => { if (!r.ok) throw new Error('Erro ao carregar atividades do deputado'); return r.json(); }),
           apiFetch(`deputados/${cadId}/conflitos-interesse`).then(r => r.ok ? r.json() : null),
-          apiFetch(`deputados/${cadId}/attendance`).then(r => r.ok ? r.json() : null),
+          ATTENDANCE_AVAILABLE ? apiFetch(`deputados/${cadId}/attendance`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
         ]);
 
         // Process required results
@@ -1234,8 +1238,8 @@ const DeputadoDetalhes = () => {
     { id: 'intervencoes', label: 'Intervenções', icon: MessageSquare },
     { id: 'iniciativas', label: 'Iniciativas', icon: FileText },
     { id: 'votacoes', label: 'Votações', icon: Vote },
-    { id: 'attendance', label: 'Presenças', icon: Activity },
-    { id: 'conflitos-interesse', label: 'Conflitos de Interesse', icon: Shield }
+    ...(ATTENDANCE_AVAILABLE ? [{ id: 'attendance', label: 'Presenças', icon: Activity }] : []),
+    { id: 'conflitos-interesse', label: 'Registo de Interesses', icon: Shield }
   ];
 
   return (
@@ -1674,73 +1678,29 @@ const DeputadoDetalhes = () => {
                 marginBottom: '12px',
               }}>Iniciativas Legislativas</h4>
 
-              <div style={{ marginBottom: '12px' }}>
-                <span style={{
-                  fontSize: '2rem',
-                  fontWeight: 700,
-                  color: tokens.colors.textPrimary,
-                  fontFamily: tokens.fonts.mono,
-                }}>
-                  {deputado.estatisticas.iniciativas_propostas.toLocaleString('pt-PT')}
-                </span>
-                <span style={{ fontSize: '0.875rem', color: tokens.colors.textSecondary, marginLeft: '8px' }}>
-                  propostas
-                </span>
-              </div>
+              {/* Latest legislature only: how the projetos were signed and how they ended */}
+              {(() => {
+                const latest = deputado.estatisticas.iniciativas_legislaturas?.[0];
+                if (!latest) {
+                  return (
+                    <p style={{ margin: 0, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>
+                      Sem projetos de lei, de resolução ou de deliberação assinados.
+                    </p>
+                  );
+                }
+                return (
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: tokens.colors.textMuted, marginBottom: '8px' }}>
+                      {latest.legislatura} Legislatura{latest.aberta ? ' (em curso)' : ''}
+                    </div>
+                    <SigningCounts assinatura={latest.assinatura} showNote={false} />
+                    <div style={{ padding: '12px 0 0 0', marginTop: '12px', borderTop: `1px solid ${tokens.colors.border}` }}>
+                      <ApprovalLines aprovacao={latest.aprovacao} aberta={latest.aberta} showNote={false} />
+                    </div>
+                  </div>
+                );
+              })()}
 
-              {/* Approval Rate with Context */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '8px',
-                padding: '12px 0',
-                borderTop: `1px solid ${tokens.colors.border}`,
-              }}>
-                <span style={{
-                  fontFamily: tokens.fonts.mono,
-                  fontSize: '1.25rem',
-                  fontWeight: 600,
-                  color: tokens.colors.infoSecondary || '#3D5A80',
-                }}>
-                  {deputado.estatisticas.iniciativas_aprovadas}
-                </span>
-                <span style={{ fontSize: '0.875rem', color: tokens.colors.textSecondary }}>aprovadas</span>
-                <span style={{
-                  fontFamily: tokens.fonts.mono,
-                  fontSize: '0.875rem',
-                  color: tokens.colors.textMuted,
-                }}>
-                  ({deputado.estatisticas.taxa_aprovacao?.toFixed(0) || 0}%)
-                </span>
-              </div>
-
-              {/* Context Frame - Shows for opposition deputies */}
-              {deputado.estatisticas.contexto_oposicao?.is_oposicao && deputado.estatisticas.taxa_aprovacao < 20 && (
-                <aside style={{
-                  display: 'flex',
-                  gap: '10px',
-                  padding: '14px 12px',
-                  marginTop: '12px',
-                  background: `linear-gradient(135deg, ${tokens.colors.bgWarm || '#F8F6F0'} 0%, #FAF8F3 100%)`,
-                  border: `1px solid ${tokens.colors.borderWarm || '#E8E4DA'}`,
-                  borderLeft: `3px solid ${tokens.colors.ouroConstitucional || '#C9A227'}`,
-                  borderRadius: '0 4px 4px 0',
-                  fontSize: '0.8125rem',
-                  lineHeight: 1.5,
-                  color: tokens.colors.infoPrimary || '#1E3A5F',
-                }}>
-                  <Info style={{
-                    flexShrink: 0,
-                    width: '16px',
-                    height: '16px',
-                    color: tokens.colors.ouroConstitucional || '#C9A227',
-                    marginTop: '2px',
-                  }} />
-                  <p style={{ margin: 0 }}>
-                    <strong style={{ color: tokens.colors.primary }}>Contexto:</strong> Deputados da oposição têm taxas de aprovação estruturalmente baixas (~{deputado.estatisticas.contexto_oposicao.media_aprovacao_oposicao}%).
-                  </p>
-                </aside>
-              )}
             </article>
 
             {/* INTERVENÇÕES CARD */}
@@ -1793,40 +1753,18 @@ const DeputadoDetalhes = () => {
                 </span>
               </div>
 
-              {/* Comparison bar vs party average */}
+              {/* Within the group, in the latest closed legislature */}
               <div style={{ paddingTop: '12px', borderTop: `1px solid ${tokens.colors.border}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '0.75rem', color: tokens.colors.textMuted }}>vs. média do partido</span>
-                  <span style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    color: deputado.estatisticas.intervencoes_parlamentares > deputado.estatisticas.media_partido_iniciativas * 10
-                      ? tokens.colors.success
-                      : tokens.colors.textSecondary,
-                  }}>
-                    {deputado.estatisticas.media_partido_iniciativas > 0
-                      ? `${Math.round((deputado.estatisticas.intervencoes_parlamentares / (deputado.estatisticas.media_partido_iniciativas * 10) - 1) * 100)}%`
-                      : 'N/A'}
-                  </span>
-                </div>
-                <div style={{
-                  height: '6px',
-                  backgroundColor: '#E5E7EB',
-                  borderRadius: '3px',
-                  overflow: 'hidden',
-                }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${Math.min(75, 75)}%`,
-                    backgroundColor: tokens.colors.verdeClaro || '#2D6A4F',
-                    borderRadius: '3px',
-                    transition: 'width 0.5s ease',
-                  }} />
-                </div>
+                <GroupComparison
+                  comparacao={deputado.estatisticas.comparacao?.intervencoes}
+                  label="Comparação com o grupo parlamentar"
+                  closedLabel={true}
+                />
               </div>
             </article>
 
-            {/* PRESENÇA CARD */}
+            {/* PRESENÇA CARD - hidden until attendance data is available */}
+            {deputado.estatisticas.taxa_assiduidade != null && (
             <article style={{
               backgroundColor: tokens.colors.bgSecondary,
               border: `1px solid ${tokens.colors.border}`,
@@ -1906,6 +1844,7 @@ const DeputadoDetalhes = () => {
                 Assiduidade às sessões plenárias
               </p>
             </article>
+            )}
 
             {/* CARREIRA CARD */}
             <article style={{
@@ -1991,13 +1930,14 @@ const DeputadoDetalhes = () => {
                   margin: '0 0 4px 0',
                 }}>Tipos de Iniciativas</h4>
                 <p style={{ fontSize: '0.8125rem', color: tokens.colors.textSecondary, margin: 0 }}>
-                  Distribuição das {deputado.estatisticas.iniciativas_propostas} iniciativas por tipo
+                  Iniciativas assinadas em todos os mandatos, por tipo
                 </p>
               </header>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {deputado.estatisticas.iniciativas_por_tipo.map((tipo, index) => {
-                  const percentage = (tipo.total / deputado.estatisticas.iniciativas_propostas * 100);
+                  const typesSum = deputado.estatisticas.iniciativas_por_tipo.reduce((sum, t) => sum + (t.total || 0), 0) || 1;
+                  const percentage = (tipo.total / typesSum * 100);
                   const maxCount = deputado.estatisticas.iniciativas_por_tipo[0]?.total || 1;
                   const barWidth = (tipo.total / maxCount * 100);
 
@@ -2087,10 +2027,41 @@ const DeputadoDetalhes = () => {
                 }}>
                   <TrendingUp style={{ flexShrink: 0, width: '16px', height: '16px', color: tokens.colors.verdeClaro || '#2D6A4F' }} />
                   <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.5, color: tokens.colors.textSecondary }}>
-                    <strong style={{ color: tokens.colors.primary }}>{deputado.estatisticas.iniciativas_por_tipo[0].descricao}</strong> representa {(deputado.estatisticas.iniciativas_por_tipo[0].total / deputado.estatisticas.iniciativas_propostas * 100).toFixed(0)}% da atividade legislativa deste deputado.
+                    <strong style={{ color: tokens.colors.primary }}>{deputado.estatisticas.iniciativas_por_tipo[0].descricao}</strong> é o tipo de iniciativa que este deputado mais assina.
                   </p>
                 </aside>
               )}
+            </section>
+          )}
+
+          {/* INITIATIVES PER LEGISLATURE: signing and outcomes, then the group comparison */}
+          {deputado.estatisticas.iniciativas_legislaturas?.length > 0 && (
+            <section style={{
+              backgroundColor: tokens.colors.bgSecondary,
+              border: `1px solid ${tokens.colors.border}`,
+              borderRadius: '6px',
+              padding: '20px',
+              marginBottom: '24px',
+            }}>
+              <header style={{ marginBottom: '16px', paddingBottom: '12px', borderBottom: `2px solid ${tokens.colors.primary}` }}>
+                <h4 style={{
+                  fontFamily: tokens.fonts.headline,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  color: tokens.colors.primary,
+                  margin: '0 0 4px 0',
+                }}>Projetos por legislatura</h4>
+                <p style={{ fontSize: '0.8125rem', color: tokens.colors.textSecondary, margin: 0 }}>
+                  Projetos de lei, de resolução e de deliberação: como foram assinados e como terminaram
+                </p>
+              </header>
+              <InitiativeRecordTable rows={deputado.estatisticas.iniciativas_legislaturas} />
+              <div style={{ marginTop: '16px' }}>
+                <GroupComparison
+                  comparacao={deputado.estatisticas.comparacao?.iniciativas_subscricao_restrita}
+                  label="Iniciativas com subscrição restrita, comparação com o grupo parlamentar"
+                />
+              </div>
             </section>
           )}
 
@@ -2126,13 +2097,16 @@ const DeputadoDetalhes = () => {
                 position: 'relative',
               }}>
                 {(() => {
+                  // Pixel heights out of a fixed track: a percentage height inside a column
+                  // with no height of its own resolves to auto and every bar looked the same.
+                  const EVOLUTION_TRACK_PX = 96;
                   const maxValue = Math.max(...deputado.estatisticas.evolucao_legislaturas.map(e => e.iniciativas + e.intervencoes));
                   // Reverse to show oldest first (left to right)
                   const sortedEvolution = [...deputado.estatisticas.evolucao_legislaturas].reverse();
 
                   return sortedEvolution.map((leg, index) => {
                     const total = leg.iniciativas + leg.intervencoes;
-                    const height = maxValue > 0 ? (total / maxValue) * 100 : 0;
+                    const barHeight = maxValue > 0 ? Math.max(Math.round((total / maxValue) * EVOLUTION_TRACK_PX), 4) : 4;
                     const isLast = index === sortedEvolution.length - 1;
 
                     return (
@@ -2157,10 +2131,9 @@ const DeputadoDetalhes = () => {
                         </div>
                         <div style={{
                           width: '100%',
-                          height: `${Math.max(height, 8)}%`,
+                          height: `${barHeight}px`,
                           backgroundColor: isLast ? tokens.colors.primary : tokens.colors.infoSecondary || '#3D5A80',
                           borderRadius: '4px 4px 0 0',
-                          minHeight: '8px',
                           transition: 'height 0.5s ease',
                         }} />
                         <div style={{
@@ -2236,9 +2209,6 @@ const DeputadoDetalhes = () => {
             <div>
               <strong style={{ color: tokens.colors.primary }}>Nota metodológica:</strong>{' '}
               Os dados apresentados são baseados em registos oficiais da Assembleia da República.
-              {deputado.estatisticas.contexto_oposicao?.is_oposicao && (
-                <> A comparação mais relevante para deputados da oposição é com outros líderes de oposição, não com a média geral do parlamento.</>
-              )}
             </div>
           </aside>
         </div>
@@ -2454,13 +2424,29 @@ const DeputadoDetalhes = () => {
                   </div>
                 </div>
 
+                {atividades?.nota_intervencoes && (
+                  <div style={{
+                    display: 'flex',
+                    gap: '10px',
+                    padding: '12px 14px',
+                    marginBottom: '20px',
+                    backgroundColor: tokens.colors.warningBg,
+                    border: '1px solid #FDE68A',
+                    borderRadius: '4px',
+                    fontSize: '0.8125rem',
+                    color: tokens.colors.textSecondary,
+                    fontFamily: tokens.fonts.body,
+                  }}>
+                    <Info style={{ flexShrink: 0, width: '16px', height: '16px', color: tokens.colors.warning, marginTop: '2px' }} />
+                    <p style={{ margin: 0 }}>{atividades.nota_intervencoes}</p>
+                  </div>
+                )}
+
                 {/* Activity Summary Bar */}
                 {atividades && totalInterventions > 0 && (
                   <InterventionsSummaryBar
                     totalInterventions={totalInterventions}
-                    interventionsThisYear={atividades.intervencoes?.length || 0}
-                    partyAverage={25} // TODO: Calculate from actual party data
-                    parliamentAverage={30} // TODO: Calculate from actual parliament data
+                    comparison={atividades.comparacao_intervencoes}
                     videoCount={atividades.intervencoes?.filter(i => i.url_video)?.length || 0}
                     lastInterventionDate={atividades.intervencoes?.[0]?.data}
                     typeBreakdown={(() => {
@@ -2998,24 +2984,31 @@ const DeputadoDetalhes = () => {
                       );
                     })()}
 
-                    {/* Authorship Pattern - if we have authorship data */}
-                    {(() => {
-                      const initiatives = atividades.iniciativas;
-                      // Count by authorship type (simplified - would need actual authorship data)
-                      const individual = initiatives.filter(i => i.autores?.length === 1).length;
-                      const group = initiatives.filter(i => i.autores?.length > 1 && !i.is_cross_party).length;
-                      const crossParty = initiatives.filter(i => i.is_cross_party).length;
-
-                      if (individual + group + crossParty === 0) return null;
-
-                      return (
-                        <AuthorshipPatternIndicator
-                          individual={individual}
-                          group={group}
-                          crossParty={crossParty}
-                        />
-                      );
-                    })()}
+                    {/* How the projetos of this legislature were signed */}
+                    {atividades.assinatura && (
+                      <div style={{
+                        backgroundColor: tokens.colors.bgSecondary,
+                        border: `1px solid ${tokens.colors.border}`,
+                        borderRadius: '4px',
+                        padding: '16px 20px',
+                      }}>
+                        <h4 style={{
+                          margin: '0 0 12px 0',
+                          fontFamily: tokens.fonts.body,
+                          fontSize: '0.8125rem',
+                          fontWeight: 600,
+                          color: tokens.colors.textPrimary,
+                        }}>
+                          Como assina
+                        </h4>
+                        <SigningCounts assinatura={atividades.assinatura} />
+                        {atividades.aprovacao?.length > 0 && (
+                          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${tokens.colors.border}` }}>
+                            <ApprovalLines aprovacao={atividades.aprovacao} aberta={!!atividades.nota_intervencoes} />
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Phase 2: Enhanced Analytics Grid */}
                     <div style={{
@@ -3024,53 +3017,6 @@ const DeputadoDetalhes = () => {
                       gap: '16px',
                       marginTop: '16px',
                     }}>
-                      {/* Authorship Breakdown (detailed) */}
-                      {(() => {
-                        const initiatives = atividades.iniciativas || [];
-                        const individual = initiatives.filter(i => i.autores?.length === 1).length;
-                        const group = initiatives.filter(i => i.autores?.length > 1 && !i.is_cross_party).length;
-                        const crossParty = initiatives.filter(i => i.is_cross_party).length;
-                        const total = individual + group + crossParty;
-
-                        if (total === 0) return null;
-
-                        return (
-                          <div style={{
-                            backgroundColor: tokens.colors.bgSecondary,
-                            border: `1px solid ${tokens.colors.border}`,
-                            borderRadius: '4px',
-                            padding: '16px 20px',
-                          }}>
-                            <h4 style={{
-                              margin: '0 0 12px 0',
-                              fontFamily: tokens.fonts.body,
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              color: tokens.colors.textMuted,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px',
-                            }}>
-                              Padrão de autoria
-                            </h4>
-                            <AuthorshipChart
-                              individual={individual}
-                              party={group}
-                              crossParty={crossParty}
-                              size="compact"
-                            />
-                            {crossParty > 0 && (
-                              <div style={{ marginTop: '12px' }}>
-                                <CollaborationIndicator
-                                  crossPartyCount={crossParty}
-                                  totalCount={total}
-                                  showLabel={false}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-
                       {/* Policy Specialization Chart */}
                       {(() => {
                         const initiatives = atividades.iniciativas || [];
@@ -3265,6 +3211,28 @@ const DeputadoDetalhes = () => {
                                 <FileText style={{ height: '16px', width: '16px', marginRight: '0.25rem' }} />
                                 <span>Tipo: {iniciativa.tipo}</span>
                               </div>
+                              {iniciativa.subscricao && (
+                                <div style={{
+                                  fontFamily: tokens.fonts.body,
+                                  fontSize: '0.875rem',
+                                  color: tokens.colors.textSecondary,
+                                }}>
+                                  {iniciativa.subscricao === 'grupo_parlamentar'
+                                    ? 'Do grupo parlamentar'
+                                    : iniciativa.subscricao === 'outros_grupos'
+                                      ? 'Com outros grupos'
+                                      : `Subscrição restrita: ${iniciativa.subscritores} ${iniciativa.subscritores === 1 ? 'deputado' : 'deputados'}`}
+                                </div>
+                              )}
+                              {iniciativa.aprovada_parcialmente && (
+                                <div style={{
+                                  fontFamily: tokens.fonts.body,
+                                  fontSize: '0.875rem',
+                                  color: tokens.colors.textSecondary,
+                                }}>
+                                  Aprovada só em parte (votação ponto a ponto)
+                                </div>
+                              )}
                               {iniciativa.resultado && (
                                 <div style={{
                                   fontFamily: tokens.fonts.body,
@@ -3730,111 +3698,97 @@ const DeputadoDetalhes = () => {
                   </div>
                 </div>
 
-                {conflitosInteresse ? (
+                {conflitosInteresse?.ept?.pendente && (
+                  <div style={{
+                    display: 'flex',
+                    gap: '10px',
+                    padding: '1rem',
+                    marginBottom: '1.5rem',
+                    backgroundColor: tokens.colors.infoBg,
+                    border: '1px solid #BFDBFE',
+                    borderRadius: '4px',
+                    fontFamily: tokens.fonts.body,
+                    fontSize: '0.875rem',
+                    color: tokens.colors.info,
+                  }}>
+                    <Clock style={{ flexShrink: 0, width: '20px', height: '20px', marginTop: '2px' }} />
+                    <p style={{ margin: 0 }}>
+                      {(() => {
+                        const legs = conflitosInteresse.ept.legislaturas;
+                        return legs.length > 1
+                          ? `As declarações de interesses das ${legs.slice(0, -1).join(', ')} e ${legs[legs.length - 1]} Legislaturas`
+                          : `As declarações de interesses da ${legs[0]} Legislatura`;
+                      })()}{' '}
+                      estão na Entidade para a Transparência e aguardam autorização da EpT para serem
+                      publicadas aqui. Pode consultá-las no{' '}
+                      <a href={conflitosInteresse.ept.url} target="_blank" rel="noopener noreferrer" style={{ color: tokens.colors.info, fontWeight: 600 }}>
+                        site da EpT
+                      </a>.
+                    </p>
+                  </div>
+                )}
+
+                {conflitosInteresse?.cobertura && (
+                  <p style={{
+                    margin: '0 0 1.5rem 0',
+                    fontSize: '0.8125rem',
+                    lineHeight: 1.5,
+                    color: tokens.colors.textMuted,
+                    fontFamily: tokens.fonts.body,
+                  }}>
+                    Os dados abertos do Parlamento só têm declaração de interesses
+                    para {conflitosInteresse.cobertura.com_declaracao.toLocaleString('pt-PT')} de{' '}
+                    {conflitosInteresse.cobertura.total.toLocaleString('pt-PT')} deputados com mandato
+                    {conflitosInteresse.cobertura.de === conflitosInteresse.cobertura.ate
+                      ? ` na ${conflitosInteresse.cobertura.de} Legislatura`
+                      : ` da ${conflitosInteresse.cobertura.de} à ${conflitosInteresse.cobertura.ate} Legislatura`}{' '}
+                    (cada deputado conta uma vez por legislatura).
+                  </p>
+                )}
+
+                {conflitosInteresse && conflitosInteresse.tem_declaracao !== false ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {/* Interest Status Card - Factual, non-accusatory */}
-                    <InterestStatusCard
-                      data={{
-                        hasDeclaration: true,
-                        hasInterestsInActiveLegislation: conflitosInteresse.has_conflict_potential || false,
-                        regulatedSectorInterests: conflitosInteresse.regulated_sector_count || 0,
-                        lastUpdated: conflitosInteresse.last_updated || null,
-                        declarationUrl: conflitosInteresse.declaration_url || null,
-                        status: conflitosInteresse.has_conflict_potential ? 'context' : 'clear',
-                      }}
-                      showDetails={true}
+                    {conflitosInteresse.legislatura && (
+                      <p style={{ margin: 0, fontSize: '0.8125rem', color: tokens.colors.textMuted, fontFamily: tokens.fonts.body }}>
+                        Última declaração publicada nos dados abertos do Parlamento: {conflitosInteresse.legislatura} Legislatura.
+                      </p>
+                    )}
+                    {/* What the latest declaration says, as neutral facts */}
+                    <DeclaredInterestsBadge
+                      declaresOther={conflitosInteresse.declara_outras_atividades}
+                      declaresShareholdings={conflitosInteresse.declara_participacoes}
                     />
 
-                    {/* Exclusivity Status */}
+                    {/* Exclusivity as published, with no guess when the declaration does not say */}
                     <ExclusivityBadge
-                      isExclusive={!conflitosInteresse.has_conflict_potential}
+                      isExclusive={conflitosInteresse.is_exclusive}
                       showExplanation={true}
                     />
 
                     {/* Educational Context Box */}
                     <EducationalBox title="Como interpretar esta informação">
                       <p style={{ margin: '0 0 8px 0' }}>
-                        A declaração de interesses é uma <strong>obrigação legal</strong> de todos os deputados
-                        (Lei n.º 52/2019). Ter interesses declarados <strong>não implica irregularidade</strong> —
-                        pelo contrário, demonstra cumprimento das regras de transparência.
+                        Declarar atividades e participações é uma <strong>obrigação legal</strong> (Lei n.º 52/2019)
+                        e não indica qualquer irregularidade. Mostramos o que consta da última declaração publicada
+                        nos dados abertos do Parlamento.
                       </p>
-                      <p style={{ margin: '0 0 8px 0' }}>
+                      <p style={{ margin: 0 }}>
                         <strong>Regime de exclusividade:</strong> Deputados podem optar por dedicação
                         exclusiva ao mandato ou manter atividades profissionais paralelas (regime legalmente previsto).
                       </p>
-                      <p style={{ margin: 0 }}>
-                        <strong>Sectores regulados:</strong> Quando um deputado declara interesses em sectores
-                        com legislação ativa, esta informação é apresentada para contexto público, permitindo
-                        aos cidadãos acompanhar a transparência parlamentar.
-                      </p>
                     </EducationalBox>
 
-                    {/* Phase 2: Sector Overlap Summary */}
-                    {conflitosInteresse.regulated_sector_count > 0 && (
-                      <SectorOverlapSummary
-                        totalSectors={conflitosInteresse.total_sectors || 5}
-                        overlappingSectors={conflitosInteresse.regulated_sector_count || 0}
-                        showContext={true}
-                      />
-                    )}
-
-                    {/* Phase 2: Sector Heatmap - showing interests vs legislation */}
-                    {(() => {
-                      // Generate sample sector data from available conflict data
-                      const sectorData = [];
-
-                      // Add professional activities as sectors
-                      if (conflitosInteresse.professional_activities?.length > 0) {
-                        conflitosInteresse.professional_activities.forEach((activity, idx) => {
-                          sectorData.push({
-                            sectorKey: `prof_${idx}`,
-                            sectorName: activity.entity_name || activity.function_type || 'Atividade Profissional',
-                            interest: activity.function_type || 'Atividade declarada',
-                            legislationCount: 0, // Would need legislation matching data
-                            status: 'noLegislation',
-                          });
-                        });
-                      }
-
-                      // Add shareholdings as sectors
-                      if (conflitosInteresse.shareholdings?.length > 0) {
-                        conflitosInteresse.shareholdings.forEach((holding, idx) => {
-                          sectorData.push({
-                            sectorKey: `share_${idx}`,
-                            sectorName: holding.entity_name || 'Participação Social',
-                            interest: holding.share_percentage ? `${holding.share_percentage}%` : 'Participação declarada',
-                            legislationCount: 0,
-                            status: 'noLegislation',
-                          });
-                        });
-                      }
-
-                      if (sectorData.length === 0) return null;
-
-                      return (
-                        <div style={{
-                          backgroundColor: tokens.colors.bgSecondary,
-                          border: `1px solid ${tokens.colors.border}`,
-                          borderRadius: '4px',
-                          padding: '20px',
-                        }}>
-                          <h4 style={{
-                            margin: '0 0 16px 0',
-                            fontFamily: tokens.fonts.body,
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                            color: tokens.colors.textPrimary,
-                          }}>
-                            Interesses por Sector
-                          </h4>
-                          <SectorHeatmap
-                            data={sectorData.slice(0, 6)} // Limit to 6 sectors
-                            showLegend={false}
-                            showDetails={false}
-                          />
-                        </div>
-                      );
-                    })()}
+                    {/* What the declaration lists, with only the fields the release has */}
+                    <InterestTable
+                      title="Atividades e cargos declarados"
+                      columns={ACTIVITY_COLUMNS}
+                      items={conflitosInteresse.professional_activities}
+                    />
+                    <InterestTable
+                      title="Participações sociais declaradas"
+                      columns={SHAREHOLDING_COLUMNS}
+                      items={conflitosInteresse.shareholdings}
+                    />
 
                     {/* Personal Information */}
                     <div style={{
@@ -3885,164 +3839,9 @@ const DeputadoDetalhes = () => {
                               {conflitosInteresse.full_name}
                             </p>
                           </div>
-
-                          {conflitosInteresse.dgf_number && (
-                            <div>
-                              <label style={{
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.75rem',
-                                fontWeight: '600',
-                                color: tokens.colors.textSecondary,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em'
-                              }}>
-                                Número DGF
-                              </label>
-                              <p style={{
-                                fontFamily: tokens.fonts.mono,
-                                color: tokens.colors.textPrimary,
-                                marginTop: '0.25rem'
-                              }}>
-                                {conflitosInteresse.dgf_number}
-                              </p>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
-
-                    {/* Marital Status and Regime */}
-                    {(conflitosInteresse.marital_status || conflitosInteresse.matrimonial_regime || conflitosInteresse.spouse_name) && (
-                      <div style={{
-                        backgroundColor: tokens.colors.bgSecondary,
-                        borderRadius: '4px',
-                        border: `1px solid ${tokens.colors.border}`
-                      }}>
-                        <div style={{
-                          padding: '1rem 1.5rem',
-                          borderBottom: `1px solid ${tokens.colors.border}`
-                        }}>
-                          <h4 style={{
-                            fontFamily: tokens.fonts.headline,
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            color: tokens.colors.textPrimary,
-                            display: 'flex',
-                            alignItems: 'center',
-                            margin: 0
-                          }}>
-                            <Heart style={{ height: '20px', width: '20px', color: tokens.colors.accent, marginRight: '0.5rem' }} />
-                            Estado Civil e Regime Matrimonial
-                          </h4>
-                        </div>
-                        <div style={{ padding: '1rem 1.5rem' }}>
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                            gap: '1.5rem'
-                          }}>
-                            {conflitosInteresse.marital_status && (
-                              <div>
-                                <label style={{
-                                  fontFamily: tokens.fonts.body,
-                                  fontSize: '0.75rem',
-                                  fontWeight: '600',
-                                  color: tokens.colors.textSecondary,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em'
-                                }}>
-                                  Estado Civil
-                                </label>
-                                <p style={{
-                                  fontFamily: tokens.fonts.body,
-                                  color: tokens.colors.textPrimary,
-                                  marginTop: '0.25rem'
-                                }}>
-                                  {conflitosInteresse.marital_status}
-                                </p>
-                              </div>
-                            )}
-
-                            {conflitosInteresse.matrimonial_regime && (
-                              <div>
-                                <label style={{
-                                  fontFamily: tokens.fonts.body,
-                                  fontSize: '0.75rem',
-                                  fontWeight: '600',
-                                  color: tokens.colors.textSecondary,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em'
-                                }}>
-                                  Regime Matrimonial
-                                </label>
-                                <p style={{
-                                  fontFamily: tokens.fonts.body,
-                                  color: tokens.colors.textPrimary,
-                                  marginTop: '0.25rem'
-                                }}>
-                                  {conflitosInteresse.matrimonial_regime}
-                                </p>
-                              </div>
-                            )}
-
-                            {conflitosInteresse.spouse_name && (
-                              <div>
-                                <label style={{
-                                  fontFamily: tokens.fonts.body,
-                                  fontSize: '0.75rem',
-                                  fontWeight: '600',
-                                  color: tokens.colors.textSecondary,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em'
-                                }}>
-                                  Nome do Cônjuge
-                                </label>
-                                <div style={{ marginTop: '0.25rem' }}>
-                                  {conflitosInteresse.spouse_deputy ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                      <Link
-                                        to={getDeputadoUrl(conflitosInteresse.spouse_deputy.cad_id || conflitosInteresse.spouse_deputy.id)}
-                                        style={{
-                                          fontFamily: tokens.fonts.body,
-                                          color: tokens.colors.primary,
-                                          fontWeight: '500',
-                                          textDecoration: 'none'
-                                        }}
-                                      >
-                                        {conflitosInteresse.spouse_name}
-                                      </Link>
-                                      <span style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        padding: '0.25rem 0.5rem',
-                                        borderRadius: '2px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: '500',
-                                        backgroundColor: colorSchemes.blue.bg,
-                                        color: colorSchemes.blue.text,
-                                        border: `1px solid ${colorSchemes.blue.border}`,
-                                        width: 'fit-content'
-                                      }}>
-                                        <Users style={{ height: '12px', width: '12px', marginRight: '0.25rem' }} />
-                                        Também Deputado/a ({conflitosInteresse.spouse_deputy.partido_sigla})
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <p style={{
-                                      fontFamily: tokens.fonts.body,
-                                      color: tokens.colors.textPrimary,
-                                      fontWeight: '500'
-                                    }}>
-                                      {conflitosInteresse.spouse_name}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Transparency Note */}
                     <div style={{
@@ -4076,7 +3875,7 @@ const DeputadoDetalhes = () => {
                       </div>
                     </div>
                   </div>
-                ) : (
+                ) : conflitosInteresse?.ept?.pendente ? null : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {/* Missing Declaration Status */}
                     <InterestStatusCard
@@ -4103,7 +3902,7 @@ const DeputadoDetalhes = () => {
               </div>
             )}
 
-            {activeTab === 'attendance' && (
+            {ATTENDANCE_AVAILABLE && activeTab === 'attendance' && (
               <div>
                 {/* Tab Section Header */}
                 <div style={{

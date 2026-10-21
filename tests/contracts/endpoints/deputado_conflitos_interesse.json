@@ -3,76 +3,154 @@
   "route": "/api/deputados/<int:cad_id>/conflitos-interesse",
   "keys": [
     {
-      "path": "declaration_url",
-      "type": "scalar",
+      "path": "cobertura",
+      "type": "object",
       "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3731"
+    },
+    {
+      "path": "cobertura.ate",
+      "type": "scalar",
+      "nullable": false,
       "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3742"
+    },
+    {
+      "path": "cobertura.com_declaracao",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3740"
+    },
+    {
+      "path": "cobertura.de",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3740"
+    },
+    {
+      "path": "cobertura.total",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3741"
+    },
+    {
+      "path": "declara_outras_atividades",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3758"
+    },
+    {
+      "path": "declara_participacoes",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3759"
+    },
+    {
+      "path": "ept",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3701"
+    },
+    {
+      "path": "ept.legislaturas",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3717"
+    },
+    {
+      "path": "ept.pendente",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3701"
+    },
+    {
+      "path": "ept.url",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3724"
     },
     {
       "path": "full_name",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3885"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3839"
     },
     {
-      "path": "has_conflict_potential",
+      "path": "is_exclusive",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3739"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3764"
     },
     {
-      "path": "last_updated",
+      "path": "legislatura",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3741"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3751"
     },
     {
       "path": "professional_activities",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3787"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3785"
+    },
+    {
+      "path": "professional_activities[].end_date",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/InterestTable.jsx:48"
     },
     {
       "path": "professional_activities[].entity_name",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3791"
+      "read_at": "frontend/src/components/deputy/InterestTable.jsx:26"
     },
     {
       "path": "professional_activities[].function_type",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3791"
+      "read_at": "frontend/src/components/deputy/InterestTable.jsx:25"
     },
     {
-      "path": "regulated_sector_count",
-      "type": "number",
+      "path": "professional_activities[].location",
+      "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3740"
+      "read_at": "frontend/src/components/deputy/InterestTable.jsx:27"
+    },
+    {
+      "path": "professional_activities[].start_date",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/InterestTable.jsx:48"
     },
     {
       "path": "shareholdings",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3800"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3790"
     },
     {
       "path": "shareholdings[].entity_name",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3804"
+      "read_at": "frontend/src/components/deputy/InterestTable.jsx:32"
+    },
+    {
+      "path": "shareholdings[].location",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/InterestTable.jsx:34"
     },
     {
       "path": "shareholdings[].share_percentage",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3805"
+      "read_at": "frontend/src/components/deputy/InterestTable.jsx:33"
     },
     {
-      "path": "total_sectors",
-      "type": "scalar",
+      "path": "tem_declaracao",
+      "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3775"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3749"
     }
   ],
   "dropped": [
@@ -95,6 +173,18 @@
     {
       "path": "dgf_number",
       "reason": "F15: family data about third parties (spouse, marital status, matrimonial regime, DGF number). Dropped for good (D2)."
+    },
+    {
+      "path": "has_conflict_potential",
+      "reason": "True for almost every declarant (not exclusive, or any declared item, the mandate included). Declaring is a legal duty, not a conflict. Replaced by declara_outras_atividades and declara_participacoes."
+    },
+    {
+      "path": "regulated_sector_count",
+      "reason": "No sector classification or legislation matching in the release, so there is nothing to count. The page no longer shows a sector status."
+    },
+    {
+      "path": "total_sectors",
+      "reason": "No sector classification or legislation matching in the release, so there is nothing to count. The page no longer shows a sector status."
     }
   ]
 }

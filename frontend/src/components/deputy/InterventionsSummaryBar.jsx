@@ -16,68 +16,35 @@ import { tokens } from '../../styles/tokens';
  *
  * @param {Object} props
  * @param {number} props.totalInterventions - Total number of interventions
- * @param {number} props.interventionsThisYear - Interventions in current year
- * @param {number} props.partyAverage - Party average for comparison
- * @param {number} props.parliamentAverage - Parliament average for comparison
+ * @param {Object} props.comparison - The deputy against their group, per year of mandate
+ *   (deputado_por_ano, media_grupo_por_ano, grupo, pares, legislatura, nota). No average while
+ *   the legislature is open, for a short mandate or a small group: then only the note shows.
  * @param {number} props.videoCount - Number of interventions with video
  * @param {string} props.lastInterventionDate - Date of last intervention
  * @param {Object} props.typeBreakdown - Breakdown by intervention type
  */
 const InterventionsSummaryBar = ({
   totalInterventions = 0,
-  interventionsThisYear = 0,
-  partyAverage = 0,
-  parliamentAverage = 0,
+  comparison = null,
   videoCount = 0,
   lastInterventionDate,
   typeBreakdown = {},
 }) => {
-  // Calculate comparison percentages
-  const vsParty = partyAverage > 0
-    ? ((interventionsThisYear - partyAverage) / partyAverage) * 100
-    : 0;
-  const vsParliament = parliamentAverage > 0
-    ? ((interventionsThisYear - parliamentAverage) / parliamentAverage) * 100
-    : 0;
+  const groupAverage = comparison?.media_grupo_por_ano;
+  const hasComparison = groupAverage != null && groupAverage > 0;
+  const vsGroup = hasComparison ? ((comparison.deputado_por_ano - groupAverage) / groupAverage) * 100 : 0;
 
-  // Determine status color based on activity level
-  const getActivityStatus = () => {
-    if (interventionsThisYear >= parliamentAverage * 1.2) return 'high';
-    if (interventionsThisYear >= parliamentAverage * 0.7) return 'normal';
-    if (interventionsThisYear > 5) return 'low';
-    return 'veryLow';
+  const neutralStatus = {
+    bg: tokens.colors.bgSecondary,
+    border: tokens.colors.border,
+    color: tokens.colors.textPrimary,
   };
-
-  const activityStatus = getActivityStatus();
-
-  const statusConfig = {
-    high: {
-      bg: tokens.colors.statusGreenBg,
-      border: tokens.colors.statusGreenBorder,
-      color: tokens.colors.statusGreen,
-      label: 'Atividade acima da média',
-    },
-    normal: {
-      bg: tokens.colors.bgSecondary,
-      border: tokens.colors.border,
-      color: tokens.colors.textPrimary,
-      label: 'Atividade dentro da média',
-    },
-    low: {
-      bg: tokens.colors.statusAmberBg,
-      border: tokens.colors.statusAmberBorder,
-      color: tokens.colors.statusAmber,
-      label: 'Atividade abaixo da média',
-    },
-    veryLow: {
-      bg: tokens.colors.statusRedBg,
-      border: tokens.colors.statusRedBorder,
-      color: tokens.colors.statusRed,
-      label: 'Atividade reduzida',
-    },
+  const config = {
+    ...neutralStatus,
+    label: hasComparison
+      ? `${comparison.deputado_por_ano.toLocaleString('pt-PT')} por ano de mandato`
+      : 'Sem comparação nesta legislatura',
   };
-
-  const config = statusConfig[activityStatus];
 
   return (
     <div style={{
@@ -165,78 +132,53 @@ const InterventionsSummaryBar = ({
           }}>
             Comparação
           </h4>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
+          {hasComparison ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <span style={{
+                fontFamily: tokens.fonts.body,
+                fontSize: '0.8125rem',
+                color: tokens.colors.textSecondary,
+              }}>
+                vs. média do grupo {comparison.grupo} ({groupAverage.toLocaleString('pt-PT')} por ano de mandato)
+              </span>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: tokens.colors.textPrimary,
+              }}>
+                {vsGroup >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                <span style={{
+                  fontFamily: tokens.fonts.mono,
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                }}>
+                  {vsGroup >= 0 ? '+' : ''}{vsGroup.toFixed(0)}%
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p style={{
+              margin: 0,
+              fontFamily: tokens.fonts.body,
+              fontSize: '0.8125rem',
+              color: tokens.colors.textSecondary,
+            }}>
+              {comparison?.nota || 'Sem comparação nesta legislatura'}
+            </p>
+          )}
+          <p style={{
+            margin: '8px 0 0 0',
+            fontFamily: tokens.fonts.body,
+            fontSize: '0.75rem',
+            color: tokens.colors.textMuted,
           }}>
-            {/* vs Party */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-              <span style={{
-                fontFamily: tokens.fonts.body,
-                fontSize: '0.8125rem',
-                color: tokens.colors.textSecondary,
-              }}>
-                vs. Grupo Parlamentar
-              </span>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                color: vsParty >= 0 ? tokens.colors.statusGreen : tokens.colors.statusRed,
-              }}>
-                {vsParty >= 0 ? (
-                  <TrendingUp size={14} />
-                ) : (
-                  <TrendingDown size={14} />
-                )}
-                <span style={{
-                  fontFamily: tokens.fonts.mono,
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                }}>
-                  {vsParty >= 0 ? '+' : ''}{vsParty.toFixed(0)}%
-                </span>
-              </div>
-            </div>
-            {/* vs Parliament */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-              <span style={{
-                fontFamily: tokens.fonts.body,
-                fontSize: '0.8125rem',
-                color: tokens.colors.textSecondary,
-              }}>
-                vs. Média Parlamentar
-              </span>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                color: vsParliament >= 0 ? tokens.colors.statusGreen : tokens.colors.statusRed,
-              }}>
-                {vsParliament >= 0 ? (
-                  <TrendingUp size={14} />
-                ) : (
-                  <TrendingDown size={14} />
-                )}
-                <span style={{
-                  fontFamily: tokens.fonts.mono,
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                }}>
-                  {vsParliament >= 0 ? '+' : ''}{vsParliament.toFixed(0)}%
-                </span>
-              </div>
-            </div>
-          </div>
+            Compara só com deputados do mesmo grupo que tiveram mandato em pelo menos metade da legislatura.
+          </p>
         </div>
 
         {/* Video & Last Activity Card */}
