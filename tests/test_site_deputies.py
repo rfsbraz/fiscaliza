@@ -110,9 +110,12 @@ def test_one_day_efetivo_period_stays_in_the_history(con):
     d = deputies.detalhes(con, 303)
     assert d["mandate_status"] == "Suspenso(Eleito)" and d["is_seated"] is False
     assert (d["mandato"]["situacao_inicio"], d["mandato"]["em_exercicio"]) == ("2025-06-05", True)
+    # The suspension from that day is still open, so "Mandato suspenso desde 05/06/2025".
+    assert d["mandato"]["situacao_fim"] is None
     [xvii, _] = d["mandatos_historico"]
     assert (xvii["mandato_inicio"], xvii["mandato_fim"]) == ("2025-06-05", "2025-06-05")
     assert (xvii["situacao"], xvii["situacao_inicio"], xvii["em_exercicio"]) == ("Suspenso(Eleito)", "2025-06-05", True)
+    assert xvii["situacao_fim"] is None
     assert d["estatisticas"]["legislaturas_servidas"] == "XVI, XVII"
 
 
