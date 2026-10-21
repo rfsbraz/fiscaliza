@@ -1,83 +1,59 @@
 # Fiscaliza
 
-[![CI](https://github.com/rodrigobraz/fiscaliza/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrigobraz/fiscaliza/actions/workflows/ci.yml)
+[![CI](https://github.com/rfsbraz/parliament/actions/workflows/ci.yml/badge.svg)](https://github.com/rfsbraz/parliament/actions/workflows/ci.yml)
 
-Portuguese Parliament open data analysis platform for government transparency.
-
-**Live at: [fiscaliza.pt](https://fiscaliza.pt)**
+Portuguese Parliament open data analysis platform for government transparency, at [fiscaliza.pt](https://fiscaliza.pt).
 
 ## Architecture
 
 | Layer | Technology |
 |-------|-----------|
-| **Backend** | Flask 3.0 + SQLAlchemy 2.0 |
-| **Frontend** | React 18 + Vite |
-| **Database** | PostgreSQL (Aurora Serverless v2 in production) |
-| **Infrastructure** | AWS Lambda, Terraform, Docker |
+| **Data** | [parlamento-aberto](https://github.com/rfsbraz/parlamento-aberto) releases, loaded into a local read-only DuckDB file |
+| **Backend** | Flask 3.0 over DuckDB, served by gunicorn |
+| **Frontend** | React 18 + Vite, calling `/api` on the same origin |
 
 ```
-├── app/                    # Flask API (blueprints, routes)
-├── database/               # SQLAlchemy models (50+ tables)
-├── scripts/                # Data import pipelines
+├── app/                    # Flask API: routes, services, data/repository.py (all SQL)
+├── fiscaliza_data/         # Sync tool, seating rule and site views
 ├── frontend/src/           # React components
-├── terraform/              # AWS infrastructure
-└── ops/                    # Operational CLI utilities
+├── tests/                  # pytest, including the endpoint contracts
+└── terraform/              # Old AWS infrastructure, kept until its destroy is confirmed
 ```
+
+There is no database server. The sync builds `fiscaliza-<tag>.duckdb` from a release, checks it, and points `current.duckdb` at it. The API opens `$FISCALIZA_DATA_DIR/current.duckdb` read-only and picks up a new file within a minute, with no restart.
 
 ## Quick Start
 
-### Docker (recommended)
-
 ```bash
-docker-compose up -d postgres    # Start PostgreSQL
-docker-compose up backend        # Start Flask API
-cd frontend && npm run dev       # Start React dev server
-```
-
-### Manual Setup
-
-```bash
-# Backend
 pip install -r requirements.txt
-FLASK_DEBUG=true python app/main.py
 
-# Frontend
-cd frontend
-npm install
-npm run dev
+# Build the data file from a local parlamento-aberto `release build` output
+# (a folder, its manifest.json, or a .tar.gz/.tgz/.zip of the folder)
+python -m fiscaliza_data.sync --from ../parlamento-aberto/dist --data-dir data
+
+# API on :5000, then the frontend dev server, which proxies /api to it
+FISCALIZA_DATA_DIR=data flask --app app.main run --port 5000
+cd frontend && npm install && npm run dev
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for full development setup instructions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup.
 
-## Data Pipeline
-
-Fiscaliza imports and processes XML data from the [Portuguese Parliament Open Data portal](https://www.parlamento.pt/Cidadania/paginas/dadosabertos.aspx).
+## Data sync
 
 ```bash
-# Discover available files
-python -m scripts.data_processing.pipeline_runner discover
-
-# Import pending files
-python -m scripts.data_processing.pipeline_runner import
+python -m fiscaliza_data.sync [--tag TAG] [--from PATH] [--data-dir DIR]
 ```
 
-### `ops` CLI
+- With no `--from`, it reads the latest parlamento-aberto release on GitHub (or `--tag`), one unauthenticated API call.
+- `--from PATH` reads a local `release build` output instead: the folder, its `manifest.json`, or a `.tar.gz`, `.tgz` or `.zip` of the folder. Use it before parlamento-aberto publishes releases. `--from-dir` still works as the old name.
+- `--data-dir` defaults to `$FISCALIZA_DATA_DIR`, then `data`.
+- `python -m fiscaliza_data sync` is the same command.
 
-```bash
-python -m ops.cli db status      # Database status
-python -m ops.cli db migrate     # Run migrations
-python -m ops.cli pipeline run   # Full pipeline run
-```
+Every source goes through the same checks: SHA-256 of each Parquet file against the manifest, the schema major version, 230 seated deputies in the current legislature, and no table more than 5% smaller than the live one. A failure exits non-zero and leaves the previous file live. The last two files are kept.
 
-## Database
+## Not served yet
 
-PostgreSQL database with 50+ tables covering:
-
-- Deputies and biographical information
-- Political parties and parliamentary groups
-- Legislative activities and voting records
-- Parliamentary agenda and sessions
-- Conflicts of interest declarations
+Attendance (`/api/deputados/<id>/attendance`) and the agenda for today and this week (`/api/agenda/hoje`, `/api/agenda/semana`) wait for their parlamento-aberto marts. They answer 503 with a reason, and the frontend shows its "indisponível" notice.
 
 ## Contributing
 
@@ -86,3 +62,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, and PR
 ## License
 
 [AGPL-3.0](LICENSE) - You are free to use, modify, and distribute this software. If you run a modified version on a network server, you must make the source code available to users.
+
+The data comes from the Assembleia da República open data, reused under its terms, through parlamento-aberto (CC BY 4.0 for its derived tables). The site footer carries the attribution.

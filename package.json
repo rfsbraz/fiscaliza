@@ -5,10 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "python main.py",
+    "dev:backend": "flask --app app.main run --port 5000",
     "dev:frontend": "cd frontend && npm run dev",
     "build": "cd frontend && npm run build",
-    "start": "python main.py",
     "install:all": "pip install -r requirements.txt && cd frontend && npm install"
   },
   "devDependencies": {

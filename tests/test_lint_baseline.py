@@ -1,9 +1,8 @@
 """The ruff baseline in pyproject.toml must only cover the legacy files.
 
-The legacy code has thousands of ruff violations and isn't formatted, and the
-migration to parlamento-aberto rewrites or deletes it. Until then pyproject.toml
-lists, per legacy file, the rule codes it already breaks, and excludes the
-unformatted legacy files from ``ruff format``. These tests check that the
+The old stack went in S10; only two small test files are left in the baseline.
+pyproject.toml lists, per legacy file, the rule codes it already breaks, and
+excludes the unformatted legacy files from ``ruff format``. These tests check that the
 baseline keeps the repo green without letting new code through.
 """
 
@@ -20,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CI = ROOT / ".github" / "workflows" / "ci.yml"
 
 # A legacy file that is in the baseline for both lint and format.
-LEGACY_FILE = "analyze_deputy_issue.py"
+LEGACY_FILE = "tests/conftest.py"
 
 # New modules, one in a new package and one beside legacy code.
 NEW_FILES = ["fiscaliza_data/new_module.py", "app/routes/new_module.py"]
