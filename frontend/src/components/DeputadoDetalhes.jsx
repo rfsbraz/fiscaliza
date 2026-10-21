@@ -15,7 +15,6 @@ import InitiativeRecordTable, { SigningCounts, ApprovalLines, GroupComparison } 
 import InterventionsSummaryBar, { ActivityBadge, VideoIndicator } from './deputy/InterventionsSummaryBar';
 // Phase 2 Components - Enhanced Analytics
 import TimelineSparkline, { ActivityHeatmap, TrendIndicator, BarSparkline } from './charts/TimelineSparkline';
-import AchievementBadge, { BadgeCollection, BadgeSummary, RedFlagIndicator } from './deputy/AchievementBadge';
 import PolicySpecializationChart, { PolicyRadar, TopicTag } from './charts/PolicySpecializationChart';
 import InterestTable, { ACTIVITY_COLUMNS, SHAREHOLDING_COLUMNS } from './deputy/InterestTable';
 
@@ -1898,39 +1897,6 @@ const DeputadoDetalhes = () => {
                 })()}
               </div>
 
-              {/* Trend indicator */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                paddingTop: '12px',
-                borderTop: `1px solid ${tokens.colors.border}`,
-                fontSize: '0.8125rem',
-                color: tokens.colors.textSecondary,
-              }}>
-                {(() => {
-                  const evolution = deputado.estatisticas.evolucao_legislaturas;
-                  if (evolution.length < 2) return null;
-                  const oldest = evolution[evolution.length - 1];
-                  const newest = evolution[0];
-                  const oldTotal = oldest.iniciativas + oldest.intervencoes;
-                  const newTotal = newest.iniciativas + newest.intervencoes;
-                  const isGrowing = newTotal >= oldTotal;
-
-                  return (
-                    <>
-                      {isGrowing ? (
-                        <TrendingUp style={{ width: '16px', height: '16px', color: tokens.colors.success }} />
-                      ) : (
-                        <TrendingDown style={{ width: '16px', height: '16px', color: tokens.colors.warning }} />
-                      )}
-                      <span>
-                        Atividade {isGrowing ? 'crescente' : 'decrescente'} ao longo das legislaturas
-                      </span>
-                    </>
-                  );
-                })()}
-              </div>
             </section>
           )}
 
@@ -2206,7 +2172,7 @@ const DeputadoDetalhes = () => {
                   />
                 )}
 
-                {/* Phase 2: Timeline and Achievements Section */}
+                {/* Phase 2: Timeline Section */}
                 {atividades && atividades.intervencoes?.length > 0 && (
                   <div style={{
                     display: 'grid',
@@ -2252,48 +2218,6 @@ const DeputadoDetalhes = () => {
                         color={tokens.colors.primary}
                         showTrend={true}
                       />
-                    </div>
-
-                    {/* Achievement Badges */}
-                    <div style={{
-                      backgroundColor: tokens.colors.bgSecondary,
-                      border: `1px solid ${tokens.colors.border}`,
-                      borderRadius: '4px',
-                      padding: '16px 20px',
-                    }}>
-                      <h4 style={{
-                        margin: '0 0 12px 0',
-                        fontFamily: tokens.fonts.body,
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        color: tokens.colors.textMuted,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}>
-                        Reconhecimentos
-                      </h4>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {atividades.intervencoes?.filter(i => i.tipo?.includes('Pergunta')).length >= 20 && (
-                          <AchievementBadge type="topQuestioner" size="small" showDescription={false} />
-                        )}
-                        {atividades.intervencoes?.length >= 50 && (
-                          <AchievementBadge type="debateParticipant" size="small" showDescription={false} />
-                        )}
-                        {atividades.intervencoes?.length < 5 && atividades.intervencoes?.length > 0 && (
-                          <RedFlagIndicator
-                            type="lowActivity"
-                            value={atividades.intervencoes?.length}
-                            showDetails={false}
-                          />
-                        )}
-                        {atividades.intervencoes?.filter(i => i.tipo?.includes('Pergunta')).length === 0 && atividades.intervencoes?.length >= 10 && (
-                          <RedFlagIndicator
-                            type="noQuestions"
-                            value={6}
-                            showDetails={false}
-                          />
-                        )}
-                      </div>
                     </div>
                   </div>
                 )}
