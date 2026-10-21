@@ -26,7 +26,7 @@ DEPUTY_ROUTES = {
 
 @pytest.fixture(scope="module")
 def data_dir(tmp_path_factory):
-    return build_site_data(tmp_path_factory.mktemp("site"))
+    return build_site_data(tmp_path_factory.mktemp("site"), sets=("deputies", "agenda"))
 
 
 @pytest.fixture

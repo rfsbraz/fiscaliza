@@ -1,6 +1,6 @@
 """S11: plenary attendance (F12) on the DuckDB data layer.
 
-Figures are worked out by hand from the lists in tests/site_data.py (ATTENDANCE). The rate is
+Figures are worked out by hand from the lists in tests/site_data.py (_attendance). The rate is
 present, in another body or on mission, over the ordinary and extraordinary sittings in the
 lists; solemn and commemorative sittings are counted apart. The strict rate is present only.
 """

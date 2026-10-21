@@ -66,6 +66,14 @@ def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema
         "create table plenary_attendance (legislature varchar, meeting_id bigint, meeting_date date, "
         "is_ceremonial boolean, cadastro_id bigint, code varchar, category varchar, is_pending boolean)"
     )
+    con.execute(
+        "create table vote_group_positions (vote_id bigint, legislature varchar, body varchar, "
+        "group_code varchar, position varchar, deputies integer)"
+    )
+    con.execute(
+        "create table vote_deputy_dissents (vote_id bigint, legislature varchar, body varchar, "
+        "position varchar, group_code varchar, cadastro_id bigint)"
+    )
     marts = {}
     for mart in (
         *(["plenary_attendance"] if attendance else []),
@@ -79,6 +87,8 @@ def make_release(root, tag="data-2026-10-20", seated=SEATS, extra_rows=0, schema
         "initiative_votes",
         "votes",
         "initiatives",
+        "vote_group_positions",
+        "vote_deputy_dissents",
     ):
         path = out / f"{mart}.parquet"
         con.execute(f"copy {mart} to '{path}' (format parquet)")

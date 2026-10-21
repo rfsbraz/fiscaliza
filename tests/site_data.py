@@ -11,15 +11,24 @@ Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) 
 tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP) in both legislatures, and
 FRS (PS) in XVI only.
 
-Activity (ACTIVITY below): person 1 authored initiatives in both legislatures, one of them with
-person 90 (CH), and spoke in both; person 2 (PSD) and person 90 have a little activity in XVII.
-The three PCP deputies (222 to 224) sign 12 initiatives as a whole group and 222 and 223 one more
-on their own, and person 227 (BE, one seat) one. Person 1 has two interest declarations from XV,
-an older and a newer one; person 2 has one that lists only the mandate and leaves exclusivity
-blank; person 301 has one from XVI.
+Activity comes in sets (ACTIVITY_SETS below) that go into the same tables with their own ids,
+so a page test can load only the set its hand-checked figures come from; the contracts and the
+static export load all of them.
 
-Plenary attendance (ATTENDANCE below, the plenary_attendance mart): each list holds whoever had a
-seat that day, everyone PR (present) unless listed here.
+- deputies (_activity below): person 1 authored initiatives in both legislatures, one of them
+  with person 90 (CH), and spoke in both; person 2 (PSD) and person 90 have a little activity in
+  XVII. The three PCP deputies (222 to 224) sign 12 initiatives as a whole group and 222 and 223
+  one more on their own, and person 227 (BE, one seat) one. Person 1 has two interest
+  declarations from XV, an older and a newer one; person 2 has one that lists only the mandate
+  and leaves exclusivity blank; person 301 has one from XVI.
+- agenda (tests/site_agenda.py): initiative ids 51 to 56 and deputies 150 to 153. The deputy,
+  party and agenda tests load deputies and agenda together, so the agenda stats count the
+  deputy set's 4 XVII interventions on 3 days of 2026.
+- votes (tests/site_votes.py): votes 1 to 9 and 20 to 34, initiatives 61 to 68 and 100 to 121,
+  interventions 5001 to 5003. The voting tests load it alone.
+
+Plenary attendance (_attendance below, the plenary_attendance mart) goes in with the deputies
+set. Each list holds whoever had a seat that day, everyone PR (present) unless listed here.
 
 - XVII: meetings 9000 (2025-10-16, 231 still on the list), 9001 (2026-01-15), 9002 (2026-02-12),
   9003 (2026-03-12), 9004 (2026-04-25, Solene), 9005 (2026-09-17) and 9006 (2026-10-15), the
@@ -29,11 +38,6 @@ seat that day, everyone PR (present) unless listed here.
 - XVI: meetings 8001 (2024-04-11), 8002 (2024-10-10) and 8003 (2025-03-13). Person 1 (PS): PT,
   CO, FIJ. Person 301: MP, QVJ, PR.
 - No lists for any other legislature.
-
-Votes, initiatives and interventions for the agenda page are in tests/site_agenda.py and go into
-the same tables (TABLES below). They use their own initiative ids and deputies, so they do not
-change the deputy figures; the deputy activity above adds 4 XVII interventions on 3 days of 2026
-to the agenda stats.
 """
 
 import hashlib
@@ -44,6 +48,7 @@ import duckdb
 
 from fiscaliza_data import sync
 from tests.site_agenda import agenda_tables
+from tests.site_votes import voting_tables
 
 TAG = "data-2026-10-20"
 EXTRACT = "2026-10-19"
@@ -238,6 +243,7 @@ def _activity():
                 None,
                 "deputy",
                 cad,
+                "PSD" if cad == 1 and leg == "XVII" else "PS" if cad == 1 else "CH",
                 "Deputado",
                 "DAR I série",
                 i,
@@ -291,8 +297,9 @@ def _activity():
         "interventions": (
             "legislature varchar, intervention_id bigint, session_number integer, meeting_date date, "
             "intervention_type varchar, session_phase varchar, debate varchar, summary varchar, abstract varchar, "
-            "speaker_kind varchar, cadastro_id bigint, speaker_role varchar, publication_type varchar, "
-            "publication_number integer, publication_date date, pages varchar[], diary_url varchar",
+            "speaker_kind varchar, cadastro_id bigint, group_acronym varchar, speaker_role varchar, "
+            "publication_type varchar, publication_number integer, publication_date date, pages varchar[], "
+            "diary_url varchar",
             interventions,
         ),
         "interest_declarations": (
@@ -308,8 +315,6 @@ def _activity():
         ),
     }
 
-
-ACTIVITY = _activity()
 
 ATTENDANCE_CATEGORY = {
     "PR": "present",
@@ -411,24 +416,29 @@ def _attendance():
     }
 
 
-ATTENDANCE = _attendance()
+def _deputies():
+    """The deputies set: their activity and the plenary attendance lists."""
+    return {**_activity(), **_attendance()}
 
 
-def _tables():
-    """ACTIVITY with the agenda page's rows added; a table in both must have the same columns."""
-    tables = {**ACTIVITY, **ATTENDANCE}
-    for table, (columns, rows) in agenda_tables().items():
-        if table in tables:
-            assert columns == tables[table][0], f"{table}: agenda columns differ from ACTIVITY"
-            rows = tables[table][1] + rows
-        tables[table] = (columns, rows)
+ACTIVITY_SETS = {"deputies": _deputies, "agenda": agenda_tables, "votes": voting_tables}
+
+
+def _tables(sets):
+    """The tables of every activity set, with rows from the sets named in ``sets`` only. A table
+    in more than one set must have the same columns in each."""
+    tables = {}
+    for name, build in ACTIVITY_SETS.items():
+        for table, (columns, rows) in build().items():
+            rows = list(rows) if name in sets else []
+            if table in tables:
+                assert columns == tables[table][0], f"{table}: {name} columns differ from another set"
+                rows = tables[table][1] + rows
+            tables[table] = (columns, rows)
     return tables
 
 
-TABLES = _tables()
-
-
-def build_release(root):
+def build_release(root, sets=tuple(ACTIVITY_SETS)):
     """Write the release folder (Parquet files and manifest.json) and return its path."""
     out = Path(root) / TAG
     out.mkdir(parents=True)
@@ -473,9 +483,11 @@ def build_release(root):
         "election_url varchar, note varchar)"
     )
     con.executemany("insert into coalitions values (?, ?, ?, ?, ?, ?, ?, ?, ?)", coalitions)
-    for table, (columns, rows) in TABLES.items():
+    tables = _tables(sets)
+    for table, (columns, rows) in tables.items():
         con.execute(f"create table {table} ({columns})")
-        con.executemany(f"insert into {table} values ({', '.join('?' * len(rows[0]))})", rows)  # noqa: S608
+        if rows:
+            con.executemany(f"insert into {table} values ({', '.join('?' * len(rows[0]))})", rows)  # noqa: S608
     marts = {}
     for mart in (
         "legislatures",
@@ -485,7 +497,7 @@ def build_release(root):
         "electoral_circles",
         "parliamentary_groups",
         "coalitions",
-        *TABLES,
+        *tables,
     ):
         path = out / f"{mart}.parquet"
         con.execute(f"copy {mart} to '{path}' (format parquet)")
@@ -503,9 +515,11 @@ def build_release(root):
     return out
 
 
-def build_site_data(root):
-    """Sync the synthetic release into root/data and return that data folder."""
+def build_site_data(root, sets=tuple(ACTIVITY_SETS)):
+    """Sync the synthetic release into root/data and return that data folder. ``sets`` picks the
+    activity rows (ACTIVITY_SETS) to load; the tables are always there. The page tests load only
+    their own set so each keeps its hand-checked figures; the contracts load both."""
     root = Path(root)
     data_dir = root / "data"
-    sync.sync(data_dir, from_dir=build_release(root / "release"))
+    sync.sync(data_dir, from_dir=build_release(root / "release", sets))
     return data_dir
