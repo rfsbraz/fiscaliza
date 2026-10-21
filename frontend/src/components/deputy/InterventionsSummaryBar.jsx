@@ -10,6 +10,7 @@
 import React from 'react';
 import { MessageSquare, TrendingUp, TrendingDown, Minus, Video, Award, Calendar, BarChart2 } from 'lucide-react';
 import { tokens } from '../../styles/tokens';
+import { formatDecimal } from '../../utils/format';
 
 /**
  * InterventionsSummaryBar - Activity metrics at the top of interventions tab
@@ -157,7 +158,7 @@ const InterventionsSummaryBar = ({
                   fontSize: '0.8125rem',
                   fontWeight: 600,
                 }}>
-                  {vsGroup >= 0 ? '+' : ''}{vsGroup.toFixed(0)}%
+                  {vsGroup >= 0 ? '+' : ''}{formatDecimal(vsGroup, 0)}%
                 </span>
               </div>
             </div>

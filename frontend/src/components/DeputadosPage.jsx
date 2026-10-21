@@ -5,6 +5,7 @@ import { User, Search, ArrowRight, Calendar } from 'lucide-react';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner, Card, PageHeader, Pagination } from './common';
+import { formatNumber, plural } from '../utils/format';
 
 const DeputadosPage = () => {
   const [deputados, setDeputados] = useState([])
@@ -82,19 +83,19 @@ const DeputadosPage = () => {
           {filters ? (
             <>
               <span style={{ fontFamily: tokens.fonts.mono, fontWeight: 600, color: tokens.colors.primary }}>
-                {pagination?.total || 0}
+                {formatNumber(pagination?.total)}
               </span> pessoas únicas · {' '}
               <span style={{ fontFamily: tokens.fonts.mono, fontWeight: 600 }}>
-                {filters.total_deputy_records}
+                {formatNumber(filters.total_deputy_records)}
               </span> mandatos totais · {' '}
               <span style={{ fontFamily: tokens.fonts.mono, fontWeight: 600, color: tokens.colors.primary }}>
-                {filters.seated_deputies_count || filters.active_deputies_count || 0}
-              </span> em exercício de {' '}
+                {formatNumber(filters.seated_deputies_count || filters.active_deputies_count)}
+              </span> em exercício · {' '}
               <span style={{ fontFamily: tokens.fonts.mono, fontWeight: 600 }}>
-                {filters.active_deputies_count || 0}
-              </span> eleitos
+                {formatNumber(filters.active_deputies_count)}
+              </span> deputados tiveram lugar na legislatura atual
             </>
-          ) : 'Carregando...'}
+          ) : 'A carregar...'}
         </p>
       </div>
 
@@ -168,7 +169,7 @@ const DeputadosPage = () => {
             letterSpacing: '0.05em',
           }}
         >
-          Mostrando todos os deputados da história parlamentar
+          A mostrar todos os deputados da história parlamentar
         </p>
       </div>
 
@@ -405,7 +406,7 @@ const DeputadosPage = () => {
                           }}
                         >
                           <Calendar size={10} />
-                          {deputado.career_info.total_mandates} mandatos
+                          {plural(deputado.career_info.total_mandates, 'mandato', 'mandatos')}
                         </span>
                       )}
                     </div>

@@ -3,6 +3,7 @@ import { Users, Briefcase, MapPin, Calendar, UserCheck, RotateCcw, User, ArrowRi
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../config/api';
+import { formatDecimal, formatPercent } from '../utils/format';
 
 const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
   const [loading, setLoading] = useState(false);
@@ -34,7 +35,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">Carregando análise demográfica...</span>
+        <span className="ml-3 text-gray-600">A carregar análise demográfica...</span>
       </div>
     );
   }
@@ -109,7 +110,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
               <p className="text-sm font-medium text-purple-600">Diversidade</p>
               <p className="text-2xl font-bold text-purple-900">
                 {demographics.genero && Object.keys(demographics.genero).length > 1 ? 
-                  `${Math.min(...Object.values(demographics.genero)) / Math.max(...Object.values(demographics.genero)) * 100}%`.substring(0, 4) : 'N/A'}
+                  formatPercent((Math.min(...Object.values(demographics.genero)) / Math.max(...Object.values(demographics.genero))) * 100, 1) : 'N/A'}
               </p>
             </div>
           </div>
@@ -122,7 +123,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
               <p className="text-sm font-medium text-orange-600">Renovação</p>
               <p className="text-2xl font-bold text-orange-900">
                 {demographics.renovacao?.percentual_renovacao ? 
-                  `${demographics.renovacao.percentual_renovacao.toFixed(1)}%` : 'N/A'}
+                  `${formatDecimal(demographics.renovacao.percentual_renovacao, 1)}%` : 'N/A'}
               </p>
             </div>
           </div>
@@ -193,7 +194,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    label={({ name, percent }) => `${name} (${formatDecimal(percent * 100, 0)}%)`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -456,7 +457,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(1)}%)`}
+                      label={({ name, percent }) => `${name} (${formatDecimal(percent * 100, 1)}%)`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
@@ -474,7 +475,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                 <div className="text-center p-3 bg-purple-50 rounded-lg">
                   <p className="text-sm text-purple-600 font-medium">Equilíbrio de Género</p>
                   <p className="text-lg font-bold text-purple-900">
-                    {((Math.min(...Object.values(demographics.genero)) / Math.max(...Object.values(demographics.genero))) * 100).toFixed(1)}%
+                    {formatDecimal((Math.min(...Object.values(demographics.genero)) / Math.max(...Object.values(demographics.genero))) * 100, 1)}%
                   </p>
                 </div>
               )}
@@ -530,9 +531,9 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                   <p className="text-sm text-orange-600 font-medium">Taxa de Renovação</p>
                   <p className="text-2xl font-bold text-orange-900">
                     {demographics.renovacao?.percentual_renovacao ? 
-                      `${demographics.renovacao.percentual_renovacao.toFixed(1)}%` : 
+                      `${formatDecimal(demographics.renovacao.percentual_renovacao, 1)}%` : 
                       demographics.renovacao?.percentagem_estreantes ? 
-                        `${(demographics.renovacao.percentagem_estreantes * 100).toFixed(1)}%` : 'N/A'}
+                        `${formatDecimal(demographics.renovacao.percentagem_estreantes * 100, 1)}%` : 'N/A'}
                   </p>
                   <p className="text-xs text-orange-600">novos deputados</p>
                 </div>

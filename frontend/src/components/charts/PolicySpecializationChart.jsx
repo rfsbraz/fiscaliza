@@ -10,6 +10,7 @@
 import React from 'react';
 import { Target, TrendingUp, Info } from 'lucide-react';
 import { tokens } from '../../styles/tokens';
+import { formatDecimal } from '../../utils/format';
 
 /**
  * Policy area color palette
@@ -227,7 +228,7 @@ const PolicySpecializationChart = ({
                       color: tokens.colors.textMuted,
                     }}
                   >
-                    ({percentage.toFixed(0)}%)
+                    ({formatDecimal(percentage, 0)}%)
                   </span>
                 )}
               </div>
@@ -521,7 +522,7 @@ export const PolicyComparisonChart = ({
                       fontWeight: 600,
                     }}
                   >
-                    {item.deputy.toFixed(0)}%
+                    {formatDecimal(item.deputy, 0)}%
                   </span>
                 </div>
               )}
@@ -553,7 +554,7 @@ export const PolicyComparisonChart = ({
                       color: tokens.colors.statusAmber,
                     }}
                   >
-                    {item.party.toFixed(0)}%
+                    {formatDecimal(item.party, 0)}%
                   </span>
                 </div>
               )}
@@ -585,7 +586,7 @@ export const PolicyComparisonChart = ({
                       color: tokens.colors.textMuted,
                     }}
                   >
-                    {item.parliament.toFixed(0)}%
+                    {formatDecimal(item.parliament, 0)}%
                   </span>
                 </div>
               )}
