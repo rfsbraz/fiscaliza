@@ -112,30 +112,34 @@ left join g on g.legislature = m.legislature and g.cadastro_id = m.cadastro_id;
 -- count, so a count matched by as many named deputies of the group with that position does not
 -- make the rest unknown. A table, not a view: it is millions of rows and requests read it by
 -- deputy.
+-- Built in steps, so no step holds the millions of rows at once: as one query it ran out of
+-- memory on the 3 GB runner. _vote_day_seats holds the deputies seated on each plenary vote day
+-- and _vote_day_groups their group that day: the membership that covers the day, else the
+-- person's latest one in that legislature. Both are per day, not per vote.
+create or replace temp table _vote_day_seats as
+with plenary_days as (
+    select distinct legislature, date from votes where body = 'plenary'
+)
+select s.day, s.legislature, s.cadastro_id
+from seated_during((select min(date) from plenary_days), (select max(date) from plenary_days)) s
+semi join plenary_days d on d.date = s.day and d.legislature = s.legislature;
+
+create or replace temp table _vote_day_groups as
+select s.legislature, s.day, s.cadastro_id,
+    arg_max(g.group_acronym, struct_pack(
+        covers := g.start_date <= s.day and (g.end_date is null or g.end_date >= s.day),
+        since := g.start_date
+    )) as group_acronym
+from _vote_day_seats s
+join group_memberships g on g.legislature = s.legislature and g.cadastro_id = s.cadastro_id
+group by s.legislature, s.day, s.cadastro_id;
+
 create or replace table deputy_vote_positions as
-with plenary as (
-    select vote_id, legislature, date from votes where body = 'plenary'
-),
-seated as (
-    select s.day, s.legislature, s.cadastro_id
-    from seated_during((select min(date) from plenary), (select max(date) from plenary)) s
-    semi join (select distinct date from plenary) d on d.date = s.day
-),
-base as (
+with base as (
     select p.vote_id, p.legislature, p.date, s.cadastro_id
-    from plenary p
-    join seated s on s.day = p.date and s.legislature = p.legislature
-),
--- The membership that covers the day, else the person's latest one in that legislature.
-groups as (
-    select b.vote_id, b.cadastro_id,
-        arg_max(g.group_acronym, struct_pack(
-            covers := g.start_date <= b.date and (g.end_date is null or g.end_date >= b.date),
-            since := g.start_date
-        )) as group_acronym
-    from base b
-    join group_memberships g on g.legislature = b.legislature and g.cadastro_id = b.cadastro_id
-    group by b.vote_id, b.cadastro_id
+    from votes p
+    join _vote_day_seats s on s.day = p.date and s.legislature = p.legislature
+    where p.body = 'plenary'
 ),
 named_counts as (
     select vote_id, group_code, position, count(*) as named
@@ -182,10 +186,13 @@ select
         when coalesce(u.unnamed, 0) = 0 then w.position
     end as position
 from base b
-left join groups g on g.vote_id = b.vote_id and g.cadastro_id = b.cadastro_id
+left join _vote_day_groups g on g.legislature = b.legislature and g.day = b.date and g.cadastro_id = b.cadastro_id
 left join whole w on w.vote_id = b.vote_id and w.group_code = g.group_acronym
 left join unnamed u on u.vote_id = b.vote_id and u.group_code = g.group_acronym
 left join named n on n.vote_id = b.vote_id and n.cadastro_id = b.cadastro_id;
+
+drop table _vote_day_groups;
+drop table _vote_day_seats;
 
 -- vote_tallies: estimated favour, against, abstention and absent counts per plenary vote. Per
 -- group seated that day and position: the larger of its count (as in 2-PS) and its named
