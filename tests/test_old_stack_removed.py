@@ -40,6 +40,7 @@ REMOVED = [
     "DEPLOYMENT_GUIDE.md",
     "SERVERLESS_MIGRATION.md",
     "IMPORT_STATUS_FLOW_SUMMARY.md",
+    "POLITICAL_RESEARCH_GUIDE.md",
 ]
 OLD_MODULES = {"database", "scripts", "ops", "config", "sqlalchemy", "flask_sqlalchemy", "alembic", "psycopg2", "boto3"}
 OLD_PACKAGES = {
