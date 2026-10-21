@@ -11,12 +11,13 @@ def text():
     return WORKFLOW.read_text()
 
 
-def test_runs_on_push_to_master_daily_and_on_pull_requests():
+def test_runs_on_push_to_master_and_on_pull_requests_only():
     t = text()
     assert re.search(r"push:\s*\n\s*branches: \[master\]", t)
     assert re.search(r"pull_request:\s*\n\s*branches: \[master\]", t)
-    # Cron is UTC: 06:00 Lisbon in summer time, 05:00 in winter time (docs/DEPLOY.md).
-    assert '- cron: "0 5 * * *"' in t
+    # The data only changes when a PR moves deploy/data-pin, so there is no schedule.
+    assert "schedule:" not in t
+    assert "cron" not in t
 
 
 def test_skips_pull_requests_from_forks_and_dependabot():
@@ -53,12 +54,11 @@ def test_never_prints_the_token_or_creates_the_project():
     assert "project create" not in t
 
 
-def test_builds_the_latest_parlamento_aberto_main():
-    # A clone without a checkout: pages.py checks main out once, in its own worktree, so the
-    # 2 GB of data is on disk once and not twice.
+def test_clones_parlamento_aberto_without_a_checkout():
+    # pages.py checks the pin out once, in its own worktree, so the 2 GB of data is on disk
+    # once and not twice. It fetches the pinned SHA itself when main has moved past it.
     clone = re.search(r"git clone [^\n]*", text()).group(0)
     assert "--no-checkout" in clone
-    assert "--branch main" in clone
     assert "https://github.com/rfsbraz/parlamento-aberto.git" in clone
 
 

@@ -1,4 +1,4 @@
-"""Cloudflare Pages deploy: the data source, the Pages build output, the _headers file and the deploy plan."""
+"""Cloudflare Pages deploy: the pin, the Pages build output, the _headers file and the deploy plan."""
 
 import importlib.util
 import re
@@ -15,7 +15,27 @@ pages = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pages)
 
 
-# The data source
+# The pin
+
+
+def test_pin_is_one_full_parlamento_aberto_commit():
+    pin = pages.read_pin()
+    assert re.fullmatch(r"[0-9a-f]{40}", pin.commit)
+    assert pin.tag is None or re.fullmatch(r"data-\d{4}-\d{2}-\d{2}(\.\d+)?", pin.tag)
+
+
+def test_pin_with_a_tag(tmp_path):
+    f = tmp_path / "data-pin"
+    f.write_text("# comment\ncommit=" + "a" * 40 + "\ntag=data-2026-10-21\n")
+    pin = pages.read_pin(f)
+    assert (pin.commit, pin.tag) == ("a" * 40, "data-2026-10-21")
+
+
+def test_pin_rejects_a_short_commit(tmp_path):
+    f = tmp_path / "data-pin"
+    f.write_text("commit=31f894a\ntag=\n")
+    with pytest.raises(pages.DeployError, match="40"):
+        pages.read_pin(f)
 
 
 def _git(*args, cwd):
@@ -30,21 +50,42 @@ def _commit(repo, name):
     return _git("rev-parse", "HEAD", cwd=repo)
 
 
-def test_latest_main_fetches_before_it_resolves(tmp_path):
-    # A checkout whose origin/main is behind must still build the newest data, or a
-    # deploy could put older data in production than the one before it.
-    upstream = tmp_path / "upstream"
-    upstream.mkdir()
-    _git("init", "-q", "-b", "main", cwd=upstream)
-    _commit(upstream, "a")
-    _git("clone", "-q", str(upstream), str(tmp_path / "checkout"), cwd=tmp_path)
-    newest = _commit(upstream, "b")
-    assert pages.latest_main(tmp_path / "checkout") == newest
+@pytest.fixture
+def upstream(tmp_path):
+    repo = tmp_path / "upstream"
+    repo.mkdir()
+    _git("init", "-q", "-b", "main", cwd=repo)
+    _git("config", "uploadpack.allowReachableSHA1InWant", "true", cwd=repo)
+    return repo
 
 
-def test_latest_main_needs_a_git_checkout(tmp_path):
+def _has(checkout, commit):
+    r = subprocess.run(["git", "-C", str(checkout), "cat-file", "-e", f"{commit}^{{commit}}"], capture_output=True)
+    return r.returncode == 0
+
+
+def test_fetch_pin_gets_the_exact_commit_a_clone_is_missing(tmp_path, upstream):
+    pinned = _commit(upstream, "a")
+    _git("clone", "-q", str(upstream), str(tmp_path / "old"), cwd=tmp_path)
+    newer = _commit(upstream, "b")
+    pages.fetch_pin(tmp_path / "old", newer)
+    assert _has(tmp_path / "old", newer)
+    assert _has(tmp_path / "old", pinned)
+
+
+def test_fetch_pin_in_a_shallow_clone_of_a_main_that_moved_on(tmp_path, upstream):
+    # CI clones main one commit deep; the pin can be behind it.
+    pinned = _commit(upstream, "a")
+    _commit(upstream, "b")
+    _git("clone", "-q", "--depth", "1", "--no-checkout", f"file://{upstream}", str(tmp_path / "ci"), cwd=tmp_path)
+    assert not _has(tmp_path / "ci", pinned)
+    pages.fetch_pin(tmp_path / "ci", pinned)
+    assert _has(tmp_path / "ci", pinned)
+
+
+def test_fetch_pin_needs_a_git_clone(tmp_path):
     with pytest.raises(pages.DeployError, match="parlamento-aberto"):
-        pages.latest_main(tmp_path)
+        pages.fetch_pin(tmp_path, "a" * 40)
 
 
 # The Pages build output
@@ -222,11 +263,8 @@ def test_csp_allows_the_deputy_photos_the_api_points_to(headers):
 # The deploy plan
 
 
-COMMIT = "c" * 40
-
-
-def commands(argv, commit=COMMIT):
-    return [step.argv for step in pages.plan(pages.parse_args(argv), work=Path("/work"), commit=commit)]
+def commands(argv):
+    return [step.argv for step in pages.plan(pages.parse_args(argv), work=Path("/work"))]
 
 
 def wrangler(argv):
@@ -257,17 +295,6 @@ def test_production_flag_and_another_branch_conflict():
         commands(["deploy", "--parlamento-aberto", "/pa", "--production", "--branch", "x"])
 
 
-def test_production_only_builds_the_latest_main():
-    # A release folder can be older than what is live, so it only goes to previews.
-    with pytest.raises(pages.DeployError, match="--parlamento-aberto"):
-        commands(["deploy", "--release", "/rel", "--production"])
-
-
-def test_a_source_is_required():
-    with pytest.raises(pages.DeployError, match="--parlamento-aberto"):
-        commands(["deploy"])
-
-
 def test_wrangler_is_pinned_to_one_version():
     assert re.fullmatch(r"npx --yes wrangler@4\.\d+\.\d+", pages.DEFAULT_WRANGLER)
 
@@ -283,13 +310,22 @@ def test_steps_run_in_order():
     assert str(FRONTEND / "public" / "api") in export
 
 
-def test_builds_the_given_commit_from_a_parlamento_aberto_checkout():
+def test_builds_the_pinned_commit_from_a_parlamento_aberto_checkout():
+    pin = pages.read_pin()
     cmds = [" ".join(c) for c in commands(["deploy", "--parlamento-aberto", "/pa"])]
-    assert any("worktree add --detach" in c and COMMIT in c for c in cmds)
+    assert any("worktree add --detach" in c and pin.commit in c for c in cmds)
     build = next(c for c in cmds if "parlamento_aberto.release build" in c)
-    assert f"--sha {COMMIT}" in build
+    assert f"--sha {pin.commit}" in build
     sync = next(c for c in cmds if "fiscaliza_data sync" in c)
     assert "--from-dir /work/release" in sync
+
+
+def test_a_release_folder_must_come_from_the_pin(tmp_path):
+    rel = tmp_path / "rel"
+    rel.mkdir()
+    (rel / "manifest.json").write_text('{"tag": "data-2026-10-20", "data_commit": "' + "b" * 40 + '"}')
+    with pytest.raises(pages.DeployError, match="pin"):
+        pages.check_release(rel, pages.read_pin())
 
 
 def test_export_processes_can_be_capped():
@@ -301,8 +337,3 @@ def test_export_processes_can_be_capped():
     assert export[export.index("--jobs") + 1] == "2"
     export = next(c for c in commands(["deploy", "--release", "/rel"]) if "fiscaliza_data.export" in c)
     assert "--jobs" not in export
-
-
-def test_there_is_no_data_pin_left():
-    # Every deploy builds the latest parlamento-aberto main; a pin would freeze the daily refresh.
-    assert not (ROOT / "deploy" / "data-pin").exists()
