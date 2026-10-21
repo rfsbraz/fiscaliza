@@ -72,3 +72,52 @@ def test_deploy_is_time_boxed_and_the_export_capped():
     step = int(re.search(r"\n        timeout-minutes: (\d+)", t).group(1))
     assert step < job <= 60
     assert "      EXPORT_WORKERS: 2\n" in t
+
+
+def preview_paths():
+    """The ERE the changes job matches each changed file against."""
+    return re.compile(re.search(r"PREVIEW_PATHS: '([^']+)'", text()).group(1))
+
+
+def test_pull_requests_also_trigger_on_labeled():
+    assert re.search(
+        r"pull_request:\s*\n\s*branches: \[master\]\s*\n\s*types: \[opened, synchronize, reopened, labeled\]",
+        text(),
+    )
+
+
+def test_only_site_paths_need_a_preview():
+    pattern = preview_paths()
+    for path in [
+        "frontend/src/App.jsx",
+        "fiscaliza_data/export.py",
+        "app/main.py",
+        "deploy/pages.py",
+        "deploy/data-pin",
+        ".github/workflows/deploy.yml",
+    ]:
+        assert pattern.search(path), path
+    for path in [
+        "README.md",
+        "docs/DEPLOY.md",
+        "tests/test_deploy_workflow.py",
+        ".github/workflows/ci.yml",
+        "scripts/frontend/x.py",
+        "myapp/main.py",
+    ]:
+        assert not pattern.search(path), path
+
+
+def test_the_preview_label_forces_a_preview_and_other_labels_start_nothing():
+    t = text()
+    # Adding some other label must not even start the changes job on the runner.
+    assert "github.event.action != 'labeled' || github.event.label.name == 'preview'" in t
+    assert "contains(github.event.pull_request.labels.*.name, 'preview')" in t
+
+
+def test_deploy_waits_for_the_changes_job_on_pull_requests_only():
+    t = text()
+    deploy = t.split("\n  deploy:\n", 1)[1]
+    assert "needs: changes" in deploy
+    assert "github.event_name == 'push'" in deploy
+    assert "needs.changes.outputs.preview == 'true'" in deploy
