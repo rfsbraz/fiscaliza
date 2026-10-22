@@ -6,91 +6,91 @@
       "path": "resumo",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:742"
+      "read_at": "frontend/src/components/AgendaPage.jsx:743"
     },
     {
       "path": "resumo.aprovadas",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:943"
+      "read_at": "frontend/src/components/AgendaPage.jsx:944"
     },
     {
       "path": "resumo.periodo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:742"
+      "read_at": "frontend/src/components/AgendaPage.jsx:743"
     },
     {
       "path": "resumo.rejeitadas",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:965"
+      "read_at": "frontend/src/components/AgendaPage.jsx:966"
     },
     {
       "path": "votacoes",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:747"
+      "read_at": "frontend/src/components/AgendaPage.jsx:748"
     },
     {
       "path": "votacoes[].abstencao",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:869"
+      "read_at": "frontend/src/components/AgendaPage.jsx:870"
     },
     {
       "path": "votacoes[].ausentes",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:891"
+      "read_at": "frontend/src/components/AgendaPage.jsx:892"
     },
     {
       "path": "votacoes[].contra",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:847"
+      "read_at": "frontend/src/components/AgendaPage.jsx:848"
     },
     {
       "path": "votacoes[].data",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:795"
+      "read_at": "frontend/src/components/AgendaPage.jsx:796"
     },
     {
       "path": "votacoes[].descricao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:769"
+      "read_at": "frontend/src/components/AgendaPage.jsx:770"
     },
     {
       "path": "votacoes[].favor",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:825"
+      "read_at": "frontend/src/components/AgendaPage.jsx:826"
     },
     {
       "path": "votacoes[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:749"
+      "read_at": "frontend/src/components/AgendaPage.jsx:750"
     },
     {
       "path": "votacoes[].resultado",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:807"
+      "read_at": "frontend/src/components/AgendaPage.jsx:808"
     },
     {
       "path": "votacoes[].titulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:767"
+      "read_at": "frontend/src/components/AgendaPage.jsx:768"
     },
     {
       "path": "votacoes[].unanime",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:796"
+      "read_at": "frontend/src/components/AgendaPage.jsx:797"
     }
   ],
   "dropped": [
