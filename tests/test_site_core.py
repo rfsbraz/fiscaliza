@@ -92,6 +92,11 @@ def test_legislatures_newest_first(con):
     assert legs[0]["data_inicio"] == "2025-06-03" and legs[0]["data_fim"] is None
 
 
+def test_legislatures_carry_their_published_interventions(con):
+    legs = core.legislaturas(con)["legislaturas"]
+    assert [(leg["numero"], leg["intervencoes_publicadas"]) for leg in legs] == [("XVII", 11), ("XVI", 5)]
+
+
 # Parties (F21)
 
 
