@@ -270,6 +270,10 @@ def _activity():
         ("XV", "XV-11", 1, 11, None, False, "Deputado", "ar_open_data"),
         ("XV", "XV-12", 2, 12, None, None, "Deputado", "ar_open_data"),
         ("XVI", "XVI-13", 301, 13, None, True, "Deputado", "ar_open_data"),
+        # Two V3 declarations in one legislature, as the AR publishes them: no id and no version date,
+        # newest first in the file, so the key's last number counts them from the newest (#168).
+        ("XV", "XV-90-2", 90, None, None, False, "Deputado", "ar_open_data"),
+        ("XV", "XV-90-1", 90, None, None, False, "Deputado", "ar_open_data"),
     ]
     interests = [
         # legislature, declaration_key, item_number, cadastro_id, category, description, entity, share,
@@ -285,6 +289,12 @@ def _activity():
         # An older declaration: the whole sentence is in the description, with no entity.
         ("XV", "XV-12", 1, 2, "activity", "Deputada à Assembleia da República", None, None, None, "2011", None),
         ("XVI", "XVI-13", 1, 301, "activity", "Deputado", "Assembleia da República", None, None, None, None),
+        # The first declaration of the legislature lists only a social position; the update adds
+        # the activities.
+        ("XV", "XV-90-2", 1, 90, "social_position", "Presidente", "Assembleia Municipal", None, None, None, None),
+        ("XV", "XV-90-1", 1, 90, "activity", "Administrador", "Fundação Exemplo", None, None, "2020-03-29", None),
+        ("XV", "XV-90-1", 2, 90, "activity", "Secretário de Estado", "Governo", None, None, "2015-11", "2019-10"),
+        ("XV", "XV-90-1", 3, 90, "social_position", "Presidente", "Assembleia Municipal", None, None, None, None),
     ]
     return {
         "initiatives": (
