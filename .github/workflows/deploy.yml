@@ -69,11 +69,14 @@ jobs:
         github.event_name == 'push' ||
         needs.changes.outputs.preview == 'true')
     runs-on: ubuntu-latest
-    # One deploy at a time across every trigger, and none cancelled halfway through an upload.
+    # Previews and production never share a group (docs/DEPLOY.md, "Concurrency"). A pull request
+    # has its own group, and a newer push to it cancels its older preview. Production has one
+    # group and nothing cancels a running production deploy; a newer push to master still
+    # replaces one that is only pending, so a burst of merges deploys the newest master.
     # On this job and not the workflow, so a run whose changes job says no never waits its turn.
     concurrency:
-      group: pages-deploy
-      cancel-in-progress: false
+      group: ${{ github.event_name == 'pull_request' && format('pages-preview-{0}', github.event.pull_request.number) || 'pages-production' }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     # A deploy takes a few minutes on a hosted runner's 4 CPUs; this stops a stuck one early.
     timeout-minutes: 90
     env:
