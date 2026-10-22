@@ -6,55 +6,55 @@
       "path": "ativa",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:255"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:256"
     },
     {
       "path": "data_dissolucao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:162"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:163"
     },
     {
       "path": "data_formacao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:156"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:157"
     },
     {
       "path": "deputy_count",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:323"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:324"
     },
     {
       "path": "espectro_politico",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:250"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:251"
     },
     {
       "path": "nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:159"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:160"
     },
     {
       "path": "observacoes",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:334"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:335"
     },
     {
       "path": "sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:240"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:241"
     },
     {
       "path": "tipo_coligacao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:306"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:307"
     }
   ],
   "dropped": []

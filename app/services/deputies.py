@@ -9,7 +9,7 @@ app.services.attendance; the card here reads its latest rate (``estatisticas.ass
 
 from app.data import repository
 from app.data.deputy_rows import DeputyRows
-from app.services.core import PICTURE_URL, NotFound, _iso, _periodo
+from app.services.core import PICTURE_URL, NotFound, _iso, _periodo, legislature_designation
 
 MAX_PER_PAGE = 100
 MAX_INITIATIVES = 100
@@ -162,7 +162,7 @@ def detalhes(con, cadastro_id, rows=None):
         "picture_url": PICTURE_URL.format(cadastro_id),
         "partido": {"id": group, "sigla": group, "nome": names.get((leg, group)) or group} if group else None,
         "circulo": latest["circle"],
-        "legislatura": {"numero": leg, "designacao": f"{leg} Legislatura", "ativa": latest["is_open"]},
+        "legislatura": {"numero": leg, "designacao": legislature_designation(leg), "ativa": latest["is_open"]},
         "legislatura_numero": leg,
         "mandato": {
             "inicio": _iso(periods[leg]["seat_start"]) if leg in periods else _iso(latest["legislature_start"]),
@@ -214,7 +214,7 @@ def detalhes(con, cadastro_id, rows=None):
             {
                 "deputado_id": c["deputy_id"],
                 "legislatura_numero": c["legislature"],
-                "legislatura_nome": f"{c['legislature']} Legislatura",
+                "legislatura_nome": legislature_designation(c["legislature"]),
                 "mandato_inicio": _iso(periods[c["legislature"]]["seat_start"])
                 if c["legislature"] in periods
                 else None,
@@ -308,7 +308,7 @@ def _atividades(con, cadastro_id, legislatura, rows, interventions):
             "nome": person["parliamentary_name"],
             "served_in_legislature": served,
         },
-        "legislatura": {"numero": name, "designacao": f"{name} Legislatura"},
+        "legislatura": {"numero": name, "designacao": legislature_designation(name)},
         "intervencoes": [_intervention(r) for r in items],
         "intervention_metadata": metadata,
         "nota_intervencoes": _interventions_note(rows, leg) if served else None,

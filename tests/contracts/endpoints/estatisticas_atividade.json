@@ -6,61 +6,61 @@
       "path": "estatisticas",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:145"
+      "read_at": "frontend/src/components/AgendaPage.jsx:146"
     },
     {
       "path": "estatisticas.assiduidade",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:160"
+      "read_at": "frontend/src/components/AgendaPage.jsx:161"
     },
     {
       "path": "estatisticas.assiduidade.media_presencas",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:160"
+      "read_at": "frontend/src/components/AgendaPage.jsx:161"
     },
     {
       "path": "estatisticas.iniciativas",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:159"
+      "read_at": "frontend/src/components/AgendaPage.jsx:160"
     },
     {
       "path": "estatisticas.iniciativas.apresentadas",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:159"
+      "read_at": "frontend/src/components/AgendaPage.jsx:160"
     },
     {
       "path": "estatisticas.sessoes_plenarias",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:157"
+      "read_at": "frontend/src/components/AgendaPage.jsx:158"
     },
     {
       "path": "estatisticas.sessoes_plenarias.total_ano",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:157"
+      "read_at": "frontend/src/components/AgendaPage.jsx:158"
     },
     {
       "path": "estatisticas.votacoes",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:158"
+      "read_at": "frontend/src/components/AgendaPage.jsx:159"
     },
     {
       "path": "estatisticas.votacoes.taxa_aprovacao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:158"
+      "read_at": "frontend/src/components/AgendaPage.jsx:159"
     },
     {
       "path": "estatisticas.votacoes.total_ano",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:158"
+      "read_at": "frontend/src/components/AgendaPage.jsx:159"
     }
   ],
   "dropped": []
