@@ -54,8 +54,16 @@ def dist(tmp_path):
         api / "coligacoes-todas.json",
         {
             "coligacoes": [
-                {"sigla": "AD", "nome": "AD - Coligação PSD/CDS"},
-                {"sigla": "PàF", "nome": "Portugal à Frente"},
+                {
+                    "id": "ad-2024",
+                    "sigla": "AD",
+                    "nome": "AD - Coligação PSD/CDS",
+                    "ambito": None,
+                    "eleicoes": [2024, 2025],
+                },
+                {"id": "ad-acores-2025", "sigla": "AD", "nome": "Aliança Democrática", "ambito": "Açores", "eleicoes": [2025]},
+                {"id": "ad-1979", "sigla": "AD", "nome": "Aliança Democrática", "ambito": None, "eleicoes": [1979, 1980]},
+                {"id": "PàF", "sigla": "PàF", "nome": "Portugal à Frente", "ambito": None, "eleicoes": [2015]},
             ]
         },
     )
@@ -87,7 +95,8 @@ def test_routes_cover_every_page_family(dist):
         "/partidos",
         "/partidos/PS",
         "/partidos/MDP/CDE",
-        "/coligacoes/AD",
+        "/coligacoes/ad-2024",
+        "/coligacoes/ad-acores-2025",
         "/coligacoes/PàF",
         "/agenda",
         "/perguntas",
@@ -123,7 +132,8 @@ def test_files_sit_where_pages_serves_the_route(dist):
         "deputados/2105.html",
         "partidos/PS.html",
         "partidos/MDP/CDE.html",
-        "coligacoes/AD.html",
+        "coligacoes/ad-2024.html",
+        "coligacoes/ad-acores-2025.html",
         "coligacoes/PàF.html",
         "perguntas/XVII.html",
         "metodologia.html",
@@ -135,6 +145,17 @@ def test_canonical_urls_are_percent_encoded(dist):
     pages.write_route_pages(dist)
     h = head((dist / "coligacoes" / "PàF.html").read_text(encoding="utf-8"))
     assert h["canonical"] == "https://fiscaliza.pt/coligacoes/P%C3%A0F"
+
+
+def test_coalition_pages_are_one_per_list_and_say_which(dist):
+    # #111: the routes are the page ids, and two pages of one short name have different titles.
+    routes = pages.route_heads(dist / "api")
+    assert "/coligacoes/AD" not in routes
+    assert routes["/coligacoes/ad-2024"][0] == "AD - Coligação PSD/CDS (2024 e 2025)"
+    assert routes["/coligacoes/ad-acores-2025"][0] == "Aliança Democrática (Açores, 2025)"
+    assert routes["/coligacoes/ad-1979"][0] == "Aliança Democrática (1979 e 1980)"
+    assert routes["/coligacoes/PàF"][0] == "Portugal à Frente (2015)"
+    assert pages.coalition_scope(None, [1987, 1991, 1995]) == "1987 a 1995"
 
 
 def test_the_rest_of_the_page_is_the_app(dist):
@@ -179,14 +200,30 @@ def test_unsafe_ids_get_no_file(dist):
     assert not any(".." in str(p.relative_to(dist)) for p in dist.rglob("*"))
 
 
-def test_redirects_have_no_rule_for_a_route():
-    # Pages applies a 200 rule before it looks for a file, so a rule would hide the route's page.
-    rules = [
-        line.split()
+def redirect_rules():
+    return [
+        tuple(line.split())
         for line in pages.REDIRECTS_FILE.read_text().splitlines()
         if line.strip() and not line.startswith("#")
     ]
-    assert rules == []
+
+
+def test_redirects_have_no_rule_for_a_route():
+    # Pages applies a 200 rule before it looks for a file, so a rule would hide the route's page.
+    # The only rules move the coalition pages that were split into one per list (#111).
+    for source, destination, code in redirect_rules():
+        assert code == "301", source
+        assert source.startswith("/coligacoes/") and destination.startswith("/coligacoes/"), source
+        assert "*" not in source and ":" not in source, source
+
+
+def test_old_coalition_pages_move_to_the_latest_list():
+    # /coligacoes/AD and /coligacoes/Madeira Primeiro were live and linked before the split.
+    rules = {source: destination for source, destination, _ in redirect_rules()}
+    for old in ("/coligacoes/AD", "/coligacoes/ad"):
+        assert rules[old] == "/coligacoes/ad-2024", old
+    for old in ("/coligacoes/Madeira%20Primeiro", "/coligacoes/madeira-primeiro"):
+        assert rules[old] == "/coligacoes/madeira-primeiro-2024", old
 
 
 def test_every_app_route_has_a_page(dist):

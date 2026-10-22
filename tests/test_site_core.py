@@ -256,36 +256,117 @@ def test_legislature_filter_and_paging(con):
     assert {d["legislatura_nome"] for d in page["deputados"]} == {"XVI"}
 
 
-# Coalitions (F31)
+# Coalitions (F31). One page per list and run (#111): a list that won seats in more than one
+# circle (or in a legislature with no seats per circle) joins the coalition's run of consecutive
+# legislatures; a list that won seats only in the Açores or Madeira is a page of its own.
+
+
+def _list_seats(con, ballot):
+    return con.execute(
+        "select sum(seats) from ballot_list_seats where legislature = 'XVII' and ballot_acronym = ?", [ballot]
+    ).fetchone()[0]
 
 
 def test_coalitions_active_by_default(con):
-    assert [c["sigla"] for c in core.coligacoes(con)["coligacoes"]] == ["AD", "CDU"]
-    every = {c["sigla"]: c for c in core.coligacoes(con, include_inactive=True)["coligacoes"]}
-    assert sorted(every) == ["AD", "CDU", "FRS"]
+    listed = core.coligacoes(con)["coligacoes"]
+    assert [(c["id"], c["sigla"]) for c in listed] == [("ad-2024", "AD"), ("ad-acores-2025", "AD"), ("CDU", "CDU")]
+    every = {c["id"]: c for c in core.coligacoes(con, include_inactive=True)["coligacoes"]}
+    assert sorted(every) == ["CDU", "FRS", "ad-2024", "ad-acores-2025"]
     assert every["FRS"]["ativa"] is False and every["FRS"]["data_dissolucao"] == "2025-06-02"
-    assert every["AD"]["ativa"] is True and every["AD"]["data_dissolucao"] is None
-    assert every["AD"]["data_formacao"] == "2024-03-26"
-    assert [p["sigla"] for p in every["AD"]["component_parties"]] == ["PSD", "CDS-PP", "PPM"]
-    assert every["AD"]["deputy_count"] == AD_XVII_SCOPED
+    assert every["ad-2024"]["ativa"] is True and every["ad-2024"]["data_dissolucao"] is None
+    assert every["ad-2024"]["data_formacao"] == "2024-03-26"
+    assert every["ad-acores-2025"]["data_formacao"] == "2025-06-03"
 
 
-def test_coalition_dates_come_from_its_latest_unbroken_run():
-    # AD ran in I-B and II, then again from XVI: today's AD starts with XVI.
-    order = ["I-B", "II", "III", "XV", "XVI", "XVII"]
-    assert core.latest_run(order, {"I-B", "II", "XVI", "XVII"}) == ["XVI", "XVII"]
-    assert core.latest_run(order, {"I-B", "II"}) == ["I-B", "II"]
+def test_each_list_and_run_is_its_own_page(con):
+    # #111: the page grouped every AD list under one short name, so it added the Açores list
+    # to the national one (88 + 3 in production).
+    national = core.coligacao(con, "ad-2024")
+    acores = core.coligacao(con, "ad-acores-2025")
+    assert national["deputy_count"] == _list_seats(con, "AD-LISTA")
+    assert acores["deputy_count"] == _list_seats(con, "AD-ACORES")
+    assert national["deputy_count"] + acores["deputy_count"] == AD_XVII_SCOPED
+    assert (national["ambito"], national["eleicoes"]) == (None, [2024, 2025])
+    assert (acores["ambito"], acores["eleicoes"]) == ("Açores", [2025])
+    assert [p["sigla"] for p in national["component_parties"]] == ["PSD", "CDS-PP"]
+    assert [(p["sigla"], p["com_lugares"]) for p in acores["component_parties"]] == [
+        ("PSD", True),
+        ("CDS-PP", True),
+        ("PPM", False),
+    ]
+    xvi_seated = con.execute(
+        "select count(*) from seated_detail(date '2025-06-02') "
+        "where legislature = 'XVI' and group_acronym in ('PSD', 'CDS-PP')"
+    ).fetchone()[0]
+    assert national["legislaturas"] == [
+        {"legislatura": "XVI", "ano_eleicao": 2024, "listas": ["AD-LISTA"], "deputados": xvi_seated},
+        {"legislatura": "XVII", "ano_eleicao": 2025, "listas": ["AD-LISTA"], "deputados": _list_seats(con, "AD-LISTA")},
+    ]
+    assert acores["legislaturas"] == [
+        {"legislatura": "XVII", "ano_eleicao": 2025, "listas": ["AD-ACORES"], "deputados": acores["deputy_count"]}
+    ]
+    assert {d["circulo"] for d in core.coligacao_deputados(con, "ad-acores-2025")["deputados"]} == {"Açores"}
+    assert "Açores" not in {d["circulo"] for d in core.coligacao_deputados(con, "ad-2024")["deputados"]}
+
+
+def test_page_ids_follow_the_approved_slugs():
+    # The real seed's AD and Madeira Primeiro lists, with the circles where each won seats
+    # (None before XI, where the release has no seats per circle).
+    order = ["I-A", "I-B", "II", "III", "XIII", "XIV", "XV", "XVI", "XVII"]
+    nation = {"Lisboa", "Porto", "Açores"}
+    lists = [
+        ("AD", "I-B", "AD", None, 1979),
+        ("AD", "II", "AD", None, 1980),
+        ("AD", "XV", "PPD/PSD.CDS-PP.PPM", {"Açores"}, 2022),
+        ("AD", "XVI", "PPD/PSD.CDS-PP.PPM", nation, 2024),
+        ("AD", "XVII", "PPD/PSD.CDS-PP", {"Lisboa", "Porto", "Madeira"}, 2025),
+        ("AD", "XVII", "PPD/PSD.CDS-PP.PPM", {"Açores"}, 2025),
+        ("Madeira Primeiro", "XV", "PPD/PSD.CDS-PP", {"Madeira"}, 2022),
+        ("Madeira Primeiro", "XVI", "PPD/PSD.CDS-PP", {"Madeira"}, 2024),
+        ("PàF", "XIII", "PPD/PSD.CDS-PP", {"Lisboa", "Porto"}, 2015),
+        ("CDU", "XIII", "PCP-PEV", {"Lisboa"}, 2015),
+        ("CDU", "XIV", "PCP-PEV", {"Lisboa", "Porto"}, 2019),
+    ]
+    pages = core.coalition_pages(
+        order,
+        [dict(zip(("coalition", "legislature", "ballot_acronym", "circles", "election_year"), x)) for x in lists],
+    )
+    found = {p["id"]: (p["ambito"], p["legislaturas"]) for p in pages}
+    assert found == {
+        "ad-1979": (None, ["I-B", "II"]),
+        "ad-acores-2022": ("Açores", ["XV"]),
+        "ad-2024": (None, ["XVI", "XVII"]),
+        "ad-acores-2025": ("Açores", ["XVII"]),
+        "madeira-primeiro-2022": ("Madeira", ["XV"]),
+        "madeira-primeiro-2024": ("Madeira", ["XVI"]),
+        "PàF": (None, ["XIII"]),
+        # A national list that won seats in one circle stays national.
+        "CDU": (None, ["XIII", "XIV"]),
+    }
 
 
 def test_coalition_detail_deputies_and_parties(con):
-    assert core.coligacao(con, "AD")["nome"] == "Coligação AD"
-    deputies = core.coligacao_deputados(con, "AD")["deputados"]
-    assert len(deputies) == AD_XVII_SCOPED
+    assert core.coligacao(con, "ad-2024")["nome"] == "Coligação AD"
+    deputies = core.coligacao_deputados(con, "ad-2024")["deputados"]
+    assert len(deputies) == _list_seats(con, "AD-LISTA")
     assert {d["partido_sigla"] for d in deputies} == {"PSD", "CDS-PP"}
-    assert [p["sigla"] for p in core.coligacao_partidos(con, "AD")["partidos"]] == ["PSD", "CDS-PP", "PPM"]
+    assert [p["sigla"] for p in core.coligacao_partidos(con, "ad-acores-2025")["partidos"]] == ["PSD", "CDS-PP", "PPM"]
+    assert core.coligacao_partidos(con, "ad-2024")["coligacao"]["id"] == "ad-2024"
     assert (
         len(core.coligacao_deputados(con, "FRS")["deputados"]) == 27
     )  # FRS ran in XVI only: PS there, person 1 included
+
+
+def test_coalition_is_found_by_its_path_form(con):
+    # The static export serves coligacoes/<slug(id)>.json; Flask answers the same ids.
+    assert core.coligacao(con, "cdu")["id"] == "CDU"
+    assert core.coligacao(con, "AD-2024")["id"] == "ad-2024"
+
+
+def test_the_old_merged_coalition_is_gone(con):
+    for fn in (core.coligacao, core.coligacao_deputados, core.coligacao_partidos):
+        with pytest.raises(core.NotFound):
+            fn(con, "AD")
 
 
 # PSD and CDS-PP hold seats 1 to 91 in XVII (KNOWN_SPLIT), in circle cad % 22 + 1. AD's two lists
@@ -295,24 +376,27 @@ AD_XVII_SCOPED = 83
 
 def test_coalition_deputies_come_only_from_circles_where_its_lists_won_seats(con):
     # #181: every deputy of the coalition's groups was counted, whatever their circle.
-    deputies = core.coligacao_deputados(con, "AD")["deputados"]
-    circles = {d["circulo"] for d in deputies}
+    circles = {
+        d["circulo"]
+        for page in ("ad-2024", "ad-acores-2025")
+        for d in core.coligacao_deputados(con, page)["deputados"]
+    }
     assert "Círculo 21" not in circles and "Círculo 22" not in circles
-    assert {f"Círculo {i}" for i in range(1, 21)} == circles  # circle 5's "a)" mark is ignored
-    assert core.coligacao(con, "AD")["deputy_count"] == AD_XVII_SCOPED
-    listed = {c["sigla"]: c for c in core.coligacoes(con)["coligacoes"]}
-    assert listed["AD"]["deputy_count"] == AD_XVII_SCOPED
+    expected = {f"Círculo {i}" for i in range(1, 21) if i != 19} | {"Açores"}
+    assert circles == expected  # circle 5's "a)" mark is ignored
     ad_seats = con.execute(
         "select sum(seats) from ballot_list_seats where legislature = 'XVII' and ballot_acronym in ('AD-LISTA', 'AD-ACORES')"
     ).fetchone()[0]
     assert ad_seats == AD_XVII_SCOPED
+    listed = {c["id"]: c for c in core.coligacoes(con)["coligacoes"]}
+    assert listed["ad-2024"]["deputy_count"] + listed["ad-acores-2025"]["deputy_count"] == AD_XVII_SCOPED
     assert len(core.coligacao_deputados(con, "CDU")["deputados"]) == KNOWN_SPLIT["PCP"]
 
 
 def test_coalition_deputies_keep_the_group_rule_without_seats_per_circle(con):
     # XVI has no ballot_list_seats rows, like every legislature before XI: all deputies of the
     # coalition's groups still count there.
-    xvi = core.coligacao_deputados(con, "AD", "XVI")
+    xvi = core.coligacao_deputados(con, "ad-2024", "XVI")
     seated = con.execute(
         "select count(*) from seated_detail(date '2025-06-02') "
         "where legislature = 'XVI' and group_acronym in ('PSD', 'CDS-PP')"
@@ -323,12 +407,25 @@ def test_coalition_deputies_keep_the_group_rule_without_seats_per_circle(con):
 
 def test_coalition_parties_without_seats_are_marked(con):
     # #181: PPM ran on the Açores AD list and PEV on the CDU list without winning a seat.
-    detail = core.coligacao(con, "AD")["component_parties"]
+    detail = core.coligacao(con, "ad-acores-2025")["component_parties"]
     assert [(p["sigla"], p["com_lugares"]) for p in detail] == [("PSD", True), ("CDS-PP", True), ("PPM", False)]
     parties = core.coligacao_partidos(con, "CDU")["partidos"]
     assert [(p["sigla"], p["com_lugares"]) for p in parties] == [("PCP", True), ("PEV", False)]
     for page in ("ColigacaoDetalhes.jsx", "PartidosPage.jsx"):
         assert "seatsNote(" in (ROOT / "frontend" / "src" / "components" / page).read_text(), page
+
+
+def test_coalition_pages_link_by_id_and_show_scope_and_legislatures():
+    # Two AD cards and two AD pages: the link is the page id, the card and the header say
+    # which list and elections it is, and the page lists its legislatures.
+    detail = (ROOT / "frontend" / "src" / "components" / "ColigacaoDetalhes.jsx").read_text()
+    listing = (ROOT / "frontend" / "src" / "components" / "PartidosPage.jsx").read_text()
+    party = (ROOT / "frontend" / "src" / "components" / "PartidoDetalhes.jsx").read_text()
+    for page in (detail, listing):
+        assert "coalitionScope(" in page
+    assert "coligacao.sigla)}" not in listing and "/coligacoes/${encodeURIComponent(coligacao.id)}" in listing
+    assert "/coligacoes/${encodeURIComponent(dados.coligacao.id)}" in party
+    assert "dados.legislaturas" in detail and "Primeira legislatura com deputados eleitos" in detail
 
 
 def test_coalition_pages_show_no_unsourced_history_or_formation_date():
