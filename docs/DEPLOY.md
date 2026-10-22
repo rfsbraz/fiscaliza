@@ -135,8 +135,8 @@ O próximo commit do parlamento-aberto repõe o ramo e começa de novo.
 
 | Repositório | Segredo | Token |
 |---|---|---|
-| `rfsbraz/parliament` | `PIN_BOT_TOKEN` | token fine-grained, com acesso só ao repositório `rfsbraz/parliament`, com Contents: read and write e Pull requests: read and write (o Metadata: read vem incluído) |
-| `rfsbraz/parlamento-aberto` | `FISCALIZA_DISPATCH_TOKEN` | token fine-grained, com acesso só ao repositório `rfsbraz/parliament`, com Contents: read and write |
+| `rfsbraz/fiscaliza` | `PIN_BOT_TOKEN` | token fine-grained, com acesso só ao repositório `rfsbraz/fiscaliza`, com Contents: read and write e Pull requests: read and write (o Metadata: read vem incluído) |
+| `rfsbraz/parlamento-aberto` | `FISCALIZA_DISPATCH_TOKEN` | token fine-grained, com acesso só ao repositório `rfsbraz/fiscaliza`, com Contents: read and write |
 
 O `PIN_BOT_TOKEN` faz push de `data/pin-bump`, abre e edita o pull request e integra-o. Um pull
 request aberto ou integrado com o `GITHUB_TOKEN` não inicia workflows, por isso sem ele o pull
@@ -146,7 +146,7 @@ workflows param no primeiro passo com um erro que nomeia o `PIN_BOT_TOKEN` quand
 
 O `FISCALIZA_DISPATCH_TOKEN` só envia o dispatch. O GitHub pede Contents: write no repositório de
 destino para `POST /repos/{owner}/{repo}/dispatches`, por isso não pode ser menor. Um só token com
-Contents e Pull requests read and write em `rfsbraz/parliament` serviria para os dois, guardado com
+Contents e Pull requests read and write em `rfsbraz/fiscaliza` serviria para os dois, guardado com
 os dois nomes, mas mantenho dois para poder revogar cada um à parte. Nenhum deles vai para outro
 sítio além dos segredos do repositório.
 

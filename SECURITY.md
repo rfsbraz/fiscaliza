@@ -10,7 +10,7 @@ Use o reporte privado de vulnerabilidades do GitHub:
 2. Carregue em **Report a vulnerability**.
 3. Descreva o problema, onde o encontrou e, se possível, como o reproduzir.
 
-Ligação direta: <https://github.com/rfsbraz/parliament/security/advisories/new>
+Ligação direta: <https://github.com/rfsbraz/fiscaliza/security/advisories/new>
 
 O reporte fica visível apenas para quem mantém o repositório.
 

@@ -24,7 +24,7 @@ import pages  # noqa: E402
 
 API = "https://api.github.com"
 PA = "repos/rfsbraz/parlamento-aberto"
-REPO = "repos/rfsbraz/parliament"
+REPO = "repos/rfsbraz/fiscaliza"
 OWNER = "rfsbraz"
 BRANCH = "data/pin-bump"
 BASE = "master"
@@ -329,7 +329,7 @@ def main(argv=None):
     if not bot:
         print(
             "PIN_BOT_TOKEN is not set. Add it in Settings, Secrets and variables, Actions: a fine-grained token "
-            "for rfsbraz/parliament only, with Contents and Pull requests read and write (docs/DEPLOY.md).",
+            "for rfsbraz/fiscaliza only, with Contents and Pull requests read and write (docs/DEPLOY.md).",
             file=sys.stderr,
         )
         return 1

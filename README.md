@@ -1,6 +1,6 @@
 # Fiscaliza
 
-[![CI](https://github.com/rfsbraz/parliament/actions/workflows/ci.yml/badge.svg)](https://github.com/rfsbraz/parliament/actions/workflows/ci.yml)
+[![CI](https://github.com/rfsbraz/fiscaliza/actions/workflows/ci.yml/badge.svg)](https://github.com/rfsbraz/fiscaliza/actions/workflows/ci.yml)
 
 Atividade da Assembleia da República a partir dos dados abertos: deputados, votações, presenças, iniciativas e agenda, em [fiscaliza.pt](https://fiscaliza.pt).
 
@@ -33,8 +33,8 @@ A sincronização cria `fiscaliza-<tag>.duckdb` a partir de uma release de dados
 É preciso Python 3.12, Node.js 20 ou mais recente, o [uv](https://docs.astral.sh/uv/) e o git.
 
 ```bash
-git clone https://github.com/rfsbraz/parliament.git
-cd parliament
+git clone https://github.com/rfsbraz/fiscaliza.git
+cd fiscaliza
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 

@@ -13,8 +13,8 @@ Obrigado pelo interesse no Fiscaliza. Este site mostra a atividade da Assembleia
 É preciso Python 3.12, Node.js 20 ou mais recente, o [uv](https://docs.astral.sh/uv/) (para construir os dados do parlamento-aberto) e o git. Não é preciso nenhum servidor de base de dados.
 
 ```bash
-git clone https://github.com/rfsbraz/parliament.git
-cd parliament
+git clone https://github.com/rfsbraz/fiscaliza.git
+cd fiscaliza
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 pip install pytest ruff==0.17.1
