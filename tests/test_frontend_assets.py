@@ -65,3 +65,9 @@ def test_no_ngrok_host_in_the_vite_config():
 def test_frontend_package_licence_matches_the_project():
     project = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["license"]
     assert json.loads((FRONTEND / "package.json").read_text()).get("license") == project
+
+
+def test_the_build_never_inlines_a_font_as_a_data_uri():
+    # font-src is 'self' only, so a font Vite inlined as data: would be blocked by the CSP.
+    config = (FRONTEND / "vite.config.js").read_text()
+    assert re.search(r"assetsInlineLimit: \(file\) => \(file\.endsWith\('\.woff2'\) \? false : undefined\)", config)

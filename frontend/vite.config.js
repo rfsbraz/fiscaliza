@@ -25,6 +25,8 @@ export default defineConfig({
   build: {
     outDir: './dist',
     emptyOutDir: true,
+    // Fonts stay files: the CSP's font-src is 'self' only, which blocks a data: URI font.
+    assetsInlineLimit: (file) => (file.endsWith('.woff2') ? false : undefined),
     rollupOptions: {
       output: {
         manualChunks: {

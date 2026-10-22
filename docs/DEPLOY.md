@@ -129,8 +129,9 @@ Pages joins the same header from every matching rule with a comma, so `Cache-Con
 set on `/*`.
 
 The CSP: scripts, data and frames from the site itself only (`frame-ancestors 'none'`), styles
-from the site and Google Fonts (`'unsafe-inline'` for the style attributes Recharts and
-framer-motion set), fonts from `fonts.gstatic.com`, and images from the site, `data:`,
+from the site (`'unsafe-inline'` for the style attributes Recharts and framer-motion set), fonts
+from the site only (they are self-hosted in `frontend/src/assets/fonts`, and the build never
+inlines them as `data:` URIs), and images from the site, `data:`,
 `app.parlamento.pt` (the deputy photos in `picture_url`) and `www.parlamento.pt` (the photos on the
 party demographics). A new external image, font or script host needs a line here,
 and `tests/test_pages_deploy.py` fails when the frontend or `PICTURE_URL` uses an image host the CSP

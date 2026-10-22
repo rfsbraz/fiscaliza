@@ -230,10 +230,10 @@ def test_csp_is_strict_where_it_can_be(headers):
 
 def test_csp_allows_what_the_app_loads(headers):
     policy = csp(headers)
-    assert "https://fonts.googleapis.com" in policy["style-src"]
-    assert "https://fonts.gstatic.com" in policy["font-src"]
-    # Recharts and framer-motion set style attributes.
-    assert "'unsafe-inline'" in policy["style-src"]
+    # The fonts are self-hosted (frontend/src/assets/fonts), so no font CDN is allowed.
+    # Recharts and framer-motion set style attributes, hence 'unsafe-inline'.
+    assert policy["style-src"] == ["'self'", "'unsafe-inline'"]
+    assert policy["font-src"] == ["'self'"]
 
     sources = [FRONTEND / "index.html", *FRONTEND.glob("src/**/*.js*")]
     img_hosts = set()
