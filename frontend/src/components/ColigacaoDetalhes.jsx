@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
-import { plural } from '../utils/format';
+import { plural, NOT_AVAILABLE } from '../utils/format';
 
 // Coalition colors based on political spectrum
 const spectrumColors = {
@@ -147,7 +147,7 @@ const ColigacaoDetalhes = () => {
   }
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return NOT_AVAILABLE;
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' });
   };
@@ -251,7 +251,7 @@ const ColigacaoDetalhes = () => {
                       backgroundColor: spectrumColors[dados.espectro_politico] || '#6B7280',
                     }}
                   >
-                    {dados.espectro_politico || 'N/A'}
+                    {dados.espectro_politico || NOT_AVAILABLE}
                   </span>
                   {dados.ativa && (
                     <span

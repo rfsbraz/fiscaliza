@@ -66,6 +66,9 @@ ENGLISH_IN_THE_UI = [
     "Total Analisado",
     "${response.statusText}",
     "${deputyResponse.statusText}",
+    "'N/A'",
+    '"N/A"',
+    ">N/A<",
 ]
 
 
@@ -83,3 +86,10 @@ def test_the_page_is_pt_pt():
     html = (FRONTEND / "index.html").read_text()
     assert '<html lang="pt-PT">' in html
     assert '<meta property="og:locale" content="pt_PT" />' in html
+
+
+@pytest.mark.parametrize(
+    "doc, heading", [("docs/STATIC_EXPORT.md", "# Exportação estática"), ("tests/contracts/README.md", "# Contratos")]
+)
+def test_developer_docs_are_pt_pt(doc, heading):
+    assert (ROOT / doc).read_text().startswith(heading)

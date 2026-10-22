@@ -3,7 +3,7 @@ import { Users, Briefcase, MapPin, Calendar, UserCheck, RotateCcw, User, ArrowRi
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../config/api';
-import { formatDecimal, formatPercent } from '../utils/format';
+import { formatDecimal, formatPercent, NOT_AVAILABLE } from '../utils/format';
 
 const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
   const [loading, setLoading] = useState(false);
@@ -97,7 +97,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
               <p className="text-sm font-medium text-green-600">Idade Média</p>
               <p className="text-2xl font-bold text-green-900">
                 {demographics.idades?.idade_media ? 
-                  `${demographics.idades.idade_media} anos` : 'N/A'}
+                  `${demographics.idades.idade_media} anos` : NOT_AVAILABLE}
               </p>
             </div>
           </div>
@@ -110,7 +110,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
               <p className="text-sm font-medium text-purple-600">Diversidade</p>
               <p className="text-2xl font-bold text-purple-900">
                 {demographics.genero && Object.keys(demographics.genero).length > 1 ? 
-                  formatPercent((Math.min(...Object.values(demographics.genero)) / Math.max(...Object.values(demographics.genero))) * 100, 1) : 'N/A'}
+                  formatPercent((Math.min(...Object.values(demographics.genero)) / Math.max(...Object.values(demographics.genero))) * 100, 1) : NOT_AVAILABLE}
               </p>
             </div>
           </div>
@@ -123,7 +123,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
               <p className="text-sm font-medium text-orange-600">Renovação</p>
               <p className="text-2xl font-bold text-orange-900">
                 {demographics.renovacao?.percentual_renovacao ? 
-                  `${formatDecimal(demographics.renovacao.percentual_renovacao, 1)}%` : 'N/A'}
+                  `${formatDecimal(demographics.renovacao.percentual_renovacao, 1)}%` : NOT_AVAILABLE}
               </p>
             </div>
           </div>
@@ -213,20 +213,20 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <p className="text-sm text-green-600 font-medium">Idade Média</p>
                   <p className="text-2xl font-bold text-green-900">
-                    {demographics.idades?.idade_media || 'N/A'}
+                    {demographics.idades?.idade_media || NOT_AVAILABLE}
                   </p>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-600 font-medium">Idade Mediana</p>
                   <p className="text-2xl font-bold text-blue-900">
-                    {demographics.idades?.idade_mediana || 'N/A'}
+                    {demographics.idades?.idade_mediana || NOT_AVAILABLE}
                   </p>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
                   <p className="text-sm text-purple-600 font-medium">Amplitude</p>
                   <p className="text-2xl font-bold text-purple-900">
                     {demographics.idades?.min && demographics.idades?.max ? 
-                      `${demographics.idades.min}-${demographics.idades.max}` : 'N/A'}
+                      `${demographics.idades.min}-${demographics.idades.max}` : NOT_AVAILABLE}
                   </p>
                 </div>
               </div>
@@ -533,7 +533,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                     {demographics.renovacao?.percentual_renovacao ? 
                       `${formatDecimal(demographics.renovacao.percentual_renovacao, 1)}%` : 
                       demographics.renovacao?.percentagem_estreantes ? 
-                        `${formatDecimal(demographics.renovacao.percentagem_estreantes * 100, 1)}%` : 'N/A'}
+                        `${formatDecimal(demographics.renovacao.percentagem_estreantes * 100, 1)}%` : NOT_AVAILABLE}
                   </p>
                   <p className="text-xs text-orange-600">novos deputados</p>
                 </div>
