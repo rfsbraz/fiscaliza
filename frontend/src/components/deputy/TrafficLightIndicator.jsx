@@ -10,6 +10,7 @@
 import React from 'react';
 import { CheckCircle, AlertTriangle, AlertCircle, HelpCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { tokens } from '../../styles/tokens';
+import { formatDecimal } from '../../utils/format';
 
 /**
  * Default thresholds for common metrics
@@ -200,7 +201,7 @@ const TrafficLightIndicator = ({
                   lineHeight: 1.2,
                 }}
               >
-                {typeof value === 'number' ? value.toFixed(1) : value}{unit}
+                {typeof value === 'number' ? formatDecimal(value, 1) : value}{unit}
               </div>
             )}
             {showLabel && (
@@ -231,7 +232,7 @@ const TrafficLightIndicator = ({
                   <TrendingDown size={14} />
                 )}
                 <span>
-                  {delta >= 0 ? '+' : ''}{delta.toFixed(1)} pp vs. {comparisonLabel}
+                  {delta >= 0 ? '+' : ''}{formatDecimal(delta, 1)} pp vs. {comparisonLabel}
                 </span>
               </div>
             )}
@@ -266,7 +267,7 @@ const TrafficLightIndicator = ({
               fontFamily: tokens.fonts.mono,
             }}
           >
-            {typeof value === 'number' ? value.toFixed(1) : value}{unit}
+            {typeof value === 'number' ? formatDecimal(value, 1) : value}{unit}
           </span>
         )}
         {showLabel && (
@@ -303,7 +304,7 @@ const TrafficLightIndicator = ({
       >
         {showIcon && <StatusIcon size={12} />}
         {showValue && value !== null && (
-          <span>{typeof value === 'number' ? value.toFixed(1) : value}{unit}</span>
+          <span>{typeof value === 'number' ? formatDecimal(value, 1) : value}{unit}</span>
         )}
       </span>
     );

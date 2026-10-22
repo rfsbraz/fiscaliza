@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, BarChart3, Zap, Network, Activity, Shield } from 'lucide-react';
 import { apiFetch } from '../config/api';
+import { formatDecimal } from '../utils/format';
 
 const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
   const [analytics, setAnalytics] = useState(null);
@@ -34,7 +35,7 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">Carregando análises do partido...</span>
+        <span className="ml-3 text-gray-600">A carregar análises do partido...</span>
       </div>
     );
   }
@@ -151,7 +152,7 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
                     <td className="py-2 pr-4 text-right">{row.rejected}</td>
                     <td className="py-2 pr-4 text-right">{row.undecided}</td>
                     <td className="py-2 text-right">
-                      {row.approval_rate == null ? 'sem taxa' : `${(row.approval_rate * 100).toFixed(1)}%`}
+                      {row.approval_rate == null ? 'sem taxa' : `${formatDecimal(row.approval_rate * 100, 1)}%`}
                     </td>
                   </tr>
                 ))}
@@ -221,7 +222,7 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-gray-600">Mesmo sentido de voto</span>
                   <span className="text-sm font-medium">
-                    {(coalition.alignment_rate * 100).toFixed(1)}%
+                    {formatDecimal(coalition.alignment_rate * 100, 1)}%
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">

@@ -6,361 +6,361 @@
       "path": "coligacao",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:207"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:208"
     },
     {
       "path": "coligacao.nome",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:222"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:223"
     },
     {
       "path": "coligacao.sigla",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:213"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:214"
     },
     {
       "path": "demografia",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:803"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:804"
     },
     {
       "path": "demografia.experiencia_politica",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:525"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:526"
     },
     {
       "path": "demografia.experiencia_politica.categorias",
       "type": "mapping",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:549"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:550"
     },
     {
       "path": "demografia.experiencia_politica.mandatos_anteriores",
       "type": "mapping",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:590"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:591"
     },
     {
       "path": "demografia.genero",
       "type": "mapping",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:65"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:66"
     },
     {
       "path": "demografia.geografia",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:71"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:72"
     },
     {
       "path": "demografia.geografia.regional",
       "type": "mapping",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:71"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:72"
     },
     {
       "path": "demografia.idades",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:61"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:62"
     },
     {
       "path": "demografia.idades.cohorts_geracionais",
       "type": "mapping",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:61"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:62"
     },
     {
       "path": "demografia.idades.idade_media",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:98"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:99"
     },
     {
       "path": "demografia.idades.idade_mediana",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:221"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:222"
     },
     {
       "path": "demografia.idades.max",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:227"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:228"
     },
     {
       "path": "demografia.idades.min",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:227"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:228"
     },
     {
       "path": "demografia.idades.oldest_deputy",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:255"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:256"
     },
     {
       "path": "demografia.idades.oldest_deputy.circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:312"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:313"
     },
     {
       "path": "demografia.idades.oldest_deputy.id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:289"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:290"
     },
     {
       "path": "demografia.idades.oldest_deputy.id_cadastro",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:264"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:265"
     },
     {
       "path": "demografia.idades.oldest_deputy.idade",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:306"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:307"
     },
     {
       "path": "demografia.idades.oldest_deputy.mandato_ativo",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:317"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:318"
     },
     {
       "path": "demografia.idades.oldest_deputy.nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:268"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:269"
     },
     {
       "path": "demografia.idades.oldest_deputy.profissao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:294"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:295"
     },
     {
       "path": "demografia.idades.oldest_deputy.ultima_legislatura",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:318"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:319"
     },
     {
       "path": "demografia.idades.youngest_deputy",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:255"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:256"
     },
     {
       "path": "demografia.idades.youngest_deputy.circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:401"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:402"
     },
     {
       "path": "demografia.idades.youngest_deputy.id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:378"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:379"
     },
     {
       "path": "demografia.idades.youngest_deputy.id_cadastro",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:353"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:354"
     },
     {
       "path": "demografia.idades.youngest_deputy.idade",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:395"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:396"
     },
     {
       "path": "demografia.idades.youngest_deputy.mandato_ativo",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:406"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:407"
     },
     {
       "path": "demografia.idades.youngest_deputy.nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:357"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:358"
     },
     {
       "path": "demografia.idades.youngest_deputy.profissao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:383"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:384"
     },
     {
       "path": "demografia.idades.youngest_deputy.ultima_legislatura",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:407"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:408"
     },
     {
       "path": "demografia.profissoes",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:57"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:58"
     },
     {
       "path": "demografia.profissoes.categorias",
       "type": "mapping",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:57"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:58"
     },
     {
       "path": "demografia.profissoes.total_especificadas",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:85"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:86"
     },
     {
       "path": "demografia.renovacao",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:124"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:125"
     },
     {
       "path": "demografia.renovacao.novos_deputados",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:618"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:619"
     },
     {
       "path": "demografia.renovacao.percentagem_estreantes",
       "type": "number",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:534"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:535"
     },
     {
       "path": "demografia.renovacao.percentual_renovacao",
       "type": "number",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:124"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:125"
     },
     {
       "path": "demografia.renovacao.veteranos",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyDemographics.jsx:542"
+      "read_at": "frontend/src/components/PartyDemographics.jsx:543"
     },
     {
       "path": "deputados",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:291"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:292"
     },
     {
       "path": "deputados[].circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:649"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:650"
     },
     {
       "path": "deputados[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:551"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:552"
     },
     {
       "path": "deputados[].id_cadastro",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:616"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:617"
     },
     {
       "path": "deputados[].mandato_ativo",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:654"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:655"
     },
     {
       "path": "deputados[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:568"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:569"
     },
     {
       "path": "deputados[].picture_url",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:564"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:565"
     },
     {
       "path": "deputados[].profissao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:630"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:631"
     },
     {
       "path": "deputados[].ultima_legislatura",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:655"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:656"
     },
     {
       "path": "historico",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:291"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:292"
     },
     {
       "path": "historico.periodo_atividade",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:509"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:510"
     },
     {
       "path": "historico.total_circulos",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:291"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:292"
     },
     {
       "path": "historico.total_legislaturas",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:526"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:527"
     },
     {
       "path": "mandatos_ativos",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:245"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:246"
     },
     {
       "path": "partido",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:196"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:197"
     },
     {
       "path": "partido.nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:205"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:206"
     },
     {
       "path": "partido.sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:196"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:197"
     },
     {
       "path": "total",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:240"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:241"
     }
   ],
   "dropped": [
