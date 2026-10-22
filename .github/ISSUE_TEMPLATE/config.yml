@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Dado errado na origem (parlamento-aberto)
+    url: https://github.com/rfsbraz/parlamento-aberto/issues/new?template=correcao-de-dados.yml
+    about: Se o dado está errado nos dados abertos ou no parlamento-aberto, reporte-o lá.
+  - name: Vulnerabilidade ou fuga de dados
+    url: https://github.com/rfsbraz/parliament/security/advisories/new
+    about: Reporte em privado. Não abra uma issue pública.

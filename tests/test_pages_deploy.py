@@ -386,3 +386,29 @@ def test_a_release_folder_must_come_from_the_pin(tmp_path):
     (rel / "manifest.json").write_text('{"tag": "data-2026-10-20", "data_commit": "' + "b" * 40 + '"}')
     with pytest.raises(pages.DeployError, match="pin"):
         pages.check_release(rel, pages.read_pin())
+
+
+def test_build_makes_the_local_data_from_the_pin_without_uploading():
+    pin = pages.read_pin()
+    args = pages.parse_args(["build", "--parlamento-aberto", "/pa", "--data-dir", "/d"])
+    cmds = [" ".join(step.argv) for step in pages.plan(args, work=Path("/work"))]
+    assert any("worktree add --detach" in c and pin.commit in c for c in cmds)
+    assert any("parlamento_aberto.release build" in c and f"--sha {pin.commit}" in c for c in cmds)
+    sync = next(c for c in cmds if "fiscaliza_data sync" in c)
+    assert "--from-dir /work/release" in sync and "--data-dir /d" in sync
+    export = next(c for c in cmds if "fiscaliza_data.export" in c)
+    assert f"--out {FRONTEND / 'public' / 'api'}" in export and "--data-dir /d" in export
+    # Nothing past the export: no npm build, no Pages step, no upload.
+    assert cmds[-1] == export
+    assert not any("wrangler" in c or "pages deploy" in c or c.startswith("prepare") for c in cmds)
+
+
+def test_build_defaults_the_data_dir_to_data():
+    args = pages.parse_args(["build", "--parlamento-aberto", "/pa"])
+    sync = next(" ".join(s.argv) for s in pages.plan(args, work=Path("/work")) if "fiscaliza_data" in s.argv)
+    assert "--data-dir data" in sync
+
+
+def test_build_takes_no_pages_branch():
+    with pytest.raises(SystemExit):
+        pages.parse_args(["build", "--parlamento-aberto", "/pa", "--branch", "x"])

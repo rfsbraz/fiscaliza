@@ -6,6 +6,7 @@
     python deploy/pages.py deploy ... --production           # production (master)
     python deploy/pages.py deploy ... --dry-run              # print the steps, run nothing
     python deploy/pages.py prepare DIST                      # only the Pages step on a built dist/
+    python deploy/pages.py build --parlamento-aberto PATH    # local data from the pin, no upload
 
 See docs/DEPLOY.md.
 """
@@ -142,9 +143,11 @@ def branch_for(args):
 def plan(args, work):
     """The commands for one deploy, in order. Nothing runs here."""
     pin = read_pin()
-    branch = branch_for(args)
+    local = args.cmd == "build"
+    branch = None if local else branch_for(args)
     work = Path(work)
-    data_dir = work / "data"
+    # A local build keeps its DuckDB file where the API and the dev tools look for it.
+    data_dir = Path(args.data_dir) if local else work / "data"
     python = sys.executable
     steps = []
 
@@ -172,7 +175,6 @@ def plan(args, work):
     else:
         raise DeployError("the pin has no release tag; pass --parlamento-aberto PATH or --release DIR")
 
-    wrangler = shlex.split(os.environ.get("WRANGLER", DEFAULT_WRANGLER))
     steps += [
         Step("sync", [python, "-m", "fiscaliza_data", "sync", *sync_source, "--data-dir", str(data_dir)]),
         Step(
@@ -187,6 +189,11 @@ def plan(args, work):
                 str(data_dir),
             ],
         ),
+    ]
+    if local:
+        return steps
+    wrangler = shlex.split(os.environ.get("WRANGLER", DEFAULT_WRANGLER))
+    steps += [
         Step("install", ["npm", "ci"], cwd=FRONTEND),
         Step("build", ["npm", "run", "build"], cwd=FRONTEND),
         Step("prepare for Pages", ["prepare", str(FRONTEND / "dist")]),
@@ -201,7 +208,9 @@ def plan(args, work):
 
 def run(args):
     pin = read_pin()
-    branch_for(args)
+    local = args.cmd == "build"
+    if not local:
+        branch_for(args)
     if args.release:
         check_release(args.release, pin)
     if args.dry_run:
@@ -213,7 +222,10 @@ def run(args):
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="fiscaliza-deploy-"))
     try:
         steps = plan(args, work)
-        print(f"deploying parlamento-aberto {pin.commit[:9]} to Pages project {PROJECT}, branch {branch_for(args)}")
+        if local:
+            print(f"building parlamento-aberto {pin.commit[:9]} into {args.data_dir} and frontend/public/api")
+        else:
+            print(f"deploying parlamento-aberto {pin.commit[:9]} to Pages project {PROJECT}, branch {branch_for(args)}")
         for step in steps:
             print(f"[{step.name}]", flush=True)
             if step.argv[0] == "prepare":
@@ -253,6 +265,14 @@ def parse_args(argv=None):
     d.add_argument("--work", help="scratch folder (default: a temporary one, removed afterwards)")
     d.add_argument("--keep", action="store_true", help="keep the temporary scratch folder")
     d.add_argument("--dry-run", action="store_true", help="print the steps and run nothing")
+    b = sub.add_parser("build", help="build the pinned data locally: sync and export, no upload")
+    source = b.add_mutually_exclusive_group(required=True)
+    source.add_argument("--parlamento-aberto", metavar="PATH", help="a parlamento-aberto clone to build the pin in")
+    source.add_argument("--release", metavar="DIR", help="a `release build` output folder built from the pin")
+    b.add_argument("--data-dir", default="data", help="where the sync writes the DuckDB file (default: data)")
+    b.add_argument("--work", help="scratch folder (default: a temporary one, removed afterwards)")
+    b.add_argument("--keep", action="store_true", help="keep the temporary scratch folder")
+    b.add_argument("--dry-run", action="store_true", help="print the steps and run nothing")
     p = sub.add_parser("prepare", help="the Pages step alone, on a built dist/")
     p.add_argument("dist")
     return parser.parse_args(argv)
@@ -266,7 +286,7 @@ def main(argv=None):
             return 0
         return run(args)
     except DeployError as e:
-        print(f"deploy failed: {e}", file=sys.stderr)
+        print(f"{args.cmd} failed: {e}", file=sys.stderr)
         return 1
 
 

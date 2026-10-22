@@ -1,0 +1,32 @@
+name: Número errado no site
+description: Um número, nome ou data que o site mostra e não corresponde aos dados abertos da Assembleia da República.
+title: "Número errado: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        O Fiscaliza mostra os dados do [parlamento-aberto](https://github.com/rfsbraz/parlamento-aberto). Se o valor já está errado nos dados de origem, reporte-o lá com o formulário [Correção de dados](https://github.com/rfsbraz/parlamento-aberto/issues/new?template=correcao-de-dados.yml). Use este formulário quando os dados estão certos e o site os conta ou mostra mal.
+
+        Não escreva aqui dados pessoais (moradas, contactos ou outros). Esta issue é pública. Indique só onde está o problema.
+  - type: input
+    id: pagina
+    attributes:
+      label: Página
+      description: O endereço da página e, se for o caso, o separador, por exemplo https://fiscaliza.pt/deputados/4453, separador Votações.
+    validations:
+      required: true
+  - type: textarea
+    id: valor
+    attributes:
+      label: O que está errado
+      description: O valor que o site mostra e o valor que devia mostrar.
+    validations:
+      required: true
+  - type: input
+    id: fonte
+    attributes:
+      label: Fonte
+      description: Ligação para a página da Assembleia da República ou para o ficheiro de dados abertos que mostra o valor correto.
+    validations:
+      required: false

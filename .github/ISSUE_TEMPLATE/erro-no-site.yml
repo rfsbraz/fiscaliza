@@ -1,0 +1,30 @@
+name: Erro no site
+description: Uma página que não funciona, mostra algo partido ou se comporta de forma inesperada.
+title: "Erro: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar. Se o problema é um número errado, use o formulário "Número errado no site".
+  - type: input
+    id: pagina
+    attributes:
+      label: Página
+      description: O endereço da página, por exemplo https://fiscaliza.pt/deputados/4453.
+    validations:
+      required: true
+  - type: textarea
+    id: descricao
+    attributes:
+      label: O que aconteceu
+      description: O que fez, o que esperava ver e o que viu. Uma captura de ecrã ajuda.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser e dispositivo
+      description: Por exemplo Firefox 131 no Windows, ou Safari no iPhone.
+    validations:
+      required: false
