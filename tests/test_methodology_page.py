@@ -1,5 +1,6 @@
 """The methodology page, /metodologia (#113, second half)."""
 
+import importlib.util
 import re
 from pathlib import Path
 
@@ -8,7 +9,9 @@ SRC = ROOT / "frontend" / "src"
 APP = SRC / "App.jsx"
 PAGE = SRC / "components" / "Metodologia.jsx"
 CONTENT = SRC / "content" / "metodologia.md"
-REDIRECTS = ROOT / "deploy" / "_redirects"
+spec = importlib.util.spec_from_file_location("pages", ROOT / "deploy" / "pages.py")
+pages = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(pages)
 COVERAGE = (
     "Mesmo nesse período, os ficheiros da AR só incluem as pessoas que constam das listas da XVII Legislatura,"
     " incluindo suplentes. Quem já não está nessas listas não tem declaração nos dados abertos, mesmo que a"
@@ -33,13 +36,14 @@ SECTIONS = [
 ]
 
 
-def test_route_footer_link_and_rewrite():
+def test_route_footer_link_and_page():
     app = APP.read_text()
     route = app.index('<Route path="/metodologia" element={<Metodologia />} />')
     assert route < app.index('<Route path="*" element={<NotFound />} />')
     assert 'to="/metodologia"' in app
     assert "Metodologia e fontes" in app
-    assert "/metodologia / 200" in REDIRECTS.read_text().splitlines()
+    # deploy/pages.py writes metodologia.html with the page's own title (tests/test_route_heads.py).
+    assert pages.STATIC_ROUTES["/metodologia"][0] == "Metodologia e fontes"
 
 
 def test_content_has_the_reviewed_sections_in_order():

@@ -12,8 +12,10 @@ See docs/DEPLOY.md.
 """
 
 import argparse
+import html
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -22,6 +24,7 @@ import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -37,6 +40,41 @@ PREVIEW_BRANCH = "preview"
 # Cloudflare Pages limits per deployment (free plan).
 MAX_FILES = 20_000
 MAX_FILE_BYTES = 25 * 1024 * 1024
+SITE = "https://fiscaliza.pt"
+SUFFIX = " · Fiscaliza"
+# The head tags each route page sets, as (before the value)(value)(after). Each must be in
+# frontend/index.html once; the rest of the page stays the app.
+HEAD_TAGS = {
+    "title": r"(<title>)([^<]*)(</title>)",
+    "description": r'(<meta name="description" content=")([^"]*)("\s*/?>)',
+    "canonical": r'(<link rel="canonical" href=")([^"]*)("\s*/?>)',
+    "og:title": r'(<meta property="og:title" content=")([^"]*)("\s*/?>)',
+    "og:description": r'(<meta property="og:description" content=")([^"]*)("\s*/?>)',
+    "og:url": r'(<meta property="og:url" content=")([^"]*)("\s*/?>)',
+}
+# The app's routes with no id (frontend/src/App.jsx): title and description.
+STATIC_ROUTES = {
+    "/deputados": (
+        "Deputados",
+        "Os deputados da Assembleia da República desde 1975: mandatos, votações, presenças, "
+        "intervenções e registo de interesses.",
+    ),
+    "/partidos": (
+        "Partidos e coligações",
+        "Os partidos e as coligações com deputados na Assembleia da República, com os seus deputados e votações.",
+    ),
+    "/agenda": ("Agenda", "As votações mais recentes e a atividade da Assembleia da República."),
+    "/perguntas": (
+        "Perguntas ao Governo",
+        "As perguntas escritas dos deputados ao Governo, com as respostas e o tempo de resposta por legislatura.",
+    ),
+    "/metodologia": (
+        "Metodologia e fontes",
+        "Como o Fiscaliza trata os dados abertos da Assembleia da República: fontes, regras e limitações.",
+    ),
+}
+# One path segment of a route that becomes a file name: no separators, no . or .., no controls.
+SAFE_SEGMENT = re.compile(r"^(?!\.{1,2}$)[^/\\\x00-\x1f\x7f]+$")
 # Wrangler 4 needs Node 22 or newer.
 DEFAULT_WRANGLER = "npx --yes wrangler@4.151.3"
 
@@ -96,10 +134,118 @@ def fetch_pin(checkout, commit):
         raise DeployError(f"{checkout}: cannot fetch the pinned commit {commit[:9]}: {e.stderr.strip()}") from e
 
 
+def _json(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def _items(data, key):
+    items = data.get(key) if isinstance(data, dict) else None
+    return [i for i in items if isinstance(i, dict)] if isinstance(items, list) else []
+
+
+def _route(prefix, value):
+    """prefix/value when every segment of value is safe as a file name, else None."""
+    value = str(value) if value is not None else ""
+    segments = value.split("/")
+    if not value or not all(SAFE_SEGMENT.match(s) for s in segments):
+        return None
+    return f"{prefix}/{value}"
+
+
+def route_heads(api):
+    """{route path: (title, description)} for every app route the export has data for, plus the
+    routes with no id. Reads the export's index files only; a missing one adds no routes."""
+    api = Path(api)
+    routes = dict(STATIC_ROUTES)
+
+    for d in _items(_json(api / "deputados.json"), "deputados"):
+        cad = d.get("id_cadastro")
+        path = _route("/deputados", cad) if isinstance(cad, int) or str(cad).isdigit() else None
+        name = (d.get("nome") or "").strip()
+        if not path or not name:
+            continue
+        party, circle = d.get("partido_sigla"), d.get("circulo")
+        context = ", ".join(x for x in (party, circle) if x)
+        title = f"{name} ({party})" if party else name
+        routes[path] = (
+            title,
+            f"Atividade parlamentar de {name}{f' ({context})' if context else ''}: votações, presenças, "
+            "intervenções e registo de interesses na Assembleia da República.",
+        )
+
+    parties = {p.get("sigla") or p.get("id"): p.get("nome") for p in _items(_json(api / "partidos.json"), "partidos")}
+    for f in sorted((api / "partidos").glob("*/deputados.json")) if (api / "partidos").is_dir() else []:
+        party = (_json(f) or {}).get("partido")
+        if isinstance(party, dict) and party.get("sigla"):
+            parties.setdefault(party["sigla"], party.get("nome"))
+    for sigla, name in parties.items():
+        path = _route("/partidos", sigla)
+        if path:
+            label = f"{name} ({sigla})" if name and name != sigla else sigla
+            routes[path] = (label, f"Deputados, votações e coligações: {label} na Assembleia da República.")
+
+    for c in _items(_json(api / "coligacoes-todas.json"), "coligacoes"):
+        path = _route("/coligacoes", c.get("sigla"))
+        if path:
+            name = c.get("nome") or c["sigla"]
+            routes[path] = (name, f"Partidos, deputados e eleições da coligação {name} na Assembleia da República.")
+
+    for leg in _items(_json(api / "perguntas.json"), "legislaturas"):
+        path = _route("/perguntas", leg.get("legislatura"))
+        if path:
+            n = leg["legislatura"]
+            routes[path] = (
+                f"Perguntas ao Governo na {n} legislatura",
+                f"As perguntas escritas dos deputados ao Governo na {n} legislatura, com as respostas e o "
+                "tempo de resposta.",
+            )
+    return routes
+
+
+def render_head(template, path, title, description):
+    """The app's index.html with this route's title, description, canonical and og:url."""
+    url = SITE + quote(path, safe="/")
+    values = {
+        "title": title + SUFFIX,
+        "description": description,
+        "canonical": url,
+        "og:title": title + SUFFIX,
+        "og:description": description,
+        "og:url": url,
+    }
+    out = template
+    for key, pattern in HEAD_TAGS.items():
+        value = html.escape(values[key], quote=True)
+        out, n = re.subn(pattern, lambda m, v=value: m.group(1) + v + m.group(3), out, count=1)
+        if n != 1:
+            raise DeployError(f"index.html has no {key} tag to set for {path}")
+    return out
+
+
+def write_route_pages(dist):
+    """One HTML file per app route, where Pages serves it: /deputados/2105 is deputados/2105.html.
+    Link previews read these heads; the browser loads the same app. Returns the number written."""
+    dist = Path(dist)
+    template = (dist / "index.html").read_text(encoding="utf-8")
+    if "<head" not in template:
+        return 0
+    written = 0
+    for path, (title, description) in route_heads(dist / "api").items():
+        target = dist / f"{path.lstrip('/')}.html"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(render_head(template, path, title, description), encoding="utf-8")
+        written += 1
+    return written
+
+
 def prepare(dist):
-    """Turn a generic build into a Pages one: the _headers and _redirects files, and a 404.html
-    that is the app. The rules in _redirects answer the app's routes with status 200; any other
-    path with no file gets 404.html with status 404 (#113). Checks the Pages limits."""
+    """Turn a generic build into a Pages one: the _headers and _redirects files, a 404.html that
+    is the app, and one HTML file per app route with its own head (write_route_pages). A route's
+    file answers it with status 200; any other path with no file gets 404.html with status 404
+    (#113). Checks the Pages limits."""
     dist = Path(dist)
     if not (dist / "index.html").is_file():
         raise DeployError(f"{dist}/index.html is missing; run `npm run build` first")
@@ -107,6 +253,7 @@ def prepare(dist):
         shutil.copyfile(dist / "index.html", dist / "404.html")
     shutil.copyfile(HEADERS_FILE, dist / "_headers")
     shutil.copyfile(REDIRECTS_FILE, dist / "_redirects")
+    write_route_pages(dist)
     files = [p for p in dist.rglob("*") if p.is_file()]
     if len(files) >= MAX_FILES:
         raise DeployError(f"{dist} has {len(files)} files; Pages takes fewer than {MAX_FILES}")
