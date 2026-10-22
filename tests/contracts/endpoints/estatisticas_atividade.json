@@ -39,6 +39,12 @@
       "read_at": "frontend/src/components/AgendaPage.jsx:158"
     },
     {
+      "path": "estatisticas.sessoes_plenarias.fonte",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:158"
+    },
+    {
       "path": "estatisticas.sessoes_plenarias.total_ano",
       "type": "scalar",
       "nullable": true,
