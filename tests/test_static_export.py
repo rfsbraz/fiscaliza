@@ -40,6 +40,9 @@ FLAT = {
     "votacoes/recentes/10.json": "votacoes/recentes",
     "estatisticas/atividade.json": "estatisticas/atividade",
     "health.json": "health",
+    "perguntas.json": "perguntas",
+    "perguntas/xvii.json": "perguntas/XVII",
+    "perguntas/xvi.json": "perguntas/XVI",
 }
 
 
@@ -266,6 +269,7 @@ def _requests(con, flask_app):
         ]
         reqs += [f"partidos/{g}/voting-analytics?legislatura={leg}" for leg in legs]
     reqs += ["agenda/hoje", "agenda/semana"]
+    reqs += ["perguntas/XV", "perguntas/NOPE"]
     return reqs
 
 
