@@ -123,6 +123,42 @@
       "read_at": "frontend/src/components/deputy/InterestTable.jsx:48"
     },
     {
+      "path": "sem_declaracao",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3658"
+    },
+    {
+      "path": "sem_declaracao.antes_da_cobertura",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3671"
+    },
+    {
+      "path": "sem_declaracao.legislatura",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3673"
+    },
+    {
+      "path": "sem_declaracao.lei_52_2019",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3685"
+    },
+    {
+      "path": "sem_declaracao.url_ept",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3681"
+    },
+    {
+      "path": "sem_declaracao.url_parlamento",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3677"
+    },
+    {
       "path": "shareholdings",
       "type": "array",
       "nullable": true,
