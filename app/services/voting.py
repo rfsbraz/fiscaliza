@@ -64,13 +64,13 @@ def _vote_dict(vote, breakdown):
 def _deputy_legislature(rows, cadastro_id, legislatura):
     career = rows.career(cadastro_id)
     if not career:
-        raise NotFound(f"deputy {cadastro_id} not found")
+        raise NotFound(f"deputado {cadastro_id} não encontrado")
     if legislatura is None:
         return career[-1]
     name = legislature_name(legislatura)
     found = next((c for c in career if c["legislature"] == name), None)
     if found is None:
-        raise NotFound(f"deputy {cadastro_id} held no seat in legislature {name}")
+        raise NotFound(f"o deputado {cadastro_id} não teve lugar na legislatura {name}")
     return found
 
 
@@ -171,14 +171,14 @@ def _group(con, sigla, legislatura):
     leg = legislature_name(legislatura) if legislatura else core_current(con)
     found = repository.group(con, leg, sigla)
     if found is None:
-        raise NotFound(f"group {sigla!r} not found in legislature {leg}")
+        raise NotFound(f"grupo {sigla!r} não encontrado na legislatura {leg}")
     return leg, found
 
 
 def core_current(con):
     current = repository.current_legislature(con)
     if current is None:
-        raise NotFound("no legislature in the data")
+        raise NotFound("não há nenhuma legislatura nos dados")
     return current["legislature"]
 
 

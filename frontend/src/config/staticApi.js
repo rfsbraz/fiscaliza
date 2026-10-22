@@ -20,7 +20,7 @@ const ROMAN = [
 // Not in the data release yet: answered "not available" until their step lands, then the
 // export renders them like the rest.
 const PENDING = {
-  agenda: { reason: 'The parliamentary agenda is not in the parlamento-aberto release yet.', planned: 'S13' },
+  agenda: { reason: 'A agenda parlamentar ainda não está na release do parlamento-aberto.', planned: 'S13' },
 };
 const INTERVENTION_ORDER = {
   newest: [['data', -1], ['id', -1]],
@@ -29,7 +29,7 @@ const INTERVENTION_ORDER = {
 };
 
 const answer = (status, body) => ({ status, body });
-const notFound = () => answer(404, { error: 'Not found' });
+const notFound = () => answer(404, { error: 'Não encontrado' });
 const pending = (key) => answer(503, { status: 'not_available', ...PENDING[key] });
 
 /** The path form of a legislature, party or coalition name: same as export.slug in Python. */

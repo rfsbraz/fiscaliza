@@ -58,7 +58,7 @@ const LegislatureDropdown = ({
         const deputyResponse = await apiFetch(`deputados/${deputyCadId}/detalhes`);
         
         if (!deputyResponse.ok) {
-          throw new Error(`HTTP ${deputyResponse.status}: ${deputyResponse.statusText}`);
+          throw new Error(`Não foi possível carregar os dados do deputado (erro ${deputyResponse.status}).`);
         }
         
         const deputyData = await deputyResponse.json();
@@ -82,7 +82,7 @@ const LegislatureDropdown = ({
         const response = await apiFetch('legislaturas');
         
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(`Não foi possível carregar as legislaturas (erro ${response.status}).`);
         }
         
         const data = await response.json();

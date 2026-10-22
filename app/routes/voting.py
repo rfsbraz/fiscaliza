@@ -23,7 +23,7 @@ def _not_found(e):
 @voting_bp.errorhandler(DataUnavailable)
 def _unavailable(e):
     current_app.logger.error("data unavailable: %s", e)
-    return jsonify({"error": "Data not available"}), 503
+    return jsonify({"error": "Dados indisponíveis"}), 503
 
 
 @voting_bp.route("/deputados/<int:cad_id>/voting-analytics", methods=["GET"])

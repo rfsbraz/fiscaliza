@@ -120,7 +120,7 @@ def _periodo(rows):
 def partido_deputados(con, sigla, legislatura=None):
     name = repository.group_name(con, sigla)
     if name is None:
-        raise NotFound(f"party {sigla!r} not found")
+        raise NotFound(f"partido {sigla!r} não encontrado")
     current = _legislature(con)
     leg = _legislature(con, legislatura) if legislatura else current
     rows = repository.group_service(con, sigla, legislatura)

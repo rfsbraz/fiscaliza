@@ -626,7 +626,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                   </p>
                 </div>
                 <div className="text-center p-3 bg-indigo-50 rounded-lg">
-                  <p className="text-sm text-indigo-600 font-medium">Total Analisado</p>
+                  <p className="text-sm text-indigo-600 font-medium">Total analisado</p>
                   <p className="text-xl font-bold text-indigo-900">
                     {(demographics.renovacao?.novos_deputados || 0) + (demographics.renovacao?.veteranos || 0)}
                   </p>

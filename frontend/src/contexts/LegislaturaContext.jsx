@@ -25,7 +25,7 @@ export const LegislaturaProvider = ({ children }) => {
       const response = await apiFetch('legislaturas');
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Não foi possível carregar as legislaturas (erro ${response.status}).`);
       }
       
       const text = await response.text();
@@ -36,7 +36,7 @@ export const LegislaturaProvider = ({ children }) => {
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
         console.error('Response text:', text);
-        throw new Error(`Invalid JSON response: ${parseError.message}`);
+        throw new Error('A resposta com as legislaturas não é válida.');
       }
       
       setLegislaturas(data);

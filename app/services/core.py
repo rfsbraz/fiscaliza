@@ -28,7 +28,7 @@ def _iso(day):
 def _legislature(con, name=None):
     leg = repository.legislature(con, name) if name else repository.current_legislature(con)
     if leg is None:
-        raise NotFound(f"legislature {name!r} not found" if name else "no legislature in the data")
+        raise NotFound(f"legislatura {name!r} não encontrada" if name else "não há nenhuma legislatura nos dados")
     return leg
 
 
@@ -248,7 +248,7 @@ def _coalitions(con, sigla=None):
 def _coalition(con, sigla):
     found = _coalitions(con, sigla).get(sigla)
     if found is None:
-        raise NotFound(f"coalition {sigla!r} not found")
+        raise NotFound(f"coligação {sigla!r} não encontrada")
     return found
 
 

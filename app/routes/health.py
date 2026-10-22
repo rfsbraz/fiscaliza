@@ -40,5 +40,5 @@ def readiness_check():
         return jsonify({"status": "not_ready", "reason": str(e)}), 503
     seated = sum(g["seats"] for g in seats)
     if not seated:
-        return jsonify({"status": "not_ready", "reason": "no seated deputies in the current legislature"}), 503
+        return jsonify({"status": "not_ready", "reason": "nenhum deputado em funções na legislatura atual"}), 503
     return jsonify({"status": "ready", "legislature": leg["legislature"], "seated": seated}), 200
