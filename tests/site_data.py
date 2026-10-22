@@ -15,8 +15,8 @@ Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) 
 tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP) in both legislatures, and
 FRS (PS) in XVI only. In XVII AD has a second list, AD_ACORES, that won seats only in circle 19
 (the Açores, the one circle with a name), with PPM as a component without seats, and CDU lists
-PEV without seats. Seats per circle and list (ballot_list_seats) exist for XVII only: PSD and
-CDS-PP deputies of circles 21 and 22 were not elected on an AD list. The coalition rows carry
+PEV without seats. Seats per circle and list (ballot_list_seats) exist for both legislatures: PSD
+and CDS-PP deputies of circles 21 and 22 were not elected on an AD list. The coalition rows carry
 an election link ending in the election year (2024 for XVI, 2025 for XVII), as the seed does.
 
 Activity comes in sets (ACTIVITY_SETS below) that go into the same tables with their own ids,
@@ -81,6 +81,7 @@ XVI = ("XVI", 107, "2024-03-26", "2025-06-02")
 XVII = ("XVII", 108, "2025-06-03", None)
 AD_ACORES = "AD-ACORES"
 ELECTION_YEAR = {"XVI": 2024, "XVII": 2025}
+ELECTION_DATE = {"XVI": "2024-03-10", "XVII": "2025-05-18"}
 
 
 def circle_name(i):
@@ -178,33 +179,37 @@ def _rows():
 
 
 def _ballot_list_seats(mandates, memberships):
-    """Seats per circle and list for XVII only, as the release has them from XI on; XVI has none,
-    like a legislature before XI. Each group's seats in a circle go to one list: PSD and CDS-PP to
-    AD-LISTA in circles 1 to 18 and 20, to AD_ACORES in circle 19 (the Açores) and to no coalition in 21 and 22,
-    PCP to CDU-LISTA, the rest to a list named after the group. Circle 5 carries the footnote mark
-    the AR gives some circles (as in "Viseu a)")."""
-    groups = {cad: group for leg, cad, _, group, *_ in memberships if leg == "XVII"}
-    seats = {}
-    for leg, cad, _, circle, _, effective, _, end in mandates:
-        if leg != "XVII" or not effective or end is not None or cad not in groups:
-            continue
-        group = groups[cad]
-        ballot = {"PCP": "CDU-LISTA"}.get(group, group)
-        if group in ("PSD", "CDS-PP"):
-            ballot = AD_ACORES if circle == 19 else "AD-LISTA" if circle <= 20 else group
-        seats[(circle, ballot)] = seats.get((circle, ballot), 0) + 1
-    return [
-        (
-            "XVII",
-            "2025-05-18",
-            f"{circle:02d}0000",
-            circle_name(circle) + (" a)" if circle == 5 else ""),
-            ballot,
-            n,
-            None,
-        )
-        for (circle, ballot), n in sorted(seats.items())
-    ]
+    """Seats per circle and list for XVI and XVII, as the release has them from I-B on. Each
+    group's seats in a circle go to one list: PSD and CDS-PP to AD-LISTA in circles 1 to 18 and 20,
+    to AD-LISTA in XVI and AD_ACORES in XVII in circle 19 (the Açores), and to no coalition in 21
+    and 22; PCP to CDU-LISTA, PS to FRS-LISTA in XVI, the rest to a list named after the group.
+    The seats are those of the deputies seated on the legislature's last day (the extract date for
+    XVII). Circle 5 carries the footnote mark the AR gives some circles (as in "Viseu a)")."""
+    out = []
+    for leg, end_date in ((XVI, XVI[3]), (XVII, None)):
+        groups = {cad: group for lg, cad, _, group, *_ in memberships if lg == leg[0]}
+        seats = {}
+        for lg, cad, _, circle, _, effective, _, end in mandates:
+            if lg != leg[0] or not effective or end != end_date or cad not in groups:
+                continue
+            group = groups[cad]
+            ballot = {"PCP": "CDU-LISTA", **({"PS": "FRS-LISTA"} if leg is XVI else {})}.get(group, group)
+            if group in ("PSD", "CDS-PP"):
+                ballot = AD_ACORES if circle == 19 and leg is XVII else "AD-LISTA" if circle <= 20 else group
+            seats[(circle, ballot)] = seats.get((circle, ballot), 0) + 1
+        out += [
+            (
+                leg[0],
+                ELECTION_DATE[leg[0]],
+                f"{circle:02d}0000",
+                circle_name(circle) + (" a)" if circle == 5 else ""),
+                ballot,
+                n,
+                None,
+            )
+            for (circle, ballot), n in sorted(seats.items())
+        ]
+    return out
 
 
 def _activity():

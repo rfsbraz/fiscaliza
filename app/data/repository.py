@@ -267,7 +267,7 @@ def election_years(con):
 
 def list_seat_circles(con, legislature):
     """{ballot acronym: {circle name}}, the circles where each list won seats in a legislature,
-    from ballot_list_seats. The release has these from XI on; an earlier legislature gives {}.
+    from ballot_list_seats. The release has these from I-B on; a legislature without rows gives {}.
     Circle names drop the AR's footnote mark ("Viseu a)") so they match electoral_circles."""
     if not _has_ballot_list_seats(con):
         return {}

@@ -234,8 +234,8 @@ def deputados(con, page=1, per_page=20, search=None, legislatura=None, active_on
 # comes back over the years (AD in 1979 and in 2024) and covers lists that ran only in one
 # autonomous region (AD in the Açores, Madeira Primeiro). A page is one list and run (#111):
 # lists that won seats in more than one circle, or in a legislature with no seats per circle
-# (before XI), form one page per run of consecutive legislatures; a list that won seats only in
-# the Açores or Madeira is a page per election.
+# (Constituinte and I-A), form one page per run of consecutive legislatures; a list that won
+# seats only in the Açores or Madeira is a page per election.
 
 REGIONS = ("Açores", "Madeira")
 
@@ -397,8 +397,8 @@ def coalition_link(con, legislature, group):
 def _coalition_seated(con, rows, legislature, day):
     """The deputies a coalition elected in a legislature: those seated on ``day`` in one of its
     groups, in a circle where the list they belong to won seats (#181). A list that ran only in
-    Madeira or the Açores does not take the whole group. Before XI the release has no seats per
-    circle, so there every deputy of the groups counts."""
+    Madeira or the Açores does not take the whole group. The release has seats per circle from
+    I-B on; in a legislature without them every deputy of the groups counts."""
     rows = [r for r in rows if r["legislature"] == legislature]
     groups = sorted({r["group_code"] for r in rows})
     seated = repository.seated_in_groups(con, legislature, day, groups) if groups else []

@@ -7,6 +7,7 @@ with the known split, a mid-term replacement and a substitute who never sat.
 import ast
 import os
 import re
+import shutil
 from pathlib import Path
 
 import duckdb
@@ -14,7 +15,7 @@ import pytest
 
 from app.data.connection import DataSource, DataUnavailable
 from app.services import core
-from tests.site_data import EXTRACT, KNOWN_SPLIT, TAG, build_site_data
+from tests.site_data import AD_ACORES, EXTRACT, KNOWN_SPLIT, TAG, build_site_data
 
 ROOT = Path(__file__).resolve().parent.parent
 PORTED_ROUTES = {
@@ -261,9 +262,9 @@ def test_legislature_filter_and_paging(con):
 # legislatures; a list that won seats only in the Açores or Madeira is a page of its own.
 
 
-def _list_seats(con, ballot):
+def _list_seats(con, ballot, legislature="XVII"):
     return con.execute(
-        "select sum(seats) from ballot_list_seats where legislature = 'XVII' and ballot_acronym = ?", [ballot]
+        "select sum(seats) from ballot_list_seats where legislature = ? and ballot_acronym = ?", [legislature, ballot]
     ).fetchone()[0]
 
 
@@ -294,12 +295,13 @@ def test_each_list_and_run_is_its_own_page(con):
         ("CDS-PP", True),
         ("PPM", False),
     ]
-    xvi_seated = con.execute(
-        "select count(*) from seated_detail(date '2025-06-02') "
-        "where legislature = 'XVI' and group_acronym in ('PSD', 'CDS-PP')"
-    ).fetchone()[0]
     assert national["legislaturas"] == [
-        {"legislatura": "XVI", "ano_eleicao": 2024, "listas": ["AD-LISTA"], "deputados": xvi_seated},
+        {
+            "legislatura": "XVI",
+            "ano_eleicao": 2024,
+            "listas": ["AD-LISTA"],
+            "deputados": _list_seats(con, "AD-LISTA", "XVI"),
+        },
         {"legislatura": "XVII", "ano_eleicao": 2025, "listas": ["AD-LISTA"], "deputados": _list_seats(con, "AD-LISTA")},
     ]
     assert acores["legislaturas"] == [
@@ -311,7 +313,7 @@ def test_each_list_and_run_is_its_own_page(con):
 
 def test_page_ids_follow_the_approved_slugs():
     # The real seed's AD and Madeira Primeiro lists, with the circles where each won seats
-    # (None before XI, where the release has no seats per circle).
+    # (None for a legislature with no seats per circle, as Constituinte and I-A).
     order = ["I-A", "I-B", "II", "III", "XIII", "XIV", "XV", "XVI", "XVII"]
     nation = {"Lisboa", "Porto", "Açores"}
     lists = [
@@ -394,16 +396,48 @@ def test_coalition_deputies_come_only_from_circles_where_its_lists_won_seats(con
     assert len(core.coligacao_deputados(con, "CDU")["deputados"]) == KNOWN_SPLIT["PCP"]
 
 
-def test_coalition_deputies_keep_the_group_rule_without_seats_per_circle(con):
-    # XVI has no ballot_list_seats rows, like every legislature before XI: all deputies of the
-    # coalition's groups still count there.
-    xvi = core.coligacao_deputados(con, "ad-2024", "XVI")
+def test_every_coalition_list_has_exactly_its_seats_in_each_legislature(con):
+    # #181 pre-XI: the release has seats per circle and list from I-B on, so the circle rule
+    # holds in XVI as in XVII. PSD and CDS-PP deputies of circles 21 and 22 are out in both.
+    for page, ballot in [
+        ("ad-2024", "AD-LISTA"),
+        ("ad-acores-2025", AD_ACORES),
+        ("CDU", "CDU-LISTA"),
+        ("FRS", "FRS-LISTA"),
+    ]:
+        detail = core.coligacao(con, page)
+        for leg in detail["legislaturas"]:
+            listed = core.coligacao_deputados(con, page, leg["legislatura"])["total_deputados"]
+            assert listed == leg["deputados"] == _list_seats(con, ballot, leg["legislatura"]), (page, leg)
+    xvi = core.coligacao_deputados(con, "ad-2024", "XVI")["deputados"]
+    assert not {"Círculo 21", "Círculo 22"} & {d["circulo"] for d in xvi}
     seated = con.execute(
         "select count(*) from seated_detail(date '2025-06-02') "
         "where legislature = 'XVI' and group_acronym in ('PSD', 'CDS-PP')"
     ).fetchone()[0]
-    assert xvi["legislatura"] == "XVI" and xvi["total_deputados"] == seated > 0
+    assert len(xvi) < seated
     assert core.coligacao_deputados(con, "FRS")["total_deputados"] == 27
+
+
+def test_coalition_deputies_keep_the_group_rule_without_seats_per_circle(data_dir, tmp_path):
+    # A legislature with no ballot_list_seats rows (Constituinte and I-A in the release): all
+    # deputies of the coalition's groups count there. XVI is emptied here to stand for one.
+    path = tmp_path / "no-seats.duckdb"
+    shutil.copy(data_dir / "current.duckdb", path)
+    c = duckdb.connect(str(path))
+    try:
+        c.execute("delete from ballot_list_seats where legislature = 'XVI'")
+        assert c.execute("select count(*) from ballot_list_seats where legislature = 'XVI'").fetchone()[0] == 0
+        xvi = core.coligacao_deputados(c, "ad-2024", "XVI")
+        seated = c.execute(
+            "select count(*) from seated_detail(date '2025-06-02') "
+            "where legislature = 'XVI' and group_acronym in ('PSD', 'CDS-PP')"
+        ).fetchone()[0]
+        assert xvi["legislatura"] == "XVI" and xvi["total_deputados"] == seated > 0
+        assert {"Círculo 21", "Círculo 22"} <= {d["circulo"] for d in xvi["deputados"]}
+        assert core.coligacao_deputados(c, "ad-2024")["total_deputados"] == _list_seats(c, "AD-LISTA")
+    finally:
+        c.close()
 
 
 def test_coalition_parties_without_seats_are_marked(con):
