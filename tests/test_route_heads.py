@@ -8,6 +8,7 @@ the routes have no rules and each one is a file. A path with no file still gets 
 import importlib.util
 import json
 import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
@@ -197,3 +198,63 @@ def test_every_app_route_has_a_page(dist):
             continue
         prefix = route.split("/:")[0]
         assert any(r == prefix or r.startswith(prefix + "/") for r in routes), route
+
+
+# sitemap.xml (#192): written by prepare from the same routes as the pages.
+
+SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+
+
+def sitemap_urls(path):
+    root = ET.parse(path).getroot()  # noqa: S314 (the file is the one prepare just wrote)
+    return root.tag, [loc.text for loc in root.iter(f"{SITEMAP_NS}loc")]
+
+
+def test_prepare_writes_a_sitemap_of_every_route(dist):
+    n = pages.prepare(dist)
+    tag, urls = sitemap_urls(dist / "sitemap.xml")
+    assert tag == f"{SITEMAP_NS}urlset"
+    routes = pages.route_heads(dist / "api")
+    assert urls == ["https://fiscaliza.pt/"] + [pages.route_url(p) for p in routes]
+    assert len(urls) == len(set(urls))
+    assert "https://fiscaliza.pt/deputados/2105" in urls
+    assert "https://fiscaliza.pt/partidos/MDP/CDE" in urls
+    assert "https://fiscaliza.pt/coligacoes/P%C3%A0F" in urls
+    assert n == len([p for p in dist.rglob("*") if p.is_file()])
+
+
+def test_sitemap_urls_match_the_canonical_of_each_page(dist):
+    pages.prepare(dist)
+    _, urls = sitemap_urls(dist / "sitemap.xml")
+    for rel in ("deputados/2105.html", "coligacoes/PàF.html", "perguntas/XVII.html"):
+        assert head((dist / rel).read_text(encoding="utf-8"))["canonical"] in urls, rel
+
+
+def test_a_build_without_the_export_still_has_a_sitemap(tmp_path):
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text(TEMPLATE, encoding="utf-8")
+    pages.prepare(dist)
+    _, urls = sitemap_urls(dist / "sitemap.xml")
+    assert urls == ["https://fiscaliza.pt/"] + [pages.SITE + p for p in pages.STATIC_ROUTES]
+
+
+def test_a_large_sitemap_is_split_with_an_index(dist, monkeypatch):
+    monkeypatch.setattr(pages, "SITEMAP_MAX_URLS", 4)
+    pages.prepare(dist)
+    tag, parts = sitemap_urls(dist / "sitemap.xml")
+    assert tag == f"{SITEMAP_NS}sitemapindex"
+    assert parts == [f"https://fiscaliza.pt/sitemap-{i}.xml" for i in range(1, len(parts) + 1)]
+    urls = []
+    for part in parts:
+        tag, chunk = sitemap_urls(dist / part.rsplit("/", 1)[1])
+        assert tag == f"{SITEMAP_NS}urlset"
+        assert 0 < len(chunk) <= 4
+        urls += chunk
+    assert urls == ["https://fiscaliza.pt/"] + [pages.route_url(p) for p in pages.route_heads(dist / "api")]
+
+
+def test_a_sitemap_over_the_size_limit_stops_the_deploy(dist, monkeypatch):
+    monkeypatch.setattr(pages, "SITEMAP_MAX_BYTES", 200)
+    with pytest.raises(pages.DeployError, match="sitemap"):
+        pages.prepare(dist)
