@@ -363,3 +363,51 @@ def test_worker_connections_use_one_duckdb_thread(tmp_path, monkeypatch):
     monkeypatch.setattr(export.duckdb, "connect", spy)
     export._deputy_chunk((str(db), str(tmp_path / "out"), []))
     assert [k.con.execute("select current_setting('threads')").fetchone()[0] for k in opened] == [1]
+
+
+# Deputy files: a few queries per batch of people, not per person
+
+
+SET_BASED = ("detalhes", "atividades", "voting-analytics")
+
+
+class _Counting:
+    """A connection that counts the queries run on it."""
+
+    def __init__(self, con):
+        self.con, self.queries = con, 0
+
+    def execute(self, *args, **kwargs):
+        self.queries += 1
+        return self.con.execute(*args, **kwargs)
+
+
+def _people(con):
+    return [r[0] for r in con.execute("select distinct cadastro_id from deputy_legislatures order by 1").fetchall()]
+
+
+def test_deputy_files_run_a_few_queries_per_batch_not_per_person(con, tmp_path, monkeypatch):
+    people = _people(con)
+    sections = tuple(s for s in export.DEPUTY_SECTIONS if s.endpoint in SET_BASED)
+    assert len(sections) == len(SET_BASED)
+    monkeypatch.setattr(export, "DEPUTY_SECTIONS", sections)
+    monkeypatch.setattr(export, "CHUNK", len(people))
+    counting = _Counting(con)
+    files = export._render_deputies(counting, str(tmp_path), people)
+    assert len(files) == len(people) > 400
+    # One query per question for the whole batch, plus one per legislature for the few that
+    # are asked per legislature. Per person it was over 20 queries each.
+    assert counting.queries < 50
+
+
+def test_a_deputy_file_is_the_same_in_any_batch(con, tmp_path, monkeypatch):
+    people = _people(con)
+    monkeypatch.setattr(export, "CHUNK", len(people))
+    export._render_deputies(con, str(tmp_path / "one"), people)
+    # One at a time, as a route reads them, for every tenth person.
+    sample = people[::10]
+    monkeypatch.setattr(export, "CHUNK", 1)
+    export._render_deputies(con, str(tmp_path / "each"), sample)
+    for cad in sample:
+        path = f"deputados/{cad}.json"
+        assert (tmp_path / "one" / path).read_bytes() == (tmp_path / "each" / path).read_bytes(), path

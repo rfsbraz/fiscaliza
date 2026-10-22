@@ -8,7 +8,8 @@ app.services.attendance; the card here reads its latest rate (``estatisticas.ass
 """
 
 from app.data import repository
-from app.services.core import PICTURE_URL, NotFound, _iso, _legislature, _periodo
+from app.data.deputy_rows import DeputyRows
+from app.services.core import PICTURE_URL, NotFound, _iso, _periodo
 
 MAX_PER_PAGE = 100
 MAX_INITIATIVES = 100
@@ -27,12 +28,18 @@ NO_CLOSED_LEGISLATURE = "Sem legislatura concluída para comparar intervenções
 OPEN_LEGISLATURE = "A {} Legislatura ainda está em curso; sem comparação de intervenções"
 
 
-def _person(con, cadastro_id):
+def _rows(con, cadastro_id, rows):
+    """The rows to answer from: the export passes its batch's, a route gets the person's."""
+    return rows if rows is not None else DeputyRows(con, [cadastro_id])
+
+
+def _person(con, cadastro_id, rows=None):
     """The person and every legislature they were elected or held a seat in, oldest first
     (``seated`` tells them apart). Only those people have a page, the same as in the deputies
     list; a substitute who never sat has none."""
-    person = repository.deputy(con, cadastro_id)
-    career = repository.elections(con, [cadastro_id]) if person else []
+    rows = _rows(con, cadastro_id, rows)
+    person = rows.deputy(cadastro_id)
+    career = rows.elections(cadastro_id) if person else []
     if not career:
         raise NotFound(f"deputy {cadastro_id} not found")
     return person, career
@@ -73,11 +80,11 @@ def _signing(row):
     }
 
 
-def _initiative_record(con, cadastro_id, career):
+def _initiative_record(rows, cadastro_id, career):
     """Per legislature, newest first: how the person's projetos were signed and how they ended."""
     open_legs = {c["legislature"]: c["is_open"] for c in career}
-    outcomes, signing = {}, {r["legislature"]: r for r in repository.deputy_signing(con, cadastro_id)}
-    for row in repository.deputy_outcomes(con, cadastro_id):
+    outcomes, signing = {}, {r["legislature"]: r for r in rows.signing(cadastro_id)}
+    for row in rows.outcomes(cadastro_id):
         outcomes.setdefault(row["legislature"], []).append(_approval(row))
     return [
         {
@@ -90,10 +97,10 @@ def _initiative_record(con, cadastro_id, career):
     ]
 
 
-def _comparison(con, cadastro_id, legislature, measure):
+def _comparison(rows, cadastro_id, legislature, measure):
     """The person against the people of their group seated at least half of ``legislature``, per
     seat-year. No average when the person sat less than that or has fewer than MIN_PEERS others."""
-    row = repository.group_comparison(con, cadastro_id, legislature, measure) if legislature else None
+    row = rows.comparison(cadastro_id, legislature, measure) if legislature else None
     out = {
         "legislatura": legislature,
         "grupo": row["group_acronym"] if row else None,
@@ -113,35 +120,38 @@ def _comparison(con, cadastro_id, legislature, measure):
     return out
 
 
-def _interventions_comparison(con, cadastro_id, legislature, is_open):
+def _interventions_comparison(rows, cadastro_id, legislature, is_open):
     """Interventions are published late for an open legislature, so there is no comparison then."""
     if is_open:
-        out = _comparison(con, cadastro_id, None, "interventions")
+        out = _comparison(rows, cadastro_id, None, "interventions")
         out.update(legislatura=legislature, nota=OPEN_LEGISLATURE.format(legislature))
         return out
-    return _comparison(con, cadastro_id, legislature, "interventions")
+    return _comparison(rows, cadastro_id, legislature, "interventions")
 
 
-def detalhes(con, cadastro_id):
+def detalhes(con, cadastro_id, rows=None):
     from app.services import attendance
 
-    person, elected = _person(con, cadastro_id)
-    current = _legislature(con)
+    rows = _rows(con, cadastro_id, rows)
+    person, elected = _person(con, cadastro_id, rows)
+    current = rows.current_legislature()
+    if current is None:
+        raise NotFound("no legislature in the data")
     # The header and the history show every legislature the person was elected in, with the
     # situation; the figures count the legislatures they held a seat in.
     career = [c for c in elected if c["seated"]]
     latest = elected[-1]
     leg = latest["legislature"]
-    seated = repository.is_seated(con, cadastro_id)
-    periods = {p["legislature"]: p for p in repository.seat_periods(con, cadastro_id)}
-    names = repository.group_names(con, [c["legislature"] for c in elected])
+    seated = rows.is_seated(cadastro_id)
+    periods = {p["legislature"]: p for p in rows.seat_periods(cadastro_id)}
+    names = rows.group_names()
     completed = [c for c in career if not c["is_open"]]
 
-    activity = {a["legislature"]: a for a in repository.deputy_activity_by_legislature(con, cadastro_id)}
+    activity = {a["legislature"]: a for a in rows.activity_by_legislature(cadastro_id)}
     interventions = sum(a["interventions"] for a in activity.values())
     days = sum(p["days"] for p in periods.values())
     interventions_comparison = _comparison(
-        con, cadastro_id, completed[-1]["legislature"] if completed else None, "interventions"
+        rows, cadastro_id, completed[-1]["legislature"] if completed else None, "interventions"
     )
     if not completed:
         interventions_comparison["nota"] = NO_CLOSED_LEGISLATURE
@@ -186,10 +196,10 @@ def detalhes(con, cadastro_id):
         "estatisticas": {
             "iniciativas_por_tipo": [
                 {"codigo": t["type_code"], "descricao": t["type"] or t["type_code"], "total": t["total"]}
-                for t in repository.deputy_initiative_types(con, cadastro_id)
+                for t in rows.initiative_types(cadastro_id)
             ],
             "intervencoes_parlamentares": interventions,
-            "assiduidade": attendance.latest_rate(con, cadastro_id, career),
+            "assiduidade": attendance.latest_rate(rows.attendance(cadastro_id), career),
             "tempo_servico_anos": round(days / 365.25, 1),
             "nivel_experiencia": _experience(len(career)),
             "total_mandatos": len(career),
@@ -203,12 +213,12 @@ def detalhes(con, cadastro_id):
                 for c in reversed(career)
             ],
             # F06 and F07: per legislature and type, never a career total or a ranking.
-            "iniciativas_legislaturas": _initiative_record(con, cadastro_id, career),
+            "iniciativas_legislaturas": _initiative_record(rows, cadastro_id, career),
             # F08: within the group only. Initiatives on restricted lists in the latest
             # legislature; interventions in the latest closed one.
             "comparacao": {
                 "iniciativas_subscricao_restrita": _comparison(
-                    con, cadastro_id, career[-1]["legislature"] if career else None, "restricted_initiatives"
+                    rows, cadastro_id, career[-1]["legislature"] if career else None, "restricted_initiatives"
                 ),
                 "intervencoes": interventions_comparison,
             },
@@ -285,53 +295,73 @@ def _initiative(row):
     }
 
 
-def _interventions_note(con, leg):
+def _interventions_note(rows, leg):
     """For an open legislature the AR publishes interventions late, so the list is incomplete."""
     if not leg["is_open"]:
         return None
-    published = repository.legislature_interventions(con, leg["legislature"])
+    published = rows.legislature_interventions(leg["legislature"])
     return (
         f"A {leg['legislature']} Legislatura ainda está em curso e os dados abertos do Parlamento só têm, "
         f"por agora, {published} intervenções publicadas. Esta lista está incompleta."
     )
 
 
-def atividades(con, cadastro_id, legislatura=None, tipo=None, ordem="newest", page=1, per_page=50):
-    person, career = _person(con, cadastro_id)
-    leg = _legislature(con, legislatura or career[-1]["legislature"])
-    name = leg["legislature"]
-    page = max(page, 1)
-    per_page = min(max(per_page, 1), MAX_PER_PAGE)
+def _atividades(con, cadastro_id, legislatura, rows, interventions):
+    """The activities answer, with ``interventions(name)`` giving its interventions and the
+    pagination for legislature ``name``."""
+    rows = _rows(con, cadastro_id, rows)
+    person, career = _person(con, cadastro_id, rows)
+    name = legislatura or career[-1]["legislature"]
+    leg = rows.legislature(name)
+    if leg is None:
+        raise NotFound(f"legislature {name!r} not found")
     served = any(c["legislature"] == name and c["seated"] for c in career)
-    rows = repository.interventions_page(
-        con, cadastro_id, name, kind=tipo, order=ordem, limit=per_page, offset=(page - 1) * per_page
-    )
-    total = rows[0]["total"] if rows else repository.interventions_count(con, cadastro_id, name, kind=tipo)
-    initiatives = repository.deputy_initiatives_in(con, cadastro_id, name, limit=MAX_INITIATIVES)
-    signing = repository.deputy_signing(con, cadastro_id, name)
-    return {
+    items, metadata = interventions(name)
+    initiatives = rows.initiatives(cadastro_id, name, MAX_INITIATIVES)
+    signing = rows.signing(cadastro_id, name)
+    out = {
         "deputado": {
             "id_cadastro": cadastro_id,
             "nome": person["parliamentary_name"],
             "served_in_legislature": served,
         },
         "legislatura": {"numero": name, "designacao": f"{name} Legislatura"},
-        "intervencoes": [_intervention(r) for r in rows],
-        "intervention_metadata": {
-            "total": total,
-            "page": page,
-            "per_page": per_page,
-            "pages": (total + per_page - 1) // per_page,
-        },
-        "nota_intervencoes": _interventions_note(con, leg) if served else None,
-        "comparacao_intervencoes": _interventions_comparison(con, cadastro_id, name, leg["is_open"])
+        "intervencoes": [_intervention(r) for r in items],
+        "intervention_metadata": metadata,
+        "nota_intervencoes": _interventions_note(rows, leg) if served else None,
+        "comparacao_intervencoes": _interventions_comparison(rows, cadastro_id, name, leg["is_open"])
         if served
         else None,
         "assinatura": _signing(signing[0] if signing else None),
-        "aprovacao": [_approval(r) for r in repository.deputy_outcomes(con, cadastro_id, name)],
+        "aprovacao": [_approval(r) for r in rows.outcomes(cadastro_id, name)],
         "iniciativas": [_initiative(r) for r in initiatives],
         "iniciativas_total": initiatives[0]["total"] if initiatives else 0,
     }
+    if metadata is None:
+        out.pop("intervention_metadata")
+    return out
+
+
+def atividades(con, cadastro_id, legislatura=None, tipo=None, ordem="newest", page=1, per_page=50):
+    page = max(page, 1)
+    per_page = min(max(per_page, 1), MAX_PER_PAGE)
+
+    def one_page(name):
+        rows = repository.interventions_page(
+            con, cadastro_id, name, kind=tipo, order=ordem, limit=per_page, offset=(page - 1) * per_page
+        )
+        total = rows[0]["total"] if rows else repository.interventions_count(con, cadastro_id, name, kind=tipo)
+        return rows, {"total": total, "page": page, "per_page": per_page, "pages": (total + per_page - 1) // per_page}
+
+    return _atividades(con, cadastro_id, legislatura, None, one_page)
+
+
+def atividades_completas(rows, cadastro_id, legislatura):
+    """The activities answer for a legislature with every intervention, newest first, and no
+    pagination: what the static export writes; the browser filters, sorts and pages them."""
+    return _atividades(
+        rows.con, cadastro_id, legislatura, rows, lambda name: (rows.interventions(cadastro_id, name), None)
+    )
 
 
 def conflitos_interesse(con, cadastro_id):
