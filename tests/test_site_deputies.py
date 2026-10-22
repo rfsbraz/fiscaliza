@@ -568,3 +568,33 @@ def test_evolution_bars_are_scaled_to_their_values():
     assert "const EVOLUTION_TRACK_PX = " in source
     assert "Math.round((total / maxValue) * EVOLUTION_TRACK_PX)" in source
     assert "height: `${barHeight}px`" in source
+
+
+def test_coverage_counts_people_with_an_effective_mandate_once():
+    # #106 / #113: the base is people with an effective mandate in any legislature with AR
+    # declarations, each counted once (793 with 149 declared on the pin), not person-legislature
+    # pairs (1,425 and 297). Suplentes who never sat are not in the base.
+    import duckdb
+
+    from app.data import repository
+
+    c = duckdb.connect()
+    c.execute("create table legislatures (legislature varchar, start_date date)")
+    c.execute("insert into legislatures values ('XI', '2009-10-15'), ('XII', '2011-06-20'), ('XIII', '2015-10-23')")
+    c.execute("create table mandates (legislature varchar, cadastro_id integer, is_effective boolean)")
+    c.execute(
+        "insert into mandates values ('XI', 1, true), ('XII', 1, true), ('XI', 2, true), ('XII', 3, true),"
+        " ('XII', 4, false), ('XIII', 5, true)"
+    )
+    c.execute("create table interest_declarations (legislature varchar, cadastro_id integer, source varchar)")
+    c.execute(
+        "insert into interest_declarations values ('XI', 1, 'ar_open_data'), ('XII', 1, 'ar_open_data'),"
+        " ('XII', 3, 'ar_open_data'), ('XII', 4, 'ar_open_data')"
+    )
+    coverage = repository.declaration_coverage(c)
+    assert {k: coverage[k] for k in ("first_legislature", "last_legislature", "seated", "declared")} == {
+        "first_legislature": "XI",
+        "last_legislature": "XII",
+        "seated": 3,
+        "declared": 2,
+    }
