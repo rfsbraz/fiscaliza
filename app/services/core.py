@@ -234,7 +234,7 @@ def latest_run(order, ran):
 def _coalitions(con, sigla=None):
     """{coalition: summary} from the coalitions seed. A coalition is active when it ran in
     the open legislature; its components are the groups of its latest legislature, largest
-    first. Its dates are those of its latest unbroken run of legislatures, because a short
+    first, with com_lugares false for a group that won no seat on any of its lists. Its dates are those of its latest unbroken run of legislatures, because a short
     name can come back decades later (AD in 1979 and in 2024)."""
     order = [leg["legislature"] for leg in reversed(repository.legislatures(con))]
     out = {}
@@ -249,6 +249,8 @@ def _coalitions(con, sigla=None):
         for r in last:
             if r["group_code"] not in [p["sigla"] for p in components]:
                 components.append({"sigla": r["group_code"], "nome": r["group_name"] or r["group_code"]})
+        for p in components:
+            p["com_lugares"] = any(r["has_seats"] for r in last if r["group_code"] == p["sigla"])
         seats = {
             g["group_acronym"]: g["seats"]
             for g in repository.seats_by_group(con, last[0]["legislature"], last[0]["ref_day"])
@@ -277,8 +279,23 @@ def _coalition(con, sigla):
     return found
 
 
+def _coalition_seated(con, rows, legislature, day):
+    """The deputies a coalition elected in a legislature: those seated on ``day`` in one of its
+    groups, in a circle where the list they belong to won seats (#181). A list that ran only in
+    Madeira or the Açores does not take the whole group. Before XI the release has no seats per
+    circle, so there every deputy of the groups counts."""
+    rows = [r for r in rows if r["legislature"] == legislature]
+    groups = sorted({r["group_code"] for r in rows})
+    seated = repository.seated_in_groups(con, legislature, day, groups) if groups else []
+    circles = repository.list_seat_circles(con, legislature)
+    if not circles:
+        return seated
+    allowed = {(r["group_code"], circle) for r in rows for circle in circles.get(r["ballot_acronym"], ())}
+    return [s for s in seated if (s["group_acronym"], s["circle"]) in allowed]
+
+
 def _coalition_dict(con, c):
-    seated = repository.seated_in_groups(con, c["legislature"], c["ref_day"], [p["sigla"] for p in c["components"]])
+    seated = _coalition_seated(con, c["rows"], c["legislature"], c["ref_day"])
     return {
         "id": c["sigla"],
         "sigla": c["sigla"],
@@ -288,7 +305,9 @@ def _coalition_dict(con, c):
         "data_formacao": c["data_formacao"],
         "data_dissolucao": c["data_dissolucao"],
         "legislatura": c["legislature"],
-        "component_parties": [{"sigla": p["sigla"], "nome": p["nome"]} for p in c["components"]],
+        "component_parties": [
+            {"sigla": p["sigla"], "nome": p["nome"], "com_lugares": p["com_lugares"]} for p in c["components"]
+        ],
         "deputy_count": len(seated),
         # Editorial fields with no source in the release: left empty, the page guards them.
         "espectro_politico": None,
@@ -309,8 +328,7 @@ def coligacao(con, sigla):
 def coligacao_deputados(con, sigla, legislatura=None):
     c = _coalition(con, sigla)
     leg = _legislature(con, legislatura) if legislatura else {"legislature": c["legislature"], "ref_day": c["ref_day"]}
-    groups = sorted({r["group_code"] for r in c["rows"] if r["legislature"] == leg["legislature"]})
-    seated = repository.seated_in_groups(con, leg["legislature"], leg["ref_day"], groups) if groups else []
+    seated = _coalition_seated(con, c["rows"], leg["legislature"], leg["ref_day"])
     return {
         "coligacao": {"sigla": c["sigla"], "nome": c["nome"], "tipo_coligacao": "eleitoral"},
         "deputados": [
@@ -336,7 +354,13 @@ def coligacao_partidos(con, sigla):
     for r in c["rows"]:
         first.setdefault(r["group_code"], r["start_date"])
     parties = [
-        {"sigla": p["sigla"], "nome": p["nome"], "data_adesao": _iso(first.get(p["sigla"])), "papel_coligacao": None}
+        {
+            "sigla": p["sigla"],
+            "nome": p["nome"],
+            "com_lugares": p["com_lugares"],
+            "data_adesao": _iso(first.get(p["sigla"])),
+            "papel_coligacao": None,
+        }
         for p in c["components"]
     ]
     return {

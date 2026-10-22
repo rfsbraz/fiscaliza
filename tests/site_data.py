@@ -175,7 +175,15 @@ def _ballot_list_seats(mandates, memberships):
             ballot = AD_ACORES if circle == 19 else "AD-LISTA" if circle <= 20 else group
         seats[(circle, ballot)] = seats.get((circle, ballot), 0) + 1
     return [
-        ("XVII", "2025-05-18", f"{circle:02d}0000", f"Círculo {circle}" + (" a)" if circle == 5 else ""), ballot, n, None)
+        (
+            "XVII",
+            "2025-05-18",
+            f"{circle:02d}0000",
+            f"Círculo {circle}" + (" a)" if circle == 5 else ""),
+            ballot,
+            n,
+            None,
+        )
         for (circle, ballot), n in sorted(seats.items())
     ]
 
@@ -541,7 +549,9 @@ def build_release(root, sets=tuple(ACTIVITY_SETS)):
         "create table ballot_list_seats (legislature varchar, election_date date, circle_code varchar, "
         "circle_name varchar, ballot_acronym varchar, seats integer, source_url varchar)"
     )
-    con.executemany("insert into ballot_list_seats values (?, ?, ?, ?, ?, ?, ?)", _ballot_list_seats(mandates, memberships))
+    con.executemany(
+        "insert into ballot_list_seats values (?, ?, ?, ?, ?, ?, ?)", _ballot_list_seats(mandates, memberships)
+    )
     tables = _tables(sets)
     for table, (columns, rows) in tables.items():
         con.execute(f"create table {table} ({columns})")

@@ -31,7 +31,7 @@ test('the first assembly is the Assembleia Constituinte', () => {
 });
 
 test('a coalition party that won no seats is marked', () => {
-  assert.equal(seatsNote({ sigla: 'PPM', com_lugares: false }), 'sem lugares');
-  assert.equal(seatsNote({ sigla: 'PSD', com_lugares: true }), null);
-  assert.equal(seatsNote({ sigla: 'PSD' }), null);
+  assert.equal(seatsNote(false), 'sem lugares');
+  assert.equal(seatsNote(true), null);
+  assert.equal(seatsNote(undefined), null);
 });

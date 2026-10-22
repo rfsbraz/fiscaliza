@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
-import { plural } from '../utils/format';
+import { plural, seatsNote } from '../utils/format';
 
 // Coalition colors based on political spectrum
 const spectrumColors = {
@@ -423,6 +423,9 @@ const ColigacaoDetalhes = () => {
                         </h3>
                         <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>
                           {partido.nome}
+                          {seatsNote(partido.com_lugares) && (
+                            <span style={{ color: tokens.colors.textMuted }}> · {seatsNote(partido.com_lugares)}</span>
+                          )}
                         </p>
                         {partido.papel_coligacao && (
                           <span
