@@ -42,12 +42,12 @@ jobs:
             echo "::error::PIN_BOT_TOKEN is not set. See docs/DEPLOY.md, Automatic pin moves."
             exit 1
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: master
           persist-credentials: false
           sparse-checkout: deploy
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Merge when green
