@@ -3,10 +3,6 @@ name: Data Freshness
 # Fails when the live data is older than MAX_DAYS (.github/scripts/data_freshness.py), so GitHub mails
 # the failed run. It only reads the public /api/health.json and needs no token.
 on:
-  # Temporary: proves the run on this branch before merge, since workflow_dispatch needs the
-  # workflow on master first. Removed in the next commit.
-  push:
-    branches: [ci/data-freshness-check]
   schedule:
     - cron: "0 9 * * *" # 10:00 Lisbon in winter, after the nightly and catch-up syncs
   workflow_dispatch:
