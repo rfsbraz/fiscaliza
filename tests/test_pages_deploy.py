@@ -151,14 +151,17 @@ def test_no_catch_all_and_no_api_rewrite():
         assert not source.startswith("/api"), source
 
 
-def test_robots_txt_is_a_real_file_and_there_is_no_sitemap():
+def test_robots_txt_allows_all_and_points_to_the_sitemap():
     public = FRONTEND / "public"
     robots = (public / "robots.txt").read_text()
     assert robots.startswith("User-agent: *")
     assert "<" not in robots
-    # No sitemap.xml: Pages answers it with 404.html and status 404.
+    lines = robots.splitlines()
+    assert "Allow: /" in lines
+    assert not any(line.startswith("Disallow:") and line.strip() != "Disallow:" for line in lines)
+    assert "Sitemap: https://fiscaliza.pt/sitemap.xml" in lines
+    # deploy/pages.py writes sitemap.xml from the routes (tests/test_route_heads.py), not the build.
     assert not (public / "sitemap.xml").exists()
-    assert "Sitemap:" not in robots
 
 
 def test_app_has_a_not_found_route_that_is_not_indexed():
