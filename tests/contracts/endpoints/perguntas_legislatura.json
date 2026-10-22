@@ -1,0 +1,103 @@
+{
+  "endpoint": "perguntas/{legislatura}",
+  "route": "/api/perguntas/<path:legislatura>",
+  "keys": [
+    {
+      "path": "destinatarios",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:196"
+    },
+    {
+      "path": "destinatarios[].destinatario",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:198"
+    },
+    {
+      "path": "destinatarios[].mediana_dias",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:202"
+    },
+    {
+      "path": "destinatarios[].perguntas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:199"
+    },
+    {
+      "path": "destinatarios[].respondidas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:200"
+    },
+    {
+      "path": "destinatarios[].taxa_resposta",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:201"
+    },
+    {
+      "path": "legislatura",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:150"
+    },
+    {
+      "path": "provisoria",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:153"
+    },
+    {
+      "path": "totais",
+      "type": "object",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:96"
+    },
+    {
+      "path": "totais.devolvidas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:210"
+    },
+    {
+      "path": "totais.mediana_dias",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:181"
+    },
+    {
+      "path": "totais.perguntas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:179"
+    },
+    {
+      "path": "totais.respondidas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:180"
+    },
+    {
+      "path": "totais.respondidas_sem_data",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:211"
+    },
+    {
+      "path": "totais.retiradas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:210"
+    },
+    {
+      "path": "totais.taxa_resposta",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:180"
+    }
+  ],
+  "dropped": []
+}
