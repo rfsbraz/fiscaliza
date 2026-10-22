@@ -105,6 +105,7 @@ def _services():
         "activity": activity,
         "voting": _optional("app.services.voting"),
         "parties": _optional("app.services.parties"),
+        "questions": _optional("app.services.questions"),
     }
 
 
@@ -169,6 +170,18 @@ def _site_files(con, svc, w):
 
     _deputy_index(con, core, w)
     _party_files(con, svc, w)
+    _question_files(con, svc, w)
+
+
+def _question_files(con, svc, w):
+    """The written questions index and one file per legislature with perguntas (#114)."""
+    questions = svc.get("questions")
+    if questions is None:
+        return
+    index = questions.perguntas(con)
+    w.write("perguntas.json", index)
+    for leg, s in slugs(row["legislatura"] for row in index["legislaturas"]).items():
+        w.write(f"perguntas/{s}.json", questions.perguntas_legislatura(con, leg))
 
 
 def _deputy_index(con, core, w):

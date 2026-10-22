@@ -1124,3 +1124,65 @@ def attendance_between(con, legislature, start, end):
         """,
         [legislature, start, end],
     )
+
+
+# Written questions to the Government (#114)
+
+# One row per pergunta to the central administration and recipient. Withdrawn and returned ones
+# are owed no answer (``counted`` false). ``days`` is from the date it was sent to that recipient
+# to their first answer, where both dates are there and in order. The source spaces some
+# recipient names differently from one question to the next; the spacing is evened out.
+_GOVERNMENT_QUESTIONS = """
+    select r.legislature, r.question_id, trim(regexp_replace(r.recipient, '\\s+', ' ', 'g')) as recipient,
+           not (r.is_withdrawn or r.is_returned) as counted,
+           r.is_withdrawn, r.is_returned,
+           r.answer_count > 0 as answered,
+           case when r.answer_count > 0 and r.first_answer_date >= r.sent_date
+                then date_diff('day', r.sent_date, r.first_answer_date) end as days
+    from question_recipients r
+    join questions q on q.legislature = r.legislature and q.question_id = r.question_id
+    where q.question_type = 'Pergunta' and q.recipient_category = 'AC'
+"""
+
+_QUESTION_FIGURES = """
+    count(distinct question_id) filter (where counted) as perguntas,
+    count(distinct question_id) filter (where counted and answered) as respondidas,
+    median(days) filter (where counted) as mediana_dias,
+    count(*) filter (where counted and answered and days is null) as respondidas_sem_data,
+    count(*) filter (where is_withdrawn) as retiradas,
+    count(*) filter (where is_returned and not is_withdrawn) as devolvidas
+"""
+
+
+def question_totals(con, legislature=None):
+    """Per legislature with perguntas to the Government, newest first: perguntas owed an answer
+    (each once), how many got at least one, the median days over the answers, answers with no
+    date, and withdrawn and returned (per recipient). ``legislature`` limits it to one."""
+    return _rows(
+        con,
+        f"""
+        with g as ({_GOVERNMENT_QUESTIONS})
+        select g.legislature, l.start_date, l.end_date, l.is_open, {_QUESTION_FIGURES}
+        from g join legislature_days l on l.legislature = g.legislature
+        where ? is null or g.legislature = ?
+        group by all
+        order by l.start_date desc
+        """,  # noqa: S608
+        [legislature, legislature],
+    )
+
+
+def question_recipients(con, legislature):
+    """The same figures per recipient of a legislature's perguntas, most perguntas first."""
+    return _rows(
+        con,
+        f"""
+        with g as ({_GOVERNMENT_QUESTIONS})
+        select recipient, {_QUESTION_FIGURES}
+        from g
+        where legislature = ?
+        group by all
+        order by perguntas desc, recipient
+        """,  # noqa: S608
+        [legislature],
+    )
