@@ -45,11 +45,12 @@ class DeputyRows:
         return self._memo(("published", name), lambda: repository.legislature_interventions(self.con, name))
 
     def group_names(self):
-        """{(legislature, group acronym): name} for every legislature anyone in the set served in."""
+        """{(legislature, group acronym): name} for every legislature anyone in the set was elected
+        or held a seat in."""
         return self._memo(
             "group_names",
             lambda: repository.group_names(
-                self.con, sorted({c["legislature"] for cad in self.ids for c in self.career(cad)})
+                self.con, sorted({c["legislature"] for cad in self.ids for c in self.elections(cad)})
             ),
         )
 
@@ -68,6 +69,10 @@ class DeputyRows:
 
     def career(self, cadastro_id):
         return self._by("careers", repository.careers, "cadastro_id").get((cadastro_id,), [])
+
+    def elections(self, cadastro_id):
+        """Every legislature the person was elected or held a seat in, oldest first."""
+        return self._by("elections", repository.elections, "cadastro_id").get((cadastro_id,), [])
 
     def is_seated(self, cadastro_id):
         return cadastro_id in self._memo("seated", lambda: repository.seated(self.con, self.ids))

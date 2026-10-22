@@ -36,7 +36,7 @@
       "path": "legislaturas[].data_inicio",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/LegislatureDropdown.jsx:198"
+      "read_at": "frontend/src/components/LegislatureDropdown.jsx:199"
     },
     {
       "path": "legislaturas[].intervencoes_publicadas",
@@ -48,7 +48,7 @@
       "path": "legislaturas[].numero",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/LegislatureDropdown.jsx:119"
+      "read_at": "frontend/src/components/LegislatureDropdown.jsx:120"
     }
   ],
   "dropped": []
