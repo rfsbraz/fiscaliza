@@ -18,3 +18,12 @@ export const legislatureName = (numero) => (numero === 'Constituinte' ? 'Assembl
 // "sem lugares" for a coalition party that won no seat on any of its lists (com_lugares false,
 // #181), else null.
 export const seatsNote = (comLugares) => (comLugares === false ? 'sem lugares' : null);
+
+// Which list and elections a coalition page is (#111): its region, if it ran only in the Açores
+// or Madeira, and its election years. "Açores, 2025", "2024 e 2025", "1987 a 2025". Same text as
+// coalition_scope in deploy/pages.py.
+export const coalitionScope = ({ ambito, eleicoes } = {}) => {
+  let years = (eleicoes || []).filter((y) => y !== null && y !== undefined).map(String);
+  if (years.length > 2) years = [`${years[0]} a ${years[years.length - 1]}`];
+  return [ambito, years.join(' e ')].filter(Boolean).join(', ');
+};

@@ -9,6 +9,12 @@
       "read_at": "frontend/src/components/PartidoDetalhes.jsx:208"
     },
     {
+      "path": "coligacao.id",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:214"
+    },
+    {
       "path": "coligacao.nome",
       "type": "scalar",
       "nullable": true,
@@ -18,7 +24,7 @@
       "path": "coligacao.sigla",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:214"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:221"
     },
     {
       "path": "demografia",

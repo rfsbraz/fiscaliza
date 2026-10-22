@@ -5,7 +5,7 @@ import { Users, TrendingUp, ArrowRight, Building, Handshake } from 'lucide-react
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner, PageHeader } from './common';
-import { formatDecimal, legislatureName, seatsNote } from '../utils/format';
+import { coalitionScope, formatDecimal, legislatureName, seatsNote } from '../utils/format';
 
 const PartidosPage = () => {
   const [partidos, setPartidos] = useState([]);
@@ -521,6 +521,19 @@ const PartidosPage = () => {
                               </span>
                             )}
                           </div>
+                          {coalitionScope(coligacao) && (
+                            <p
+                              style={{
+                                fontFamily: tokens.fonts.body,
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                color: tokens.colors.textMuted,
+                                marginBottom: '0.25rem',
+                              }}
+                            >
+                              {coalitionScope(coligacao)}
+                            </p>
+                          )}
                           <p
                             style={{
                               fontFamily: tokens.fonts.body,
@@ -638,13 +651,13 @@ const PartidosPage = () => {
                           }}
                         >
                           {coligacao.data_dissolucao && (
-                            <p>Dissolvida: {new Date(coligacao.data_dissolucao).getFullYear()}</p>
+                            <p>Última legislatura até {new Date(coligacao.data_dissolucao).getFullYear()}</p>
                           )}
                         </div>
                       )}
 
                       <Link
-                        to={`/coligacoes/${encodeURIComponent(coligacao.sigla)}`}
+                        to={`/coligacoes/${encodeURIComponent(coligacao.id)}`}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',

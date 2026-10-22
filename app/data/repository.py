@@ -227,35 +227,49 @@ def groups_served(con, cadastro_ids):
     )
 
 
-def coalition_rows(con, coalition=None):
+def coalition_rows(con):
     """The coalitions seed, one row per legislature, list and group, with the legislature's
-    dates. has_seats says whether the group won a seat on that list. ``coalition`` limits it to
-    one coalition by its short name."""
+    dates. has_seats says whether the group won a seat on that list. url_year is the year the
+    seed's election link ends in (the CNE page of that election), None without one."""
     return _rows(
         con,
         """
         select c.legislature, c.coalition, c.ballot_acronym, c.coalition_name, c.group_code,
                coalesce(g.name, c.group_name) as group_name, coalesce(c.has_seats, true) as has_seats,
+               try_cast(nullif(regexp_extract(c.election_url, '(\\d{4})/?$', 1), '') as integer) as url_year,
                l.start_date, l.end_date, l.ref_day, l.is_open
         from coalitions c
         join legislature_days l on l.legislature = c.legislature
         left join parliamentary_groups g
           on g.legislature = c.legislature and g.group_acronym = c.group_code
-        where ? is null or c.coalition = ?
         order by c.coalition, l.start_date, c.ballot_acronym, c.group_code
         """,
-        [coalition, coalition],
     )
+
+
+def _has_ballot_list_seats(con):
+    return con.execute(
+        "select count(*) from information_schema.tables where table_name = 'ballot_list_seats'"
+    ).fetchone()[0]
+
+
+def election_years(con):
+    """{legislature: year of its election} from ballot_list_seats, for the legislatures it has."""
+    if not _has_ballot_list_seats(con):
+        return {}
+    return {
+        r["legislature"]: r["year"]
+        for r in _rows(
+            con, "select legislature, year(min(election_date)) as year from ballot_list_seats group by legislature"
+        )
+    }
 
 
 def list_seat_circles(con, legislature):
     """{ballot acronym: {circle name}}, the circles where each list won seats in a legislature,
     from ballot_list_seats. The release has these from XI on; an earlier legislature gives {}.
     Circle names drop the AR's footnote mark ("Viseu a)") so they match electoral_circles."""
-    found = con.execute(
-        "select count(*) from information_schema.tables where table_name = 'ballot_list_seats'"
-    ).fetchone()[0]
-    if not found:
+    if not _has_ballot_list_seats(con):
         return {}
     out = {}
     for r in _rows(

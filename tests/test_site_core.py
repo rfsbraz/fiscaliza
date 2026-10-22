@@ -329,7 +329,10 @@ def test_page_ids_follow_the_approved_slugs():
     ]
     pages = core.coalition_pages(
         order,
-        [dict(zip(("coalition", "legislature", "ballot_acronym", "circles", "election_year"), x)) for x in lists],
+        [
+            dict(zip(("coalition", "legislature", "ballot_acronym", "circles", "election_year"), x, strict=True))
+            for x in lists
+        ],
     )
     found = {p["id"]: (p["ambito"], p["legislaturas"]) for p in pages}
     assert found == {
@@ -377,9 +380,7 @@ AD_XVII_SCOPED = 83
 def test_coalition_deputies_come_only_from_circles_where_its_lists_won_seats(con):
     # #181: every deputy of the coalition's groups was counted, whatever their circle.
     circles = {
-        d["circulo"]
-        for page in ("ad-2024", "ad-acores-2025")
-        for d in core.coligacao_deputados(con, page)["deputados"]
+        d["circulo"] for page in ("ad-2024", "ad-acores-2025") for d in core.coligacao_deputados(con, page)["deputados"]
     }
     assert "Círculo 21" not in circles and "Círculo 22" not in circles
     expected = {f"Círculo {i}" for i in range(1, 21) if i != 19} | {"Açores"}

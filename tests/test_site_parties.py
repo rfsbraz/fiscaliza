@@ -63,9 +63,17 @@ def test_legislatura_limits_the_list_and_the_demographics(con):
 
 def test_coalition_of_the_group_in_the_legislature(con):
     # PSD ran on both AD lists in XVII: the link goes to the national one (#111).
-    assert parties.partido_deputados(con, "PSD")["coligacao"] == {"id": "ad-2024", "sigla": "AD", "nome": "Coligação AD"}
+    assert parties.partido_deputados(con, "PSD")["coligacao"] == {
+        "id": "ad-2024",
+        "sigla": "AD",
+        "nome": "Coligação AD",
+    }
     assert parties.partido_deputados(con, "PS")["coligacao"] is None
-    assert parties.partido_deputados(con, "PS", "XVI")["coligacao"] == {"id": "FRS", "sigla": "FRS", "nome": "Coligação FRS"}
+    assert parties.partido_deputados(con, "PS", "XVI")["coligacao"] == {
+        "id": "FRS",
+        "sigla": "FRS",
+        "nome": "Coligação FRS",
+    }
 
 
 def test_unknown_group_or_legislature_is_not_found(con):

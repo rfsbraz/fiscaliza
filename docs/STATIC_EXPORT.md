@@ -34,7 +34,7 @@ as a numeral or a number (`17`), like the API.
 | `legislaturas`, `estatisticas`, `partidos`, `health`, `estatisticas/atividade` | `legislaturas.json`, `estatisticas.json`, `partidos.json`, `health.json`, `estatisticas/atividade.json` |
 | `votacoes/recentes?limite=5` (and the default, 10) | `votacoes/recentes/5.json`, `votacoes/recentes/10.json` |
 | `coligacoes?include_inactive=false` / `true` | `coligacoes.json` / `coligacoes-todas.json` |
-| `coligacoes/{sigla}`, `/deputados`, `/partidos` | `coligacoes/{slug}.json`, `coligacoes/{slug}/deputados.json`, `coligacoes/{slug}/partidos.json` |
+| `coligacoes/{id}`, `/deputados`, `/partidos` (one page per list and run: `ad-2024`, `ad-acores-2025`, `CDU`) | `coligacoes/{slug}.json`, `coligacoes/{slug}/deputados.json`, `coligacoes/{slug}/partidos.json` |
 | `deputados?page&per_page&active_only&search` | `deputados.json`: everyone, in the list's order; search, filter and paging run in the browser |
 | `deputados/{id}/detalhes`, `/conflitos-interesse`, `/atividades`, `/voting-analytics`, `/attendance` | `deputados/{id}.json`: one file per person with all of it, for every legislature they served in; interventions are filtered, sorted and paged in the browser |
 | `partidos/{sigla}/deputados` | `partidos/{slug}/deputados.json` |

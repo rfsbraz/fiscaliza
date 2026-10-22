@@ -61,8 +61,20 @@ def dist(tmp_path):
                     "ambito": None,
                     "eleicoes": [2024, 2025],
                 },
-                {"id": "ad-acores-2025", "sigla": "AD", "nome": "Aliança Democrática", "ambito": "Açores", "eleicoes": [2025]},
-                {"id": "ad-1979", "sigla": "AD", "nome": "Aliança Democrática", "ambito": None, "eleicoes": [1979, 1980]},
+                {
+                    "id": "ad-acores-2025",
+                    "sigla": "AD",
+                    "nome": "Aliança Democrática",
+                    "ambito": "Açores",
+                    "eleicoes": [2025],
+                },
+                {
+                    "id": "ad-1979",
+                    "sigla": "AD",
+                    "nome": "Aliança Democrática",
+                    "ambito": None,
+                    "eleicoes": [1979, 1980],
+                },
                 {"id": "PàF", "sigla": "PàF", "nome": "Portugal à Frente", "ambito": None, "eleicoes": [2015]},
             ]
         },

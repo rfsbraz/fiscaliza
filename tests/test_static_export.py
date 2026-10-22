@@ -226,7 +226,11 @@ def _requests(con, flask_app):
     """Every request shape the frontend makes, over the fixture's people, parties and
     coalitions, plus search, paging and interventions filters."""
     reqs = list(FLAT.values())
-    reqs += [f"coligacoes/{c}{s}" for c in ("CDU", "FRS", "ad-acores-2025", "AD", "NOPE") for s in ("", "/deputados", "/partidos")]
+    reqs += [
+        f"coligacoes/{c}{s}"
+        for c in ("CDU", "FRS", "ad-acores-2025", "AD", "NOPE")
+        for s in ("", "/deputados", "/partidos")
+    ]
     reqs += [
         "deputados?page=1&per_page=20&active_only=false",
         "deputados?page=2&per_page=20&active_only=false",
