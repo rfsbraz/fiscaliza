@@ -179,7 +179,7 @@ def _deputy_index(con, core, w):
         "deputados",
         core.MAX_PER_PAGE,
     )
-    counts = dict(con.execute("select cadastro_id, count(*) from deputy_legislatures group by 1").fetchall())
+    counts = dict(con.execute("select cadastro_id, count(*) from deputy_elections group by 1").fetchall())
     w.write(
         "deputados.json",
         {
@@ -231,7 +231,7 @@ class DeputySection:
     it; the section is left out while that module does not exist. ``render(service, rows,
     cadastro_id, legislatures)`` returns the fields it adds to the file (rows: the DeputyRows of
     the batch the person is in, with the connection in ``rows.con``; legislatures: the ones the
-    person served in, oldest first). The browser side (frontend/src/config/staticApi.js,
+    person was elected or seated in, oldest first). The browser side (frontend/src/config/staticApi.js,
     DEPUTY_SECTIONS) reads the same fields.
     """
 
@@ -299,7 +299,7 @@ def _deputy_sections():
 
 def deputy_bundle(rows, sections, cadastro_id):
     """Everything the deputy page reads about one person, from the DeputyRows of their batch."""
-    legs = [c["legislature"] for c in rows.career(cadastro_id)]
+    legs = [c["legislature"] for c in rows.elections(cadastro_id)]
     bundle = {"id_cadastro": cadastro_id, "legislatura_atual": legs[-1]}
     for section, module in sections:
         bundle.update(section.render(module, rows, cadastro_id, legs))
@@ -351,7 +351,7 @@ def _deputy_chunk(args):
 def _deputy_files(db, con, root, jobs):
     if not _deputy_sections():
         return []
-    ids = [r[0] for r in con.execute("select distinct cadastro_id from deputy_legislatures order by 1").fetchall()]
+    ids = [r[0] for r in con.execute("select distinct cadastro_id from deputy_elections order by 1").fetchall()]
     if jobs <= 1:
         return _render_deputies(con, str(root), ids)
     chunks = [(db, str(root), ids[i : i + CHUNK]) for i in range(0, len(ids), CHUNK)]

@@ -6,6 +6,10 @@ Ids and made-up names only, no real people. Two legislatures:
 - XVII, open, extract date 2026-10-19: people 1 to 229 and 232 hold its 230 seats with the
   known split (KNOWN_SPLIT). Person 231 sat for PS until 2025-12-31 and resigned; person 232 took
   the seat on 2026-01-01. Person 500 is a substitute who never sat.
+- Elected for XVII but not seated (#107): persons 302 and 303 sat in XVI and were elected for
+  XVII with the mandate suspended (Suspenso(Eleito)) from its first day. 303 also has the AR's
+  one-day Efetivo period on 2025-06-05, next to a Suspenso(Eleito) period from that same day.
+  Person 501 was elected for XVII and never sat. None of them has a group in XVII.
 
 Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) and every
 tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP) in both legislatures, and
@@ -106,6 +110,11 @@ def _rows():
     mandate(XVII, 232, "Efetivo Definitivo", True, "2026-01-01", None)
     member(XVII, 232, "PS", "2026-01-01", None)
     mandate(XVII, 500, "Suplente", False, XVII[2], None)
+    mandate(XVII, 302, "Suspenso(Eleito)", False, XVII[2], None)
+    mandate(XVII, 303, "Suspenso(Eleito)", False, XVII[2], "2025-06-04")
+    mandate(XVII, 303, "Efetivo", True, "2025-06-05", "2025-06-05")
+    mandate(XVII, 303, "Suspenso(Eleito)", False, "2025-06-05", None)
+    mandate(XVII, 501, "Suspenso(Eleito)", False, XVII[2], None)
 
     xvi_people = list(range(1, 51)) + list(range(300, 480))
     for i, cad in enumerate(xvi_people):
