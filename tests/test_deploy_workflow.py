@@ -75,8 +75,8 @@ def test_deploy_is_time_boxed_and_the_export_capped():
     job = int(re.search(r"\n    timeout-minutes: (\d+)", t).group(1))
     step = int(re.search(r"\n        timeout-minutes: (\d+)", t).group(1))
     assert (step, job) == (80, 90)
-    # The export takes its workers from the cgroup CPU limit (cpu.max), so the runner's
-    # current CPU cap applies without a hardcoded count.
+    # The export takes its workers from the cgroup CPU limit (cpu.max) or the CPU count, so
+    # whatever runner it lands on applies without a hardcoded count.
     assert "EXPORT_WORKERS" not in t
 
 
@@ -116,7 +116,7 @@ def test_only_site_paths_need_a_preview():
 
 def test_the_preview_label_forces_a_preview_and_other_labels_start_nothing():
     t = text()
-    # Adding some other label must not even start the changes job on the runner.
+    # Adding some other label must not even start the changes job.
     assert "github.event.action != 'labeled' || github.event.label.name == 'preview'" in t
     assert "contains(github.event.pull_request.labels.*.name, 'preview')" in t
 
