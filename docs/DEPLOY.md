@@ -52,9 +52,83 @@ preview, builds exactly that commit.
 Production is pinned because CI starts from an empty data folder each time: the sync's check that
 no table lost more than 5% of its rows has nothing to compare against, so a bad commit on
 parlamento-aberto `main` would go straight to production. Moving the pin is a small pull request of
-its own, after checking the new data; its preview shows the new data before it merges.
+its own; its preview shows the new data before it merges. Most moves are automatic (see
+[Automatic pin moves](#automatic-pin-moves)); I still move it by hand when a change needs new
+figures checked first, as in #132.
 
 When parlamento-aberto turns on data releases (`DATA_RELEASES`), the pin moves to a release tag.
+
+## Automatic pin moves
+
+When parlamento-aberto `main` changes, a pin PR opens here and merges itself once every check on
+it is green (#133). This is my one exception to merging by hand, for pin PRs only. The repo is
+private on the free plan, so it has no branch protection or required checks and GitHub's
+auto-merge can't wait for CI; two workflows do the job instead, and `deploy/pin_bump.py` holds the
+logic (tested in `tests/test_pin_bump.py`).
+
+1. parlamento-aberto's `fiscaliza-dispatch.yml` runs on every push to its `main` and sends a
+   `repository_dispatch` here: event type `data-updated`, payload `{"sha": "<commit>"}`.
+2. `data-pin-bump.yml` (`Pin Bump`) checks the SHA is a full commit on parlamento-aberto `main`.
+   When the pin on `master` already has it, or it is older than the pin, it stops there and opens
+   nothing. Otherwise it resets the branch `data/pin-bump` from `master`, writes the new pin and
+   force-pushes that branch. That is the only branch anything force-pushes. Then it opens the pin
+   PR, or updates the open one, so there is only ever one. The title is
+   `chore(data): move the data pin to parlamento-aberto <short sha>`, and the body lists the old
+   and new SHAs and the parlamento-aberto commits in between. A newer dispatch cancels a running
+   one and replaces the PR's head.
+3. The PR's CI and preview Deploy run as on any PR.
+4. `data-pin-merge.yml` (`Pin Merge`) runs each time CI or Deploy finishes on `data/pin-bump`. It
+   looks at every workflow run on the PR head: while one is still going it exits and waits for the
+   next one to finish, so it never holds the runner that CI needs. When all of them passed, and CI
+   and Deploy are among them, it squash-merges the PR at that head. The push to `master` then
+   deploys production.
+
+### Guard stops
+
+`Pin Merge` doesn't merge, leaves the PR open with a comment saying why, and fails, when:
+
+- a workflow on the PR head failed, was cancelled or timed out;
+- the checks haven't finished 6 hours after the pin commit;
+- the `schema_version` major in parlamento-aberto (`src/parlamento_aberto/models/schema.yml`)
+  differs between the old and the new pin (`Pin Bump` comments on this one too, right away);
+- the PR changes anything other than `deploy/data-pin`;
+- GitHub refuses the merge, for example when `master` moved the pin itself and the PR conflicts.
+
+A stopped head never merges later. I look at it and merge or close the PR by hand. The next
+parlamento-aberto commit resets the branch and starts again.
+
+### Secrets
+
+| Repo | Secret | Token |
+|---|---|---|
+| `rfsbraz/parliament` | `PIN_BOT_TOKEN` | fine-grained token, repository access only `rfsbraz/parliament`, with Contents: read and write and Pull requests: read and write (Metadata: read comes with it) |
+| `rfsbraz/parlamento-aberto` | `FISCALIZA_DISPATCH_TOKEN` | fine-grained token, repository access only `rfsbraz/parliament`, with Contents: read and write |
+
+`PIN_BOT_TOKEN` pushes `data/pin-bump`, opens and edits the PR and merges it. A PR opened or merged
+with `GITHUB_TOKEN` starts no workflows, so without it the PR would get no CI and the merge no
+production Deploy. The workflows' own `GITHUB_TOKEN` does the reads (parlamento-aberto is public)
+and posts the guard comments. Both workflows stop on their first step with an error naming
+`PIN_BOT_TOKEN` when it is missing.
+
+`FISCALIZA_DISPATCH_TOKEN` only sends the dispatch. GitHub asks for Contents: write on the target
+repo for `POST /repos/{owner}/{repo}/dispatches`, so that is the smallest it can be. One token
+with Contents and Pull requests read and write on `rfsbraz/parliament` would work for both,
+stored under both names, but I keep two so each can be revoked alone. Neither goes anywhere but
+the repo secrets.
+
+If the push of `data/pin-bump` is ever refused because `master` changed a workflow file since the
+branch was last pushed, close the pin PR and delete the branch; the next run recreates it.
+
+### Manual run
+
+Actions, `Data Pin Bump`, Run workflow, with a parlamento-aberto commit SHA (all 40 characters).
+With the current pin it does nothing and opens no PR, which is the quickest check that the token
+and the runner work. `gh workflow run data-pin-bump.yml -f sha=<sha>` does the same.
+
+When parlamento-aberto turns on data releases, the dispatch moves to `release: published` and the
+pin to the release tag (#57). Related: #132 (the last move by hand) and #128 (the methodology page
+says the site only changes data version on purpose, which now means through a pin PR that passed
+CI, not one I opened by hand).
 
 ## What a deploy runs
 
