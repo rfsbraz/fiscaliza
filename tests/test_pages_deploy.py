@@ -102,13 +102,20 @@ def _dist(tmp_path):
     return dist
 
 
-def test_prepare_drops_404_html_so_pages_answers_deep_links_200(tmp_path):
+def test_prepare_keeps_404_html_so_unknown_paths_answer_404(tmp_path):
+    # #113: with a top-level 404.html Pages answers a path with no file and no rule with it and
+    # status 404. The build's 404.html is the app, which shows its "page not found" view.
     dist = _dist(tmp_path)
     pages.prepare(dist)
-    assert not (dist / "404.html").exists()
-    assert (dist / "index.html").exists()
+    assert (dist / "404.html").read_text() == (dist / "index.html").read_text()
     assert (dist / "api" / "partidos.json").read_text() == "[]"
     assert (dist / "assets" / "index-abc123.js").exists()
+
+
+def test_prepare_copies_the_redirects_file(tmp_path):
+    dist = _dist(tmp_path)
+    pages.prepare(dist)
+    assert (dist / "_redirects").read_text() == pages.REDIRECTS_FILE.read_text()
 
 
 def test_prepare_copies_the_headers_file(tmp_path):
@@ -117,11 +124,64 @@ def test_prepare_copies_the_headers_file(tmp_path):
     assert (dist / "_headers").read_text() == pages.HEADERS_FILE.read_text()
 
 
-def test_prepare_works_on_a_build_without_404_html(tmp_path):
+def test_prepare_writes_404_html_when_the_build_has_none(tmp_path):
     dist = _dist(tmp_path)
     (dist / "404.html").unlink()
     pages.prepare(dist)
     assert (dist / "_headers").exists()
+    assert (dist / "404.html").read_text() == (dist / "index.html").read_text()
+
+
+# The _redirects file: the app's routes answer 200 with the app, everything else 404 (#113).
+
+
+def redirect_rules():
+    rules = []
+    for line in pages.REDIRECTS_FILE.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            rules.append(tuple(line.split()))
+    return rules
+
+
+def app_routes():
+    app = (FRONTEND / "src" / "App.jsx").read_text()
+    return re.findall(r'<Route path="(/[^"]*)"', app)
+
+
+def test_every_app_route_is_rewritten_to_the_app():
+    rules = {source: (target, code) for source, target, code in redirect_rules()}
+    for route in app_routes():
+        if route in ("/", "/*"):
+            continue
+        source = re.sub(r"/:[^/]+$", "/*", route)
+        # Pages turns /index.html into /, so a rewrite to it would loop; rewrite to / instead.
+        assert rules.get(source) == ("/", "200"), route
+
+
+def test_no_catch_all_and_no_api_rewrite():
+    for source, _, _ in redirect_rules():
+        assert source not in ("/*", "/"), source
+        assert not source.startswith("/api"), source
+
+
+def test_robots_txt_is_a_real_file_and_there_is_no_sitemap():
+    public = FRONTEND / "public"
+    robots = (public / "robots.txt").read_text()
+    assert robots.startswith("User-agent: *")
+    assert "<" not in robots
+    # No sitemap.xml: Pages answers it with 404.html and status 404.
+    assert not (public / "sitemap.xml").exists()
+    assert "Sitemap:" not in robots
+
+
+def test_app_has_a_not_found_route_that_is_not_indexed():
+    app = (FRONTEND / "src" / "App.jsx").read_text()
+    assert '<Route path="*" element={<NotFound />} />' in app
+    view = (FRONTEND / "src" / "components" / "NotFound.jsx").read_text()
+    assert "Página não encontrada" in view
+    assert "noindex" in view
+    assert 'to="/"' in view
 
 
 def test_prepare_refuses_a_folder_without_index_html(tmp_path):
