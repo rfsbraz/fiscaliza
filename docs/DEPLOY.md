@@ -32,10 +32,27 @@ To get a preview for any other pull request, add the `preview` label. Adding it 
 right away, and every later push to that PR deploys again until the label comes off. Adding any
 other label starts nothing.
 
-There is one concurrency group for every trigger, with `cancel-in-progress: false`: a deploy
-waits for the one before it to finish and is never cancelled halfway through an upload. The group
-is on the deploy job, so a pull request that needs no preview doesn't wait behind a running deploy
-just to skip.
+### Concurrency
+
+Previews and production never share a concurrency group (#152). GitHub keeps at most one running
+and one pending job per group, and a newer job replaces the pending one. With a single group for
+every trigger, each push to `master` cancelled the previews waiting their turn, so pull requests
+showed a cancelled Deploy, a preview could cancel a waiting production deploy, and `Pin Merge`
+stopped on a pin PR whose preview was cancelled (#151).
+
+- A pull request deploys in its own group, `pages-preview-<PR number>`, with
+  `cancel-in-progress: true`: a newer push to the same PR cancels its older preview, even halfway
+  through, because only the newest head matters. A Pages deployment only goes live once its upload
+  finishes, so a cancelled one leaves the previous preview in place. Other PRs and `master` never
+  cancel it.
+- Production deploys in `pages-production`, with `cancel-in-progress: false`: nothing cancels a
+  running production deploy. A push to `master` while one runs waits for it. A third push while
+  that one still waits replaces it, and the replaced run shows as cancelled. A burst of merges
+  therefore skips the deploys in between, and the newest `master`, with the newest pin, always
+  deploys last.
+
+Previews and production can now run at the same time; they upload to different Pages branches.
+The groups are on the deploy job, so a pull request that needs no preview never enters one.
 
 The workflow needs:
 
@@ -94,7 +111,9 @@ Both workflows run on GitHub-hosted runners (`ubuntu-latest`), like CI and Deplo
 
 `Pin Merge` doesn't merge, leaves the PR open with a comment saying why, and fails, when:
 
-- a workflow on the PR head failed, was cancelled or timed out;
+- a workflow on the PR head failed, was cancelled or timed out. Only the newest run of each
+  workflow on that head counts, and only a newer push to the pin PR cancels its preview, so a
+  pin PR's preview is no longer cancelled by other deploys;
 - the checks haven't finished 6 hours after the pin commit;
 - the `schema_version` major in parlamento-aberto (`src/parlamento_aberto/models/schema.yml`)
   differs between the old and the new pin (`Pin Bump` comments on this one too, right away);
