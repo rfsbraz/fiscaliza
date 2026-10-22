@@ -83,6 +83,17 @@ class DeputyRows:
     def activity_by_legislature(self, cadastro_id):
         return self._by("activity", repository.deputy_activity_by_legislature, "cadastro_id").get((cadastro_id,), [])
 
+    def written_questions(self, cadastro_id, legislature):
+        """Perguntas to the Government the person wrote or cowrote in ``legislature``; None when
+        the release has none in that legislature at all."""
+        if legislature not in self._memo(
+            "question_legislatures", lambda: set(repository.question_legislatures(self.con))
+        ):
+            return None
+        rows = self._by("written_questions", repository.deputy_written_questions, "cadastro_id", "legislature")
+        found = rows.get((cadastro_id, legislature))
+        return found[0]["total"] if found else 0
+
     def initiative_types(self, cadastro_id):
         return self._by("initiative_types", repository.deputy_initiative_types, "cadastro_id").get((cadastro_id,), [])
 
