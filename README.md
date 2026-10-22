@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/rfsbraz/fiscaliza/actions/workflows/ci.yml/badge.svg)](https://github.com/rfsbraz/fiscaliza/actions/workflows/ci.yml)
 
-Atividade da Assembleia da República a partir dos dados abertos: deputados, votações, presenças, iniciativas e agenda, em [fiscaliza.pt](https://fiscaliza.pt).
+Atividade da Assembleia da República a partir dos dados abertos: deputados, partidos e coligações, votações, presenças, iniciativas, perguntas escritas e agenda, em [fiscaliza.pt](https://fiscaliza.pt).
 
-> O histórico deste repositório anterior à mudança para português, em outubro de 2026 (commits, issues e pull requests), está em inglês. A partir daí, a documentação, as issues, os pull requests e as mensagens de commit estão em português de Portugal.
+> O histórico deste repositório anterior à mudança para português, em outubro de 2026 (commits, issues e pull requests), está em inglês. A partir daí, a documentação, as issues e os pull requests estão em português de Portugal. As mensagens de commit seguem os Conventional Commits em inglês ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Como funciona
 
@@ -15,11 +15,11 @@ O Fiscaliza é um site estático. Nenhum servidor responde a pedidos em tempo re
 | **Dados** | O [parlamento-aberto](https://github.com/rfsbraz/parlamento-aberto) no commit fixado em `deploy/data-pin`, carregado num ficheiro DuckDB local só de leitura |
 | **Exportação** | `fiscaliza_data.export` escreve em ficheiros JSON todas as respostas de que o frontend precisa |
 | **Frontend** | React 18 e Vite, que lê esses ficheiros em `/api` na mesma origem |
-| **Alojamento** | Cloudflare Pages, com um deploy por cada push para `master` e uma pré-visualização por pull request ([docs/DEPLOY.md](docs/DEPLOY.md)) |
+| **Alojamento** | Cloudflare Pages, com um deploy por cada push para `master` e uma pré-visualização para os pull requests que mudam o site ou têm a etiqueta `preview` ([docs/DEPLOY.md](docs/DEPLOY.md)) |
 
 ```
 ├── app/                    # Serviços e consultas SQL (data/repository.py) que a exportação usa; também correm como API Flask local
-├── deploy/                 # pages.py (build e deploy), data-pin (o commit dos dados), _headers
+├── deploy/                 # pages.py (build e deploy), data-pin (o commit dos dados), pin_bump.py, _headers, _redirects
 ├── docs/                   # DEPLOY.md, STATIC_EXPORT.md
 ├── fiscaliza_data/         # Sincronização, regra dos lugares, vistas e exportação estática
 ├── frontend/src/           # Componentes React
@@ -64,7 +64,9 @@ Todas as fontes passam pelas mesmas verificações: o SHA-256 de cada ficheiro P
 
 ## Ainda não disponível
 
-As presenças (`/api/deputados/<id>/attendance`) e a agenda de hoje e da semana (`/api/agenda/hoje`, `/api/agenda/semana`) esperam pelos marts respetivos do parlamento-aberto. Respondem 503 com o motivo, e o frontend mostra o aviso "indisponível".
+A agenda de hoje e da semana (`agenda/hoje`, `agenda/semana`) espera pelo mart da agenda do parlamento-aberto. A exportação ainda não escreve esses ficheiros, a API Flask local responde 503 com o motivo, e a página da agenda mostra o aviso "indisponível". As votações recentes e as estatísticas da mesma página já funcionam.
+
+As presenças no plenário já estão no site: vêm do mart `plenary_attendance` e fazem parte do ficheiro de cada deputado.
 
 ## Contribuir
 
