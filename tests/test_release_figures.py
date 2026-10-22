@@ -245,6 +245,6 @@ def test_declaration_flags_and_coverage(con):
     assert deputies.conflitos_interesse(con, DEPUTY)["cobertura"] == {
         "de": "XI",
         "ate": "XV",
-        "com_declaracao": 297,
-        "total": 1425,
+        "com_declaracao": 149,
+        "total": 793,
     }

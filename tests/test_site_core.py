@@ -93,6 +93,50 @@ def test_legislatures_newest_first(con):
     assert legs[0]["data_inicio"] == "2025-06-03" and legs[0]["data_fim"] is None
 
 
+def test_legislatures_carry_their_published_interventions(con):
+    legs = core.legislaturas(con)["legislaturas"]
+    assert [(leg["numero"], leg["intervencoes_publicadas"]) for leg in legs] == [("XVII", 11), ("XVI", 5)]
+
+
+def test_legislatures_carry_the_declaration_coverage(con):
+    # People with an effective mandate in the legislatures with AR declarations, each counted
+    # once, and how many of them have one (#113). On the pin: 149 of 793 (XI to XV). The synthetic
+    # release has AR declarations only for XVI among its legislatures, and only 301 has one.
+    assert core.legislaturas(con)["cobertura_declaracoes"] == {
+        "de": "XVI",
+        "ate": "XVI",
+        "com_declaracao": 1,
+        "total": 230,
+    }
+
+
+def test_declaration_coverage_counts_people_with_an_effective_mandate_once():
+    # Each person once, over the covered legislatures (793 with 149 declared on the pin), not
+    # person-legislature pairs (1,425 and 297). Suplentes who never sat are not in the base.
+    from app.data import repository
+
+    c = duckdb.connect()
+    c.execute("create table legislatures (legislature varchar, start_date date)")
+    c.execute("insert into legislatures values ('XI', '2009-10-15'), ('XII', '2011-06-20'), ('XIII', '2015-10-23')")
+    c.execute("create table mandates (legislature varchar, cadastro_id integer, is_effective boolean)")
+    c.execute(
+        "insert into mandates values ('XI', 1, true), ('XII', 1, true), ('XI', 2, true), ('XII', 3, true),"
+        " ('XII', 4, false), ('XIII', 5, true)"
+    )
+    c.execute("create table interest_declarations (legislature varchar, cadastro_id integer, source varchar)")
+    c.execute(
+        "insert into interest_declarations values ('XI', 1, 'ar_open_data'), ('XII', 1, 'ar_open_data'),"
+        " ('XII', 3, 'ar_open_data'), ('XII', 4, 'ar_open_data')"
+    )
+    coverage = repository.declaration_coverage(c)
+    assert {k: coverage[k] for k in ("first_legislature", "last_legislature", "seated", "declared")} == {
+        "first_legislature": "XI",
+        "last_legislature": "XII",
+        "seated": 3,
+        "declared": 2,
+    }
+
+
 # Parties (F21)
 
 
