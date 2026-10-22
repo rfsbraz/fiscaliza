@@ -151,7 +151,7 @@ const LegislatureDropdown = ({
     return (
       <div className={`inline-flex items-center ${sizeClasses[size]} bg-gray-100 border border-gray-200 rounded-md ${className}`}>
         <Calendar className={`${iconSizes[size]} text-gray-400 mr-2`} />
-        <span className="text-gray-500">Carregando...</span>
+        <span className="text-gray-500">A carregar...</span>
         <div className="ml-2 animate-spin">
           <ChevronDown className={iconSizes[size]} />
         </div>
@@ -202,7 +202,7 @@ const LegislatureDropdown = ({
             
             return (
               <option key={legislature.numero} value={legislature.numero}>
-                {legislature.numero}ª Leg. {yearRange} {isCurrent ? '• Atual' : ''}
+                {legislature.numero === 'Constituinte' ? 'Assembleia Constituinte' : `${legislature.numero} Leg.`} {yearRange} {isCurrent ? '• Atual' : ''}
               </option>
             );
           })}

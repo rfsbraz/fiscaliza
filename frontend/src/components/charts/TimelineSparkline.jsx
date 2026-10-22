@@ -9,6 +9,7 @@
 
 import React, { useMemo } from 'react';
 import { tokens } from '../../styles/tokens';
+import { formatDecimal } from '../../utils/format';
 
 /**
  * TimelineSparkline - Compact activity visualization
@@ -186,7 +187,7 @@ const TimelineSparkline = ({
             fontWeight: 600,
           }}>
             <span>{getTrendIcon()}</span>
-            <span>{Math.abs(trend).toFixed(0)}%</span>
+            <span>{formatDecimal(Math.abs(trend), 0)}%</span>
           </div>
         )}
       </div>
@@ -349,7 +350,7 @@ export const TrendIndicator = ({
         fontWeight: 600,
       }}>
         {isPositive ? '↑' : value < 0 ? '↓' : '→'}
-        {Math.abs(value).toFixed(0)}%
+        {formatDecimal(Math.abs(value), 0)}%
       </span>
       {showLabel && label && (
         <span style={{

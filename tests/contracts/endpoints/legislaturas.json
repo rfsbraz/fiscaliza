@@ -6,13 +6,13 @@
       "path": "legislaturas",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:38"
+      "read_at": "frontend/src/components/PartidosPage.jsx:39"
     },
     {
       "path": "legislaturas[].data_fim",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:38"
+      "read_at": "frontend/src/components/PartidosPage.jsx:39"
     },
     {
       "path": "legislaturas[].data_inicio",
