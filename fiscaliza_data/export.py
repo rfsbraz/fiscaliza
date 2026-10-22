@@ -163,10 +163,10 @@ def _site_files(con, svc, w):
     w.write("coligacoes.json", core.coligacoes(con, include_inactive=False))
     every = core.coligacoes(con, include_inactive=True)
     w.write("coligacoes-todas.json", every)
-    for sigla, s in slugs(c["sigla"] for c in every["coligacoes"]).items():
-        w.write(f"coligacoes/{s}.json", core.coligacao(con, sigla))
-        w.write(f"coligacoes/{s}/deputados.json", core.coligacao_deputados(con, sigla))
-        w.write(f"coligacoes/{s}/partidos.json", core.coligacao_partidos(con, sigla))
+    for cid, s in slugs(c["id"] for c in every["coligacoes"]).items():
+        w.write(f"coligacoes/{s}.json", core.coligacao(con, cid))
+        w.write(f"coligacoes/{s}/deputados.json", core.coligacao_deputados(con, cid))
+        w.write(f"coligacoes/{s}/partidos.json", core.coligacao_partidos(con, cid))
 
     _deputy_index(con, core, w)
     _party_files(con, svc, w)

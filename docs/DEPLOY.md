@@ -226,16 +226,18 @@ nunca faz login e nunca cria tokens.
 A aplicação trata das rotas no browser. Para que uma ligação direta carregue a aplicação e as
 pré-visualizações de ligações (WhatsApp, X, Telegram, que não correm JavaScript) mostrem a página
 certa, o passo do Pages escreve um HTML por rota: `deputados/2105.html` para `/deputados/2105`,
-`partidos/PS.html`, `coligacoes/AD.html`, `perguntas/XVII.html`, `deputados.html`,
+`partidos/PS.html`, `coligacoes/ad-2024.html`, `perguntas/XVII.html`, `deputados.html`,
 `metodologia.html`, e assim por diante. Cada um é o `index.html` do build com o título, a descrição,
 o canonical e o `og:url` dessa rota, e responde 200. As rotas saem dos ficheiros de índice da
 exportação, por isso um deputado, partido ou coligação novo tem a sua página no deploy seguinte. O
 próprio `/` é o `index.html`.
 
 O `deploy/_redirects` não tem regras para as rotas. O Pages aplica uma regra 200 antes de procurar
-o ficheiro, por isso uma regra `/deputados/* / 200` esconderia estas páginas. Com cerca de 3 300
-ficheiros da exportação, 3 066 páginas de rotas e o sitemap, o deploy fica perto dos 6 400
-ficheiros, longe do limite de 20 000.
+o ficheiro, por isso uma regra `/deputados/* / 200` esconderia estas páginas. As únicas regras são
+301 de páginas que deixaram de existir: `/coligacoes/AD` e `/coligacoes/Madeira Primeiro` passaram a
+uma página por lista (#111) e levam à lista mais recente. Com cerca de 3 300 ficheiros da
+exportação, 3 070 páginas de rotas e o sitemap, o deploy fica perto dos 6 400 ficheiros, longe do
+limite de 20 000.
 
 Qualquer outro caminho sem ficheiro, como `/sobre`, recebe o `404.html` de topo com o estado 404.
 Esse ficheiro é de novo a aplicação, escrito pelo build, e a aplicação mostra a vista "Página não

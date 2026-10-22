@@ -9,6 +9,12 @@
       "read_at": "frontend/src/components/PartidosPage.jsx:93"
     },
     {
+      "path": "coligacoes[].ambito",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/utils/format.js:25"
+    },
+    {
       "path": "coligacoes[].ativa",
       "type": "boolean",
       "nullable": true,
@@ -18,31 +24,37 @@
       "path": "coligacoes[].component_parties",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:580"
+      "read_at": "frontend/src/components/PartidosPage.jsx:593"
     },
     {
       "path": "coligacoes[].component_parties[].com_lugares",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:609"
+      "read_at": "frontend/src/components/PartidosPage.jsx:622"
     },
     {
       "path": "coligacoes[].component_parties[].sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:597"
+      "read_at": "frontend/src/components/PartidosPage.jsx:610"
     },
     {
       "path": "coligacoes[].data_dissolucao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:631"
+      "read_at": "frontend/src/components/PartidosPage.jsx:644"
     },
     {
       "path": "coligacoes[].deputy_count",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:563"
+      "read_at": "frontend/src/components/PartidosPage.jsx:576"
+    },
+    {
+      "path": "coligacoes[].eleicoes",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/utils/format.js:25"
     },
     {
       "path": "coligacoes[].espectro_politico",
@@ -60,7 +72,7 @@
       "path": "coligacoes[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:535"
+      "read_at": "frontend/src/components/PartidosPage.jsx:548"
     },
     {
       "path": "coligacoes[].sigla",

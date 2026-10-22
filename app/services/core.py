@@ -7,6 +7,9 @@ parlamento-aberto (seated_on) on the legislature's reference day: its last day o
 ended, the AR extract date while it is open.
 """
 
+import re
+import unicodedata
+
 from app.data import repository
 
 PICTURE_URL = "https://app.parlamento.pt/webutils/getimage.aspx?id={}&type=deputado"
@@ -227,63 +230,168 @@ def deputados(con, page=1, per_page=20, search=None, legislatura=None, active_on
     }
 
 
-def latest_run(order, ran):
-    """The latest unbroken run of legislatures in ``ran``, given every legislature oldest
-    first in ``order``."""
-    i = max(order.index(leg) for leg in ran)
-    run = []
-    while i >= 0 and order[i] in ran:
-        run.append(order[i])
-        i -= 1
-    return run[::-1]
+# Coalitions. The seed has one row per legislature, list and group, under a short name that
+# comes back over the years (AD in 1979 and in 2024) and covers lists that ran only in one
+# autonomous region (AD in the Açores, Madeira Primeiro). A page is one list and run (#111):
+# lists that won seats in more than one circle, or in a legislature with no seats per circle
+# (before XI), form one page per run of consecutive legislatures; a list that won seats only in
+# the Açores or Madeira is a page per election.
+
+REGIONS = ("Açores", "Madeira")
 
 
-def _coalitions(con, sigla=None):
-    """{coalition: summary} from the coalitions seed. A coalition is active when it ran in
-    the open legislature; its components are the groups of its latest legislature, largest
-    first, with com_lugares false for a group that won no seat on any of its lists. Its dates are those of its latest unbroken run of legislatures, because a short
-    name can come back decades later (AD in 1979 and in 2024)."""
-    order = [leg["legislature"] for leg in reversed(repository.legislatures(con))]
-    out = {}
-    for row in repository.coalition_rows(con, sigla):
-        c = out.setdefault(row["coalition"], {"rows": []})
-        c["rows"].append(row)
-    for name, c in out.items():
-        rows = c["rows"]
-        latest = max(r["start_date"] for r in rows)
-        last = [r for r in rows if r["start_date"] == latest]
-        components = []
-        for r in last:
-            if r["group_code"] not in [p["sigla"] for p in components]:
-                components.append({"sigla": r["group_code"], "nome": r["group_name"] or r["group_code"]})
-        for p in components:
-            p["com_lugares"] = any(r["has_seats"] for r in last if r["group_code"] == p["sigla"])
-        seats = {
-            g["group_acronym"]: g["seats"]
-            for g in repository.seats_by_group(con, last[0]["legislature"], last[0]["ref_day"])
-        }
-        components.sort(key=lambda p: (-seats.get(p["sigla"], 0), p["sigla"]))
-        ativa = any(r["is_open"] for r in rows)
-        run_legs = latest_run(order, {r["legislature"] for r in rows})
-        run = [r for r in rows if r["legislature"] in run_legs]
-        c.update(
-            sigla=name,
-            nome=sorted(r["coalition_name"] for r in last)[0],
-            legislature=last[0]["legislature"],
-            ref_day=last[0]["ref_day"],
-            ativa=ativa,
-            data_formacao=_iso(min(r["start_date"] for r in run)),
-            data_dissolucao=None if ativa else _iso(max(r["end_date"] for r in run)),
-            components=components,
+def _slug(value):
+    """The path form of a name, as fiscaliza_data.export.slug."""
+    text = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+
+
+def _region(circles):
+    """The autonomous region a list won all its seats in, else None."""
+    if circles and len(circles) == 1 and next(iter(circles)) in REGIONS:
+        return next(iter(circles))
+    return None
+
+
+def coalition_pages(order, lists):
+    """The coalition pages for ``lists``, one dict per list in a legislature with coalition,
+    legislature, ballot_acronym, circles (the circles where it won seats, None when the release
+    has none) and election_year; ``order`` is every legislature oldest first. Each page has id,
+    sigla, ambito (the region, None for a national list), legislaturas (oldest first), eleicoes
+    and listas ({(legislature, ballot acronym)}).
+
+    A short name with one page keeps it as its id (CDU, PàF). Otherwise each id is the short
+    name's path form, then the region unless the name already says it, then the year of the
+    page's first election: ad-1979, ad-2024, ad-acores-2025, madeira-primeiro-2022."""
+    pages = []
+    by_name = {}
+    for entry in lists:
+        by_name.setdefault(entry["coalition"], []).append(entry)
+    for name, entries in by_name.items():
+        found = []
+        national = sorted(
+            (e for e in entries if not _region(e["circles"])), key=lambda e: order.index(e["legislature"])
         )
-    return out
+        for e in national:
+            last = found[-1] if found else None
+            leg = e["legislature"]
+            if last and (
+                last["legislaturas"][-1] == leg or order.index(last["legislaturas"][-1]) + 1 == order.index(leg)
+            ):
+                page = last
+            else:
+                page = {"ambito": None, "legislaturas": [], "years": {}, "listas": set()}
+                found.append(page)
+            if leg not in page["legislaturas"]:
+                page["legislaturas"].append(leg)
+            page["years"][leg] = e["election_year"]
+            page["listas"].add((leg, e["ballot_acronym"]))
+        regional = {}
+        for e in entries:
+            region = _region(e["circles"])
+            if region:
+                page = regional.setdefault(
+                    (e["legislature"], region),
+                    {"ambito": region, "legislaturas": [e["legislature"]], "years": {}, "listas": set()},
+                )
+                page["years"][e["legislature"]] = e["election_year"]
+                page["listas"].add((e["legislature"], e["ballot_acronym"]))
+        found += regional.values()
+        for page in found:
+            page["legislaturas"].sort(key=order.index)
+            page["eleicoes"] = [page["years"][leg] for leg in page["legislaturas"]]
+            if len(found) == 1:
+                page["id"] = name
+                continue
+            if page["eleicoes"][0] is None:
+                raise ValueError(f"coalition {name!r} in {page['legislaturas'][0]} has no election year")
+            parts = [_slug(name)]
+            if page["ambito"] and _slug(page["ambito"]) not in _slug(name).split("-"):
+                parts.append(_slug(page["ambito"]))
+            page["id"] = "-".join([*parts, str(page["eleicoes"][0])])
+        for page in found:
+            del page["years"]
+            page["sigla"] = name
+        pages += found
+    ids = [p["id"] for p in pages]
+    if len(set(map(_slug, ids))) != len(ids):
+        raise ValueError(f"two coalition pages share a path: {sorted(ids)}")
+    return pages
 
 
-def _coalition(con, sigla):
-    found = _coalitions(con, sigla).get(sigla)
-    if found is None:
-        raise NotFound(f"coalition {sigla!r} not found")
-    return found
+def _coalition_lists(con):
+    """[page] for every coalition list and run (coalition_pages), each with the seed rows of
+    its lists, oldest short name first."""
+    order = [leg["legislature"] for leg in reversed(repository.legislatures(con))]
+    rows = repository.coalition_rows(con)
+    years = repository.election_years(con)
+    circles = {}
+    lists = {}
+    for r in rows:
+        leg = r["legislature"]
+        if leg not in circles:
+            circles[leg] = repository.list_seat_circles(con, leg)
+        key = (r["coalition"], leg, r["ballot_acronym"])
+        if key not in lists:
+            lists[key] = {
+                "coalition": r["coalition"],
+                "legislature": leg,
+                "ballot_acronym": r["ballot_acronym"],
+                "circles": circles[leg].get(r["ballot_acronym"]) if circles[leg] else None,
+                "election_year": years.get(leg) or r["url_year"],
+            }
+    pages = coalition_pages(order, list(lists.values()))
+    for c in pages:
+        c["rows"] = [
+            r for r in rows if r["coalition"] == c["sigla"] and (r["legislature"], r["ballot_acronym"]) in c["listas"]
+        ]
+    pages.sort(key=lambda c: (c["sigla"], order.index(c["legislaturas"][0]), c["ambito"] or ""))
+    return pages
+
+
+def _summary(con, c):
+    """The page with its summary. It is active when it has the open legislature. Its
+    components are the groups of its latest legislature, largest first, with com_lugares false
+    for a group that won no seat on that list; its dates are those of its legislatures."""
+    latest = c["legislaturas"][-1]
+    last = [r for r in c["rows"] if r["legislature"] == latest]
+    components = []
+    for r in last:
+        if r["group_code"] not in [p["sigla"] for p in components]:
+            components.append({"sigla": r["group_code"], "nome": r["group_name"] or r["group_code"]})
+    for p in components:
+        p["com_lugares"] = any(r["has_seats"] for r in last if r["group_code"] == p["sigla"])
+    seats = {g["group_acronym"]: g["seats"] for g in repository.seats_by_group(con, latest, last[0]["ref_day"])}
+    components.sort(key=lambda p: (-seats.get(p["sigla"], 0), p["sigla"]))
+    ativa = any(r["is_open"] for r in c["rows"])
+    return {
+        **c,
+        "nome": sorted(r["coalition_name"] for r in last)[0],
+        "legislature": latest,
+        "ref_day": last[0]["ref_day"],
+        "ativa": ativa,
+        "data_formacao": _iso(min(r["start_date"] for r in c["rows"])),
+        "data_dissolucao": None if ativa else _iso(max(r["end_date"] for r in c["rows"])),
+        "components": components,
+    }
+
+
+def _coalition(con, coligacao_id):
+    """The page with this id, or whose id has the same path form (coligacoes/cdu is CDU)."""
+    for c in _coalition_lists(con):
+        if c["id"] == coligacao_id or _slug(c["id"]) == _slug(coligacao_id):
+            return _summary(con, c)
+    raise NotFound(f"coalition {coligacao_id!r} not found")
+
+
+def coalition_link(con, legislature, group):
+    """{id, sigla, nome} of the coalition page a group ran in for a legislature, the national
+    list first, else None."""
+    for c in sorted(_coalition_lists(con), key=lambda c: c["ambito"] is not None):
+        rows = [r for r in c["rows"] if r["legislature"] == legislature and r["group_code"] == group]
+        if rows:
+            return {"id": c["id"], "sigla": c["sigla"], "nome": rows[0]["coalition_name"]}
+    return None
 
 
 def _coalition_seated(con, rows, legislature, day):
@@ -301,13 +409,16 @@ def _coalition_seated(con, rows, legislature, day):
     return [s for s in seated if (s["group_acronym"], s["circle"]) in allowed]
 
 
-def _coalition_dict(con, c):
+def _head(c):
+    return {"id": c["id"], "sigla": c["sigla"], "nome": c["nome"], "tipo_coligacao": "eleitoral"}
+
+
+def _coalition_dict(con, c, with_legislatures=False):
     seated = _coalition_seated(con, c["rows"], c["legislature"], c["ref_day"])
-    return {
-        "id": c["sigla"],
-        "sigla": c["sigla"],
-        "nome": c["nome"],
-        "tipo_coligacao": "eleitoral",
+    out = {
+        **_head(c),
+        "ambito": c["ambito"],
+        "eleicoes": c["eleicoes"],
         "ativa": c["ativa"],
         "data_formacao": c["data_formacao"],
         "data_dissolucao": c["data_dissolucao"],
@@ -320,24 +431,37 @@ def _coalition_dict(con, c):
         "espectro_politico": None,
         "observacoes": None,
     }
+    if with_legislatures:
+        out["legislaturas"] = []
+        for leg, year in zip(c["legislaturas"], c["eleicoes"], strict=True):
+            rows = [r for r in c["rows"] if r["legislature"] == leg]
+            out["legislaturas"].append(
+                {
+                    "legislatura": leg,
+                    "ano_eleicao": year,
+                    "listas": sorted({r["ballot_acronym"] for r in rows}),
+                    "deputados": len(_coalition_seated(con, c["rows"], leg, rows[0]["ref_day"])),
+                }
+            )
+    return out
 
 
 def coligacoes(con, include_inactive=False):
-    found = [_coalition_dict(con, c) for c in _coalitions(con).values() if include_inactive or c["ativa"]]
-    found.sort(key=lambda c: c["sigla"])
+    pages = [_summary(con, c) for c in _coalition_lists(con)]
+    found = [_coalition_dict(con, c) for c in pages if include_inactive or c["ativa"]]
     return {"coligacoes": found, "total": len(found), "include_inactive": include_inactive}
 
 
-def coligacao(con, sigla):
-    return _coalition_dict(con, _coalition(con, sigla))
+def coligacao(con, coligacao_id):
+    return _coalition_dict(con, _coalition(con, coligacao_id), with_legislatures=True)
 
 
-def coligacao_deputados(con, sigla, legislatura=None):
-    c = _coalition(con, sigla)
+def coligacao_deputados(con, coligacao_id, legislatura=None):
+    c = _coalition(con, coligacao_id)
     leg = _legislature(con, legislatura) if legislatura else {"legislature": c["legislature"], "ref_day": c["ref_day"]}
     seated = _coalition_seated(con, c["rows"], leg["legislature"], leg["ref_day"])
     return {
-        "coligacao": {"sigla": c["sigla"], "nome": c["nome"], "tipo_coligacao": "eleitoral"},
+        "coligacao": _head(c),
         "deputados": [
             {
                 "id": s["cadastro_id"],
@@ -355,8 +479,8 @@ def coligacao_deputados(con, sigla, legislatura=None):
     }
 
 
-def coligacao_partidos(con, sigla):
-    c = _coalition(con, sigla)
+def coligacao_partidos(con, coligacao_id):
+    c = _coalition(con, coligacao_id)
     first = {}
     for r in c["rows"]:
         first.setdefault(r["group_code"], r["start_date"])
@@ -371,7 +495,7 @@ def coligacao_partidos(con, sigla):
         for p in c["components"]
     ]
     return {
-        "coligacao": {"sigla": c["sigla"], "nome": c["nome"], "tipo_coligacao": "eleitoral"},
+        "coligacao": _head(c),
         "partidos": parties,
         "total_partidos": len(parties),
     }

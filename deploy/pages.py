@@ -159,6 +159,15 @@ def _route(prefix, value):
     return f"{prefix}/{value}"
 
 
+def coalition_scope(region, years):
+    """Which list and elections a coalition page is, as the page shows it (coalitionScope in
+    frontend/src/utils/format.js): "Açores, 2025", "2024 e 2025", "1987 a 2025"."""
+    years = [str(y) for y in years or [] if y is not None]
+    if len(years) > 2:
+        years = [f"{years[0]} a {years[-1]}"]
+    return ", ".join(x for x in (region, " e ".join(years)) if x)
+
+
 def route_heads(api):
     """{route path: (title, description)} for every app route the export has data for, plus the
     routes with no id. Reads the export's index files only; a missing one adds no routes."""
@@ -192,10 +201,12 @@ def route_heads(api):
             routes[path] = (label, f"Deputados, votações e coligações: {label} na Assembleia da República.")
 
     for c in _items(_json(api / "coligacoes-todas.json"), "coligacoes"):
-        path = _route("/coligacoes", c.get("sigla"))
+        path = _route("/coligacoes", c.get("id"))
         if path:
-            name = c.get("nome") or c["sigla"]
-            routes[path] = (name, f"Partidos, deputados e eleições da coligação {name} na Assembleia da República.")
+            name = c.get("nome") or c.get("sigla") or c["id"]
+            scope = coalition_scope(c.get("ambito"), c.get("eleicoes"))
+            label = f"{name} ({scope})" if scope else name
+            routes[path] = (label, f"Partidos, deputados e eleições da coligação {label} na Assembleia da República.")
 
     for leg in _items(_json(api / "perguntas.json"), "legislaturas"):
         path = _route("/perguntas", leg.get("legislatura"))

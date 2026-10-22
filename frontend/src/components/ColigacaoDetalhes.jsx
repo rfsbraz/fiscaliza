@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Users, Building, Calendar, TrendingUp, Handshake, History, MapPin } from 'lucide-react';
+import { ArrowLeft, Users, Building, Calendar, Handshake, History } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
-import { plural, seatsNote } from '../utils/format';
+import { coalitionScope, formatNumber, plural, seatsNote } from '../utils/format';
 
 // Coalition colors based on political spectrum
 const spectrumColors = {
@@ -29,7 +29,7 @@ const ColigacaoDetalhes = () => {
   // Get active tab from URL hash
   const getActiveTabFromUrl = () => {
     const hash = location.hash.replace('#', '');
-    const validTabs = ['partidos', 'deputados', 'timeline'];
+    const validTabs = ['partidos', 'deputados', 'legislaturas'];
     return validTabs.includes(hash) ? hash : 'partidos';
   };
 
@@ -146,27 +146,15 @@ const ColigacaoDetalhes = () => {
     );
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' });
-  };
-
-  // Coalition timeline data. No formation event: the date the data gives is the start of the
-  // coalition's first legislature in its latest run, not when it was formed (#111).
-  const timelineEvents = [
-    dados.data_dissolucao && {
-      date: dados.data_dissolucao,
-      title: 'Dissolução',
-      description: 'Fim da coligação',
-      type: 'dissolution'
-    }
-  ].filter(Boolean);
+  // One page per list and run (#111). The data has no formation or dissolution dates, only the
+  // legislatures the list elected deputies in.
+  const legislaturas = dados.legislaturas || [];
+  const first = legislaturas[0];
 
   const tabs = [
     { id: 'partidos', label: 'Partidos Componentes', icon: Building },
     { id: 'deputados', label: `Deputados (${deputados.length})`, icon: Users },
-    ...(timelineEvents.length ? [{ id: 'timeline', label: 'Linha do Tempo', icon: History }] : []),
+    ...(legislaturas.length ? [{ id: 'legislaturas', label: 'Legislaturas', icon: History }] : []),
   ];
 
   return (
@@ -233,6 +221,11 @@ const ColigacaoDetalhes = () => {
                   >
                     {dados.sigla}
                   </h1>
+                  {coalitionScope(dados) && (
+                    <span style={{ fontFamily: tokens.fonts.body, fontSize: '1rem', fontWeight: 600, color: tokens.colors.textMuted }}>
+                      {coalitionScope(dados)}
+                    </span>
+                  )}
                   {dados.espectro_politico && (
                     <span
                       style={{
@@ -277,12 +270,14 @@ const ColigacaoDetalhes = () => {
 
                 {/* Key Information */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginTop: '1.5rem' }}>
-                  {dados.data_dissolucao && (
+                  {first && (
                     <div style={{ display: 'flex', alignItems: 'center', color: tokens.colors.textSecondary }}>
                       <Calendar style={{ width: '20px', height: '20px', marginRight: '0.5rem', color: tokens.colors.textMuted }} />
                       <div>
-                        <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.textMuted }}>Dissolução</p>
-                        <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600 }}>{formatDate(dados.data_dissolucao)}</p>
+                        <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.textMuted }}>Primeira legislatura com deputados eleitos</p>
+                        <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600 }}>
+                          {first.legislatura}{first.ano_eleicao ? ` (${first.ano_eleicao})` : ''}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -506,74 +501,29 @@ const ColigacaoDetalhes = () => {
               </div>
             )}
 
-            {/* Timeline Tab */}
-            {activeTab === 'timeline' && (
-              <div style={{ position: 'relative' }}>
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '32px',
-                    top: 0,
-                    bottom: 0,
-                    width: '2px',
-                    backgroundColor: tokens.colors.border,
-                  }}
-                />
-                {timelineEvents.map((event, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.2 }}
-                    style={{
-                      position: 'relative',
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      marginBottom: '2rem',
-                    }}
-                  >
-                    <div
-                      style={{
-                        zIndex: 10,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '50%',
-                        backgroundColor: event.type === 'formation' ? '#E8F5E9' : '#FFEBEE',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Calendar
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          color: event.type === 'formation' ? tokens.colors.primary : tokens.colors.accent,
-                        }}
-                      />
-                    </div>
-                    <div style={{ marginLeft: '1.5rem' }}>
-                      <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textMuted }}>
-                        {formatDate(event.date)}
-                      </p>
-                      <h3
-                        style={{
-                          fontFamily: tokens.fonts.body,
-                          fontSize: '1.125rem',
-                          fontWeight: 600,
-                          color: tokens.colors.textPrimary,
-                          marginTop: '0.25rem',
-                        }}
-                      >
-                        {event.title}
-                      </h3>
-                      <p style={{ fontFamily: tokens.fonts.body, color: tokens.colors.textSecondary, marginTop: '0.25rem' }}>
-                        {event.description}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+            {/* Legislatures Tab */}
+            {activeTab === 'legislaturas' && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: tokens.fonts.body, fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', color: tokens.colors.textMuted, borderBottom: `1px solid ${tokens.colors.border}` }}>
+                      <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Legislatura</th>
+                      <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Eleições</th>
+                      <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Lista no boletim</th>
+                      <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Deputados eleitos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dados.legislaturas.map((leg) => (
+                      <tr key={leg.legislatura} style={{ borderBottom: `1px solid ${tokens.colors.border}`, color: tokens.colors.textPrimary }}>
+                        <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>{leg.legislatura}</td>
+                        <td style={{ padding: '0.5rem 0.75rem' }}>{leg.ano_eleicao}</td>
+                        <td style={{ padding: '0.5rem 0.75rem', fontFamily: tokens.fonts.mono }}>{(leg.listas || []).join(', ')}</td>
+                        <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: tokens.fonts.mono }}>{formatNumber(leg.deputados)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
 

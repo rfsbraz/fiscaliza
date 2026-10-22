@@ -10,7 +10,7 @@ split, so neither is in the payload.
 from statistics import median
 
 from app.data import repository
-from app.services.core import PICTURE_URL, NotFound, _legislature
+from app.services.core import PICTURE_URL, NotFound, _legislature, coalition_link
 
 SEX = {"M": "Masculino", "F": "Feminino"}
 COHORTS = [(35, "< 35 anos"), (45, "35-44 anos"), (55, "45-54 anos"), (65, "55-64 anos"), (None, "65+ anos")]
@@ -144,14 +144,7 @@ def partido_deputados(con, sigla, legislatura=None):
     }
     deputies = sorted(people.values(), key=lambda d: (not d["mandato_ativo"], d["nome"], d["id"]))
     seated = repository.group_seated(con, leg["legislature"], leg["ref_day"], sigla)
-    coalition = next(
-        (
-            {"sigla": c["coalition"], "nome": c["coalition_name"]}
-            for c in repository.coalition_rows(con)
-            if c["legislature"] == leg["legislature"] and c["group_code"] == sigla
-        ),
-        None,
-    )
+    coalition = coalition_link(con, leg["legislature"], sigla)
     return {
         "partido": {"sigla": sigla, "nome": name},
         "coligacao": coalition,

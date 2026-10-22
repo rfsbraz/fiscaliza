@@ -3,52 +3,88 @@
   "route": "/api/coligacoes/<path:coligacao_sigla>",
   "keys": [
     {
+      "path": "ambito",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/utils/format.js:25"
+    },
+    {
       "path": "ativa",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:251"
-    },
-    {
-      "path": "data_dissolucao",
-      "type": "scalar",
-      "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:158"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:244"
     },
     {
       "path": "deputy_count",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:311"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:306"
+    },
+    {
+      "path": "eleicoes",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/utils/format.js:25"
     },
     {
       "path": "espectro_politico",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:245"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:229"
+    },
+    {
+      "path": "legislaturas",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:151"
+    },
+    {
+      "path": "legislaturas[].ano_eleicao",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:520"
+    },
+    {
+      "path": "legislaturas[].deputados",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:522"
+    },
+    {
+      "path": "legislaturas[].legislatura",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:519"
+    },
+    {
+      "path": "legislaturas[].listas",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:521"
     },
     {
       "path": "nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:275"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:268"
     },
     {
       "path": "observacoes",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:322"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:317"
     },
     {
       "path": "sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:234"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:222"
     },
     {
       "path": "tipo_coligacao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:294"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:289"
     }
   ],
   "dropped": []

@@ -33,9 +33,10 @@ FLAT = {
     "partidos.json": "partidos",
     "coligacoes.json": "coligacoes?include_inactive=false",
     "coligacoes-todas.json": "coligacoes?include_inactive=true",
-    "coligacoes/ad.json": "coligacoes/AD",
-    "coligacoes/ad/deputados.json": "coligacoes/AD/deputados",
-    "coligacoes/ad/partidos.json": "coligacoes/AD/partidos",
+    "coligacoes/ad-2024.json": "coligacoes/ad-2024",
+    "coligacoes/ad-2024/deputados.json": "coligacoes/ad-2024/deputados",
+    "coligacoes/ad-2024/partidos.json": "coligacoes/ad-2024/partidos",
+    "coligacoes/ad-acores-2025.json": "coligacoes/ad-acores-2025",
     "votacoes/recentes/5.json": "votacoes/recentes?limite=5",
     "votacoes/recentes/10.json": "votacoes/recentes",
     "estatisticas/atividade.json": "estatisticas/atividade",
@@ -225,7 +226,11 @@ def _requests(con, flask_app):
     """Every request shape the frontend makes, over the fixture's people, parties and
     coalitions, plus search, paging and interventions filters."""
     reqs = list(FLAT.values())
-    reqs += [f"coligacoes/{c}{s}" for c in ("CDU", "FRS", "NOPE") for s in ("", "/deputados", "/partidos")]
+    reqs += [
+        f"coligacoes/{c}{s}"
+        for c in ("CDU", "FRS", "ad-acores-2025", "AD", "NOPE")
+        for s in ("", "/deputados", "/partidos")
+    ]
     reqs += [
         "deputados?page=1&per_page=20&active_only=false",
         "deputados?page=2&per_page=20&active_only=false",

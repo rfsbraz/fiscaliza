@@ -6,31 +6,31 @@
       "path": "partidos",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:316"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:311"
     },
     {
       "path": "partidos[].com_lugares",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:426"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:422"
     },
     {
       "path": "partidos[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:425"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:420"
     },
     {
       "path": "partidos[].papel_coligacao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:430"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:425"
     },
     {
       "path": "partidos[].sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:389"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:384"
     }
   ],
   "dropped": []

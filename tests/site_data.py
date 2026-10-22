@@ -13,9 +13,11 @@ Ids and made-up names only, no real people. Two legislatures:
 
 Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) and every
 tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP) in both legislatures, and
-FRS (PS) in XVI only. In XVII AD has a second list, AD_ACORES, with PPM as a component without
-seats, and CDU lists PEV without seats. Seats per circle and list (ballot_list_seats) exist for
-XVII only: PSD and CDS-PP deputies of circles 21 and 22 were not elected on an AD list.
+FRS (PS) in XVI only. In XVII AD has a second list, AD_ACORES, that won seats only in circle 19
+(the Açores, the one circle with a name), with PPM as a component without seats, and CDU lists
+PEV without seats. Seats per circle and list (ballot_list_seats) exist for XVII only: PSD and
+CDS-PP deputies of circles 21 and 22 were not elected on an AD list. The coalition rows carry
+an election link ending in the election year (2024 for XVI, 2025 for XVII), as the seed does.
 
 Activity comes in sets (ACTIVITY_SETS below) that go into the same tables with their own ids,
 so a page test can load only the set its hand-checked figures come from; the contracts and the
@@ -78,6 +80,12 @@ CIRCLES = 22
 XVI = ("XVI", 107, "2024-03-26", "2025-06-02")
 XVII = ("XVII", 108, "2025-06-03", None)
 AD_ACORES = "AD-ACORES"
+ELECTION_YEAR = {"XVI": 2024, "XVII": 2025}
+
+
+def circle_name(i):
+    """Circle 19 is the Açores, where the second AD list ran; the others are numbered."""
+    return "Açores" if i == 19 else f"Círculo {i}"
 
 
 def _born(cad):
@@ -153,7 +161,18 @@ def _rows():
         for group in members:
             has_seats = group not in ("PPM", "PEV")
             coalitions.append(
-                (leg[0], name, ballot, f"Coligação {name}", group, f"Grupo {group}", None, None, None, has_seats)
+                (
+                    leg[0],
+                    name,
+                    ballot,
+                    f"Coligação {name}",
+                    group,
+                    f"Grupo {group}",
+                    None,
+                    f"https://example.org/eleicoes-{ELECTION_YEAR[leg[0]]}",
+                    None,
+                    has_seats,
+                )
             )
     return mandates, memberships, deputies, coalitions
 
@@ -161,7 +180,7 @@ def _rows():
 def _ballot_list_seats(mandates, memberships):
     """Seats per circle and list for XVII only, as the release has them from XI on; XVI has none,
     like a legislature before XI. Each group's seats in a circle go to one list: PSD and CDS-PP to
-    AD-LISTA in circles 1 to 18 and 20, to AD_ACORES in circle 19 and to no coalition in 21 and 22,
+    AD-LISTA in circles 1 to 18 and 20, to AD_ACORES in circle 19 (the Açores) and to no coalition in 21 and 22,
     PCP to CDU-LISTA, the rest to a list named after the group. Circle 5 carries the footnote mark
     the AR gives some circles (as in "Viseu a)")."""
     groups = {cad: group for leg, cad, _, group, *_ in memberships if leg == "XVII"}
@@ -179,7 +198,7 @@ def _ballot_list_seats(mandates, memberships):
             "XVII",
             "2025-05-18",
             f"{circle:02d}0000",
-            f"Círculo {circle}" + (" a)" if circle == 5 else ""),
+            circle_name(circle) + (" a)" if circle == 5 else ""),
             ballot,
             n,
             None,
@@ -532,7 +551,7 @@ def build_release(root, sets=tuple(ACTIVITY_SETS)):
     con.execute("create table electoral_circles (legislature varchar, circle_id integer, name varchar)")
     con.executemany(
         "insert into electoral_circles values (?, ?, ?)",
-        [(leg[0], i, f"Círculo {i}") for leg in (XVI, XVII) for i in range(1, CIRCLES + 1)],
+        [(leg[0], i, circle_name(i)) for leg in (XVI, XVII) for i in range(1, CIRCLES + 1)],
     )
     con.execute("create table parliamentary_groups (legislature varchar, group_acronym varchar, name varchar)")
     con.executemany(
