@@ -18,8 +18,7 @@ permissions:
 jobs:
   gitleaks:
     name: gitleaks (full history)
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       GITLEAKS_VERSION: 8.30.1
@@ -29,7 +28,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      # Into the job's temp dir, not /usr/local/bin: the runner persists between jobs.
+      # Pinned and checked against its SHA-256, into the job's temp dir instead of the system PATH.
       - name: Install gitleaks
         run: |
           cd "$RUNNER_TEMP"
