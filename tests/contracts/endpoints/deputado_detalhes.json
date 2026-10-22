@@ -498,7 +498,7 @@
       "path": "mandatos_historico[].circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3769"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3780"
     },
     {
       "path": "mandatos_historico[].deputado_id",
@@ -510,13 +510,13 @@
       "path": "mandatos_historico[].is_current",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3701"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3712"
     },
     {
       "path": "mandatos_historico[].legislatura_nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3718"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3729"
     },
     {
       "path": "mandatos_historico[].legislatura_numero",
@@ -528,19 +528,19 @@
       "path": "mandatos_historico[].mandato_fim",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3754"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3765"
     },
     {
       "path": "mandatos_historico[].mandato_inicio",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3753"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3764"
     },
     {
       "path": "mandatos_historico[].partido_sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3780"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3791"
     },
     {
       "path": "nome",
