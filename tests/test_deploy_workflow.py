@@ -26,16 +26,39 @@ def test_skips_pull_requests_from_forks_and_dependabot():
     assert "github.event.pull_request.user.login != 'dependabot[bot]'" in t
 
 
-def test_one_deploy_at_a_time_and_none_cancelled():
+def concurrency_block():
     t = text()
     # On the deploy job, not the workflow: a run the changes job skips then never queues.
     assert "\nconcurrency:" not in t
     changes, deploy = re.search(r"\n  changes:\n(.*)\n  deploy:\n(.*)", t, re.S).groups()
     assert "concurrency:" not in changes
-    block = re.search(r"\n    concurrency:\n((?:      .*\n)+)", deploy).group(1)
-    assert re.search(r"group: pages-deploy\n", block), "one fixed group, not one per ref"
-    assert "${{" not in block
-    assert "cancel-in-progress: false" in block
+    return re.search(r"\n    concurrency:\n((?:      .*\n)+)", deploy).group(1)
+
+
+def test_previews_and_production_never_share_a_concurrency_group():
+    # One group for every trigger kept a single pending deploy, so each push to master cancelled
+    # the queued previews and a preview could cancel a queued production deploy.
+    block = concurrency_block()
+    assert "pages-deploy\n" not in block
+    group = re.search(r"group: (.*)\n", block).group(1)
+    assert group == (
+        "${{ github.event_name == 'pull_request' && "
+        "format('pages-preview-{0}', github.event.pull_request.number) || 'pages-production' }}"
+    )
+
+
+def test_a_newer_push_cancels_a_preview_but_never_a_production_deploy():
+    block = concurrency_block()
+    assert "cancel-in-progress: ${{ github.event_name == 'pull_request' }}\n" in block
+
+
+def test_the_workflow_keeps_the_name_the_pin_merge_waits_for():
+    # data-pin-merge.yml listens to the Deploy workflow by name and pin_bump.py requires a run
+    # called Deploy on the pin PR head.
+    assert text().startswith("name: Deploy\n")
+    merge = (ROOT / ".github" / "workflows" / "data-pin-merge.yml").read_text()
+    assert "workflows: [CI, Deploy]" in merge
+    assert 'REQUIRED_WORKFLOWS = ("CI", "Deploy")' in (ROOT / "deploy" / "pin_bump.py").read_text()
 
 
 def test_deploys_through_pages_py():
