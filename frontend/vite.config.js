@@ -25,6 +25,8 @@ export default defineConfig({
   build: {
     outDir: './dist',
     emptyOutDir: true,
+    // Fonts stay files: the CSP's font-src is 'self' only, which blocks a data: URI font.
+    assetsInlineLimit: (file) => (file.endsWith('.woff2') ? false : undefined),
     rollupOptions: {
       output: {
         manualChunks: {
@@ -37,12 +39,8 @@ export default defineConfig({
   },
   server: {
     host: true, // Allow external access
-    allowedHosts: [
-      'localhost',
-      '.ngrok.io',
-      '.ngrok-free.app',
-      'f440ec437a42.ngrok-free.app'
-    ],
+    // Vite's default host check applies (localhost and IP addresses). To reach the dev server
+    // through a tunnel, add its host to server.allowedHosts locally and don't commit it.
     // No proxy: the site reads the static export. Render it into public/api (gitignored) and
     // the dev server serves it at /api, as the static host does. See docs/STATIC_EXPORT.md.
     watch: {
