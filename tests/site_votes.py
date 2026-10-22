@@ -108,6 +108,12 @@ def _initiatives():
     for ini, vote in [(61, 1), (63, 3)]:
         initiative("XVII", ini, "R", "2025-07-01", [(150, "PS")])
         links.append((vote, ini, "XVII", "plenary", "Votação Deliberação"))
+    # Vote 8 also decides two later projetos de lei with no authors on record (#110), each with
+    # its phase listed twice.
+    for ini in (69, 70):
+        initiative("XVII", ini, "J", "2025-07-02", [])
+        links.append((8, ini, "XVII", "plenary", "Votação final global"))
+        links.append((8, ini, "XVII", "plenary", "Votação final global"))
 
     vote_id = 20
     for n in range(12):
