@@ -30,8 +30,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login != 'dependabot[bot]' &&
       (github.event.action != 'labeled' || github.event.label.name == 'preview')
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       preview: ${{ steps.check.outputs.preview }}
@@ -69,15 +68,16 @@ jobs:
       !cancelled() && (
         github.event_name == 'push' ||
         needs.changes.outputs.preview == 'true')
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
-    # One deploy at a time across every trigger, and none cancelled halfway through an upload.
+    runs-on: ubuntu-latest
+    # Previews and production never share a group (docs/DEPLOY.md, "Concurrency"). A pull request
+    # has its own group, and a newer push to it cancels its older preview. Production has one
+    # group and nothing cancels a running production deploy; a newer push to master still
+    # replaces one that is only pending, so a burst of merges deploys the newest master.
     # On this job and not the workflow, so a run whose changes job says no never waits its turn.
     concurrency:
-      group: pages-deploy
-      cancel-in-progress: false
-    # A deploy takes about 5 minutes on 8 cores and over 45 on the runner's current 1 CPU; this
-    # stops a stuck one from holding the runner.
+      group: ${{ github.event_name == 'pull_request' && format('pages-preview-{0}', github.event.pull_request.number) || 'pages-production' }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    # A deploy takes a few minutes on a hosted runner's 4 CPUs; this stops a stuck one early.
     timeout-minutes: 90
     env:
       CLOUDFLARE_ACCOUNT_ID: cda49578092f3bc8595c954e1e771ac1
@@ -104,7 +104,6 @@ jobs:
       - name: Clone parlamento-aberto
         run: |
           rm -rf "$RUNNER_TEMP/parlamento-aberto" "$RUNNER_TEMP/deploy"
-          echo "$(nproc) CPUs"; free -h; df -h "$RUNNER_TEMP"
           git clone --quiet --depth 1 --no-checkout --branch main https://github.com/rfsbraz/parlamento-aberto.git "$RUNNER_TEMP/parlamento-aberto"
       - name: Deploy
         timeout-minutes: 80

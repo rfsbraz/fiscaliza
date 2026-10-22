@@ -15,6 +15,8 @@ from app.services.core import NotFound
 
 POSITIONS = {"favour": "favor", "against": "contra", "abstention": "abstencao", "absent": "ausente"}
 RESULTS = {"Aprovado": "aprovada", "Rejeitado": "rejeitada", "Prejudicado": "prejudicada", "Retirado": "retirada"}
+INITIATIVE_URL = "https://www.parlamento.pt/ActividadeParlamentar/Paginas/DetalheIniciativa.aspx?BID={}"
+NO_DESCRIPTION = "Votação sem descrição publicada"
 CLOSE_MARGIN = 10
 MIN_DECIDED = 10
 RATE_TYPES = ("J", "R", "D")
@@ -44,18 +46,50 @@ def _iso(day):
 
 
 def _vote_items(rows, votes):
-    """{vote_id: (vote row, {group: position})} for the given vote ids."""
+    """{vote_id: (vote row, {group: position}, [initiatives])} for the given vote ids."""
     return {
-        vote_id: (vote, {p["group_code"]: POSITIONS[p["position"]] for p in positions})
-        for vote_id, (vote, positions) in rows.vote_items(votes).items()
+        vote_id: (vote, {p["group_code"]: POSITIONS[p["position"]] for p in positions}, initiatives)
+        for vote_id, (vote, positions, initiatives) in rows.vote_items(votes).items()
     }
 
 
-def _vote_dict(vote, breakdown):
+def _initiative_name(initiative):
+    name = initiative["type"] or "Iniciativa"
+    if initiative["number"] is not None:
+        name += f" n.º {initiative['number']}/{initiative['legislature']}"
+    return f"{name}: {initiative['title']}" if initiative["title"] else name
+
+
+def vote_subject(description, initiatives):
+    """What a vote was about (#110). The AR leaves most vote descriptions empty, so: the first
+    initiative the vote decided (and how many more), else the vote description, else a line
+    saying none was published."""
+    if initiatives:
+        subject = _initiative_name(initiatives[0])
+        more = len(initiatives) - 1
+        if more:
+            subject += f" e mais {more} {'iniciativa' if more == 1 else 'iniciativas'}"
+        return subject
+    return (description or "").strip() or NO_DESCRIPTION
+
+
+def _vote_dict(vote, breakdown, initiatives):
+    first = initiatives[0] if initiatives else None
     return {
         "vote_id": vote["vote_id"],
         "data": _iso(vote["date"]),
-        "objeto": vote["description"] or "",
+        "objeto": vote_subject(vote["description"], initiatives),
+        "iniciativa": {
+            "tipo": first["type"],
+            "numero": first["number"],
+            "legislatura": first["legislature"],
+            "titulo": first["title"],
+            "fase": first["phase"],
+            "url": INITIATIVE_URL.format(first["initiative_id"]),
+        }
+        if first
+        else None,
+        "outras_iniciativas": max(len(initiatives) - 1, 0),
         "resultado": RESULTS.get(vote["result"], (vote["result"] or "").lower()),
         "vote_breakdown": breakdown,
     }

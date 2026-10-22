@@ -213,6 +213,8 @@ export function createStaticApi({ load }) {
     if (route === 'estatisticas/atividade' && none) return serve('estatisticas/atividade.json');
     if (route === 'partidos' && none) return serve('partidos.json');
     if (route === 'health' && none) return serve('health.json');
+    if (route === 'perguntas' && none) return serve('perguntas.json');
+    if (route.startsWith('perguntas/') && none) return serve(`perguntas/${slug(route.slice('perguntas/'.length))}.json`);
     if (route === 'agenda/hoje' || route === 'agenda/semana') return pending('agenda');
     if (route === 'votacoes/recentes' && only(params, ['limite'])) {
       return serve(`votacoes/recentes/${intArg(params, 'limite', 10)}.json`);

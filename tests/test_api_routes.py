@@ -26,6 +26,8 @@ FRONTEND_ENDPOINTS = {
     "/api/agenda/semana",
     "/api/votacoes/recentes",
     "/api/estatisticas/atividade",
+    "/api/perguntas",
+    "/api/perguntas/<path:legislatura>",
 }
 HEALTH_ENDPOINTS = {"/api/health", "/api/ready", "/api/ping"}
 

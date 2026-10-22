@@ -57,8 +57,9 @@ def test_current_legislature_has_230_seats_with_the_known_split(con):
 
 
 def test_elected_counts_everyone_who_held_a_seat_in_the_legislature(con):
-    # 230 seated now, plus person 231 who resigned. Person 500 never sat.
-    assert core.estatisticas(con)["totais"]["deputados_eleitos"] == 231
+    # 230 seated now, plus person 231 who resigned and person 303, seated for one day. Person
+    # 500 is a substitute who never sat, and 302 and 501 were elected but never took the seat.
+    assert core.estatisticas(con)["totais"]["deputados_eleitos"] == 232
 
 
 def test_circle_distribution_is_the_top_ten_circles_by_seats(con):
@@ -86,10 +87,54 @@ def test_unknown_legislature_is_not_found(con):
 def test_legislatures_newest_first(con):
     legs = core.legislaturas(con)["legislaturas"]
     assert [(leg["numero"], leg["ativa"], leg["total_deputados"]) for leg in legs] == [
-        ("XVII", True, 231),
+        ("XVII", True, 232),
         ("XVI", False, 230),
     ]
     assert legs[0]["data_inicio"] == "2025-06-03" and legs[0]["data_fim"] is None
+
+
+def test_legislatures_carry_their_published_interventions(con):
+    legs = core.legislaturas(con)["legislaturas"]
+    assert [(leg["numero"], leg["intervencoes_publicadas"]) for leg in legs] == [("XVII", 11), ("XVI", 5)]
+
+
+def test_legislatures_carry_the_declaration_coverage(con):
+    # People with an effective mandate in the legislatures with AR declarations, each counted
+    # once, and how many of them have one (#113). On the pin: 149 of 793 (XI to XV). The synthetic
+    # release has AR declarations only for XVI among its legislatures, and only 301 has one.
+    assert core.legislaturas(con)["cobertura_declaracoes"] == {
+        "de": "XVI",
+        "ate": "XVI",
+        "com_declaracao": 1,
+        "total": 230,
+    }
+
+
+def test_declaration_coverage_counts_people_with_an_effective_mandate_once():
+    # Each person once, over the covered legislatures (793 with 149 declared on the pin), not
+    # person-legislature pairs (1,425 and 297). Suplentes who never sat are not in the base.
+    from app.data import repository
+
+    c = duckdb.connect()
+    c.execute("create table legislatures (legislature varchar, start_date date)")
+    c.execute("insert into legislatures values ('XI', '2009-10-15'), ('XII', '2011-06-20'), ('XIII', '2015-10-23')")
+    c.execute("create table mandates (legislature varchar, cadastro_id integer, is_effective boolean)")
+    c.execute(
+        "insert into mandates values ('XI', 1, true), ('XII', 1, true), ('XI', 2, true), ('XII', 3, true),"
+        " ('XII', 4, false), ('XIII', 5, true)"
+    )
+    c.execute("create table interest_declarations (legislature varchar, cadastro_id integer, source varchar)")
+    c.execute(
+        "insert into interest_declarations values ('XI', 1, 'ar_open_data'), ('XII', 1, 'ar_open_data'),"
+        " ('XII', 3, 'ar_open_data'), ('XII', 4, 'ar_open_data')"
+    )
+    coverage = repository.declaration_coverage(c)
+    assert {k: coverage[k] for k in ("first_legislature", "last_legislature", "seated", "declared")} == {
+        "first_legislature": "XI",
+        "last_legislature": "XII",
+        "seated": 3,
+        "declared": 2,
+    }
 
 
 # Parties (F21)
@@ -113,19 +158,24 @@ def test_parties_have_their_seat_counts(con):
 
 def test_deputies_list_defaults_to_the_current_legislature_seated_first(con):
     page = core.deputados(con, per_page=100)
-    assert page["pagination"]["total"] == 231
+    assert page["pagination"]["total"] == 234
     assert all(d["is_seated"] for d in page["deputados"])
     last = core.deputados(con, page=3, per_page=100)["deputados"]
-    assert last[-1]["id_cadastro"] == 231 and last[-1]["is_seated"] is False
-    assert last[-1]["mandate_status"] == "Renunciou"
+    assert [(d["id_cadastro"], d["is_seated"], d["mandate_status"]) for d in last[-4:]] == [
+        (231, False, "Renunciou"),
+        (302, False, "Suspenso(Eleito)"),
+        (303, False, "Suspenso(Eleito)"),
+        (501, False, "Suspenso(Eleito)"),
+    ]
 
 
 def test_deputies_list_of_everyone_who_ever_sat(con):
     page = core.deputados(con, active_only=False)
-    assert page["pagination"]["total"] == 411  # 231 in XVII plus 180 only in XVI; 500 never sat
+    # 234 elected or seated in XVII plus 178 only in XVI; 500 is a substitute who never sat.
+    assert page["pagination"]["total"] == 412
     assert page["filters"]["seated_deputies_count"] == 230
-    assert page["filters"]["active_deputies_count"] == 231
-    assert page["filters"]["total_deputy_records"] == 461  # 231 in XVII plus 230 in XVI
+    assert page["filters"]["active_deputies_count"] == 232
+    assert page["filters"]["total_deputy_records"] == 464  # 234 in XVII plus 230 in XVI
 
 
 def test_deputy_career_across_legislatures(con):
@@ -144,6 +194,25 @@ def test_former_deputy_shows_the_latest_completed_mandate(con):
     [d] = core.deputados(con, search="deputado 300", active_only=False)["deputados"]
     assert d["career_info"]["is_currently_active"] is False
     assert d["career_info"]["latest_completed_mandate"] == {"legislatura": "XVI", "periodo": "2024-2025"}
+
+
+def test_elected_people_who_never_sat_are_listed_and_found(con):
+    # #107: elected with the mandate suspended from the start, never seated.
+    [d] = core.deputados(con, search="deputado 501", active_only=False)["deputados"]
+    assert (d["id_cadastro"], d["legislatura_nome"], d["is_seated"]) == (501, "XVII", False)
+    assert d["mandate_status"] == "Suspenso(Eleito)" and d["partido_sigla"] is None
+    assert d["career_info"]["total_mandates"] == 0 and d["career_info"]["is_currently_active"] is True
+    assert d["circulo"] == "Círculo 18"
+
+
+def test_a_suspended_xvii_mandate_is_the_latest_legislature(con):
+    [d] = core.deputados(con, search="deputado 302", active_only=False)["deputados"]
+    assert d["legislatura_nome"] == "XVII" and d["mandate_status"] == "Suspenso(Eleito)"
+    career = d["career_info"]
+    assert (career["first_mandate"], career["latest_mandate"]) == ("XVI", "XVII")
+    # Seated legislatures only: the suspended one is not a mandate served.
+    assert career["total_mandates"] == 1 and career["is_multi_term"] is False
+    assert career["latest_completed_mandate"] == {"legislatura": "XVI", "periodo": "2024-2025"}
 
 
 def test_search_ignores_case_and_accents(con):

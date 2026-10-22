@@ -9,8 +9,7 @@ on:
 jobs:
   backend-lint:
     name: Backend Lint
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,8 +22,7 @@ jobs:
 
   backend-test:
     name: Backend Tests
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -40,10 +38,9 @@ jobs:
 
   contract-tests:
     name: Contract Tests
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
     # No database server: the contracts are checked against service functions reading a
     # DuckDB file built from synthetic fixture Parquet (tests/site_data.py).
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -57,8 +54,7 @@ jobs:
 
   frontend-build:
     name: Frontend Build
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
@@ -75,8 +71,7 @@ jobs:
 
   terraform-validate:
     name: Terraform Validate
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: terraform

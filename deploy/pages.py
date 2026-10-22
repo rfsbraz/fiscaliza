@@ -29,6 +29,7 @@ DEPLOY = ROOT / "deploy"
 FRONTEND = ROOT / "frontend"
 PIN_FILE = DEPLOY / "data-pin"
 HEADERS_FILE = DEPLOY / "_headers"
+REDIRECTS_FILE = DEPLOY / "_redirects"
 
 PROJECT = "fiscaliza"
 PRODUCTION_BRANCH = "master"
@@ -96,13 +97,16 @@ def fetch_pin(checkout, commit):
 
 
 def prepare(dist):
-    """Turn a generic build into a Pages one: no 404.html (Pages then serves index.html with
-    status 200 for deep links) and the _headers file. Checks the Pages limits."""
+    """Turn a generic build into a Pages one: the _headers and _redirects files, and a 404.html
+    that is the app. The rules in _redirects answer the app's routes with status 200; any other
+    path with no file gets 404.html with status 404 (#113). Checks the Pages limits."""
     dist = Path(dist)
     if not (dist / "index.html").is_file():
         raise DeployError(f"{dist}/index.html is missing; run `npm run build` first")
-    (dist / "404.html").unlink(missing_ok=True)
+    if not (dist / "404.html").is_file():
+        shutil.copyfile(dist / "index.html", dist / "404.html")
     shutil.copyfile(HEADERS_FILE, dist / "_headers")
+    shutil.copyfile(REDIRECTS_FILE, dist / "_redirects")
     files = [p for p in dist.rglob("*") if p.is_file()]
     if len(files) >= MAX_FILES:
         raise DeployError(f"{dist} has {len(files)} files; Pages takes fewer than {MAX_FILES}")
