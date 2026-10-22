@@ -215,12 +215,13 @@ def groups_served(con, cadastro_ids):
 
 def coalition_rows(con, coalition=None):
     """The coalitions seed, one row per legislature, list and group, with the legislature's
-    dates. ``coalition`` limits it to one coalition by its short name."""
+    dates. has_seats says whether the group won a seat on that list. ``coalition`` limits it to
+    one coalition by its short name."""
     return _rows(
         con,
         """
         select c.legislature, c.coalition, c.ballot_acronym, c.coalition_name, c.group_code,
-               coalesce(g.name, c.group_name) as group_name,
+               coalesce(g.name, c.group_name) as group_name, coalesce(c.has_seats, true) as has_seats,
                l.start_date, l.end_date, l.ref_day, l.is_open
         from coalitions c
         join legislature_days l on l.legislature = c.legislature
@@ -231,6 +232,29 @@ def coalition_rows(con, coalition=None):
         """,
         [coalition, coalition],
     )
+
+
+def list_seat_circles(con, legislature):
+    """{ballot acronym: {circle name}}, the circles where each list won seats in a legislature,
+    from ballot_list_seats. The release has these from XI on; an earlier legislature gives {}.
+    Circle names drop the AR's footnote mark ("Viseu a)") so they match electoral_circles."""
+    found = con.execute(
+        "select count(*) from information_schema.tables where table_name = 'ballot_list_seats'"
+    ).fetchone()[0]
+    if not found:
+        return {}
+    out = {}
+    for r in _rows(
+        con,
+        """
+        select distinct ballot_acronym, regexp_replace(trim(circle_name), '\\s+[a-z]\\)$', '') as circle
+        from ballot_list_seats
+        where legislature = ? and seats > 0
+        """,
+        [legislature],
+    ):
+        out.setdefault(r["ballot_acronym"], set()).add(r["circle"])
+    return out
 
 
 def seated_in_groups(con, legislature, day, group_acronyms):

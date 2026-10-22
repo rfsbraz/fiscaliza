@@ -21,6 +21,12 @@
       "read_at": "frontend/src/components/PartidosPage.jsx:580"
     },
     {
+      "path": "coligacoes[].component_parties[].com_lugares",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/PartidosPage.jsx:609"
+    },
+    {
       "path": "coligacoes[].component_parties[].sigla",
       "type": "scalar",
       "nullable": false,
@@ -30,7 +36,7 @@
       "path": "coligacoes[].data_dissolucao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:630"
+      "read_at": "frontend/src/components/PartidosPage.jsx:631"
     },
     {
       "path": "coligacoes[].deputy_count",

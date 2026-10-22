@@ -5,7 +5,7 @@ import { Users, TrendingUp, ArrowRight, Building, Handshake } from 'lucide-react
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner, PageHeader } from './common';
-import { formatDecimal, legislatureName } from '../utils/format';
+import { formatDecimal, legislatureName, seatsNote } from '../utils/format';
 
 const PartidosPage = () => {
   const [partidos, setPartidos] = useState([]);
@@ -606,6 +606,7 @@ const PartidosPage = () => {
                                 }}
                               >
                                 {party.sigla}
+                                {seatsNote(party.com_lugares) && ` · ${seatsNote(party.com_lugares)}`}
                               </span>
                             ))}
                             {coligacao.component_parties.length > 3 && (

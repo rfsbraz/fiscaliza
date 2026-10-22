@@ -238,8 +238,8 @@ def test_coalitions_active_by_default(con):
     assert every["FRS"]["ativa"] is False and every["FRS"]["data_dissolucao"] == "2025-06-02"
     assert every["AD"]["ativa"] is True and every["AD"]["data_dissolucao"] is None
     assert every["AD"]["data_formacao"] == "2024-03-26"
-    assert [p["sigla"] for p in every["AD"]["component_parties"]] == ["PSD", "CDS-PP"]
-    assert every["AD"]["deputy_count"] == 91
+    assert [p["sigla"] for p in every["AD"]["component_parties"]] == ["PSD", "CDS-PP", "PPM"]
+    assert every["AD"]["deputy_count"] == AD_XVII_SCOPED
 
 
 def test_coalition_dates_come_from_its_latest_unbroken_run():
@@ -252,12 +252,55 @@ def test_coalition_dates_come_from_its_latest_unbroken_run():
 def test_coalition_detail_deputies_and_parties(con):
     assert core.coligacao(con, "AD")["nome"] == "Coligação AD"
     deputies = core.coligacao_deputados(con, "AD")["deputados"]
-    assert len(deputies) == 91
+    assert len(deputies) == AD_XVII_SCOPED
     assert {d["partido_sigla"] for d in deputies} == {"PSD", "CDS-PP"}
-    assert [p["sigla"] for p in core.coligacao_partidos(con, "AD")["partidos"]] == ["PSD", "CDS-PP"]
+    assert [p["sigla"] for p in core.coligacao_partidos(con, "AD")["partidos"]] == ["PSD", "CDS-PP", "PPM"]
     assert (
         len(core.coligacao_deputados(con, "FRS")["deputados"]) == 27
     )  # FRS ran in XVI only: PS there, person 1 included
+
+
+# PSD and CDS-PP hold seats 1 to 91 in XVII (KNOWN_SPLIT), in circle cad % 22 + 1. AD's two lists
+# won seats in circles 1 to 20 (ballot_list_seats), so the 8 of them in circles 21 and 22 are out.
+AD_XVII_SCOPED = 83
+
+
+def test_coalition_deputies_come_only_from_circles_where_its_lists_won_seats(con):
+    # #181: every deputy of the coalition's groups was counted, whatever their circle.
+    deputies = core.coligacao_deputados(con, "AD")["deputados"]
+    circles = {d["circulo"] for d in deputies}
+    assert "Círculo 21" not in circles and "Círculo 22" not in circles
+    assert {f"Círculo {i}" for i in range(1, 21)} == circles  # circle 5's "a)" mark is ignored
+    assert core.coligacao(con, "AD")["deputy_count"] == AD_XVII_SCOPED
+    listed = {c["sigla"]: c for c in core.coligacoes(con)["coligacoes"]}
+    assert listed["AD"]["deputy_count"] == AD_XVII_SCOPED
+    ad_seats = con.execute(
+        "select sum(seats) from ballot_list_seats where legislature = 'XVII' and ballot_acronym in ('AD-LISTA', 'AD-ACORES')"
+    ).fetchone()[0]
+    assert ad_seats == AD_XVII_SCOPED
+    assert len(core.coligacao_deputados(con, "CDU")["deputados"]) == KNOWN_SPLIT["PCP"]
+
+
+def test_coalition_deputies_keep_the_group_rule_without_seats_per_circle(con):
+    # XVI has no ballot_list_seats rows, like every legislature before XI: all deputies of the
+    # coalition's groups still count there.
+    xvi = core.coligacao_deputados(con, "AD", "XVI")
+    seated = con.execute(
+        "select count(*) from seated_detail(date '2025-06-02') "
+        "where legislature = 'XVI' and group_acronym in ('PSD', 'CDS-PP')"
+    ).fetchone()[0]
+    assert xvi["legislatura"] == "XVI" and xvi["total_deputados"] == seated > 0
+    assert core.coligacao_deputados(con, "FRS")["total_deputados"] == 27
+
+
+def test_coalition_parties_without_seats_are_marked(con):
+    # #181: PPM ran on the Açores AD list and PEV on the CDU list without winning a seat.
+    detail = core.coligacao(con, "AD")["component_parties"]
+    assert [(p["sigla"], p["com_lugares"]) for p in detail] == [("PSD", True), ("CDS-PP", True), ("PPM", False)]
+    parties = core.coligacao_partidos(con, "CDU")["partidos"]
+    assert [(p["sigla"], p["com_lugares"]) for p in parties] == [("PCP", True), ("PEV", False)]
+    for page in ("ColigacaoDetalhes.jsx", "PartidosPage.jsx"):
+        assert "seatsNote(" in (ROOT / "frontend" / "src" / "components" / page).read_text(), page
 
 
 def test_coalition_pages_show_no_unsourced_history_or_formation_date():

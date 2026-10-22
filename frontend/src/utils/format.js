@@ -14,3 +14,7 @@ export const plural = (count, one, many) => `${formatNumber(count)} ${count === 
 // "XVII Legislatura", but the first assembly is the Assembleia Constituinte (#108). Mirrors
 // legislature_designation in app/services/core.py.
 export const legislatureName = (numero) => (numero === 'Constituinte' ? 'Assembleia Constituinte' : `${numero} Legislatura`);
+
+// "sem lugares" for a coalition party that won no seat on any of its lists (com_lugares false,
+// #181), else null.
+export const seatsNote = (comLugares) => (comLugares === false ? 'sem lugares' : null);
