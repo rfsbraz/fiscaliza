@@ -9,15 +9,15 @@ import { LoadingSpinner } from './common';
 // Phase 1 Components - Constitutional Modernism Design System
 import AttendancePanel, { AttendanceCard } from './deputy/AttendancePanel';
 import { EducationalBox, ImportantContextBox, MethodologyNote } from './deputy/ContextBox';
-import InterestStatusCard, { ExclusivityBadge, DeclaredInterestsBadge, SectorInterestRow } from './deputy/InterestStatusCard';
+import { ExclusivityBadge, DeclaredInterestsBadge, SectorInterestRow } from './deputy/InterestStatusCard';
 import InitiativeProcessStepper, { InitiativeOutcomesSummary } from './deputy/InitiativeProcessStepper';
 import InitiativeRecordTable, { SigningCounts, ApprovalLines, GroupComparison } from './deputy/InitiativeRecord';
 import InterventionsSummaryBar, { ActivityBadge, VideoIndicator } from './deputy/InterventionsSummaryBar';
 // Phase 2 Components - Enhanced Analytics
 import TimelineSparkline, { ActivityHeatmap, TrendIndicator, BarSparkline } from './charts/TimelineSparkline';
-import AchievementBadge, { BadgeCollection, BadgeSummary, RedFlagIndicator } from './deputy/AchievementBadge';
 import PolicySpecializationChart, { PolicyRadar, TopicTag } from './charts/PolicySpecializationChart';
 import InterestTable, { ACTIVITY_COLUMNS, SHAREHOLDING_COLUMNS } from './deputy/InterestTable';
+import { formatDecimal, legislatureName, plural } from '../utils/format';
 
 // TODO: Deputy mandate linking limitation
 // Current system uses name-based linking to connect same person across legislaturas
@@ -207,12 +207,12 @@ const StatisticCard = ({
                 aria-valuenow={percentage}
                 aria-valuemin="0"
                 aria-valuemax="100"
-                aria-label={`${current} de ${total} (${percentage.toFixed(1)}%)`}
+                aria-label={`${current} de ${total} (${formatDecimal(percentage, 1)}%)`}
               />
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: '6px' }}>
               <span style={{ fontSize: '0.75rem', color: scheme.textLight }}>
-                {percentage.toFixed(1)}% do total
+                {formatDecimal(percentage, 1)}% do total
               </span>
               <span style={{ fontSize: '0.75rem', color: scheme.text }}>
                 {total.toLocaleString('pt-PT')} total
@@ -259,7 +259,7 @@ const StatisticCardSkeleton = ({ colorScheme = 'gray' }) => {
         fontFamily: tokens.fonts.body,
       }}
       role="listitem"
-      aria-label="Carregando estatística..."
+      aria-label="A carregar estatística..."
     >
       <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div style={{ padding: '10px', backgroundColor: scheme.primary || '#D1D5DB', borderRadius: '4px', opacity: 0.5 }}>
@@ -299,7 +299,7 @@ const StatisticsLoadingSkeleton = () => (
       marginBottom: '32px',
       fontFamily: tokens.fonts.body,
     }}
-    aria-label="Carregando estatísticas..."
+    aria-label="A carregar estatísticas..."
   >
     <header style={{ padding: '16px 24px', borderBottom: `1px solid ${tokens.colors.border}` }}>
       <div style={{ width: '256px', height: '24px', backgroundColor: '#D1D5DB', borderRadius: '2px', marginBottom: '8px' }} />
@@ -379,6 +379,27 @@ const StatisticsError = ({ error, onRetry }) => (
   </section>
 );
 
+const formatDay = (iso) => new Date(iso).toLocaleDateString('pt-PT');
+
+// The latest AR situation of a mandate, in words, with its dates. Suspenso(Eleito) and the other
+// suspensions read "Mandato suspenso"; the rest are shown as the AR publishes them.
+const situationLabel = (situacao) => (situacao && situacao.startsWith('Suspenso') ? 'Mandato suspenso' : situacao);
+
+const situationLine = (situacao, inicio, fim) => {
+  if (!situacao || !inicio) return null;
+  const label = situationLabel(situacao);
+  return fim ? `${label}: ${formatDay(inicio)} a ${formatDay(fim)}` : `${label} desde ${formatDay(inicio)}`;
+};
+
+// Header line: a suspended mandate says so with its date, never a reason the data does not give.
+const mandateLine = (mandato, isSeated, legislatura) => {
+  if (!isSeated && mandato?.situacao?.startsWith('Suspenso') && mandato.situacao_inicio) {
+    return situationLine(mandato.situacao, mandato.situacao_inicio, mandato.situacao_fim);
+  }
+  if (mandato?.inicio) return `Mandato desde ${formatDay(mandato.inicio)}`;
+  return `Eleito na ${legislatura} Legislatura`;
+};
+
 /**
  * Mandate Timeline Component - Visual horizontal timeline showing career progression
  */
@@ -393,6 +414,8 @@ const MandateTimeline = ({ mandatos, currentLegislature }) => {
   });
 
   const maxMandates = sortedMandatos.length;
+  // Legislatures with a seated period count as mandates; the rest were elected only (#107).
+  const servedMandates = sortedMandatos.filter(m => m.em_exercicio !== false).length;
 
   return (
     <section style={{
@@ -423,6 +446,7 @@ const MandateTimeline = ({ mandatos, currentLegislature }) => {
         }}>
           {sortedMandatos.map((mandato, index) => {
             const isCurrent = mandato.legislatura_numero === currentLegislature;
+            const notSeated = mandato.em_exercicio === false;
             return (
               <div
                 key={mandato.deputado_id || index}
@@ -434,13 +458,13 @@ const MandateTimeline = ({ mandatos, currentLegislature }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   position: 'relative',
-                  opacity: isCurrent ? 1 : 0.7,
+                  opacity: notSeated ? 0.35 : isCurrent ? 1 : 0.7,
                   transition: 'opacity 0.15s ease',
                   cursor: 'default',
                 }}
-                title={`${mandato.legislatura_nome} · ${mandato.partido_sigla} · ${mandato.circulo}`}
+                title={[mandato.legislatura_nome, mandato.partido_sigla, mandato.circulo, notSeated ? situationLabel(mandato.situacao) : null].filter(Boolean).join(' · ')}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = isCurrent ? '1' : '0.7'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = notSeated ? '0.35' : isCurrent ? '1' : '0.7'}
               >
                 <span style={{
                   color: '#FFFFFF',
@@ -475,7 +499,11 @@ const MandateTimeline = ({ mandatos, currentLegislature }) => {
         fontSize: '0.8125rem',
         color: tokens.colors.textSecondary,
       }}>
-        <span style={{ fontWeight: 500 }}>{maxMandates} mandato{maxMandates > 1 ? 's' : ''}</span>
+        <span style={{ fontWeight: 500 }}>
+          {servedMandates === maxMandates
+            ? `${maxMandates} mandato${maxMandates > 1 ? 's' : ''}`
+            : `${servedMandates} ${servedMandates === 1 ? 'mandato em exercício' : 'mandatos em exercício'} · eleito em ${maxMandates} legislaturas`}
+        </span>
         {sortedMandatos.length > 1 && (
           <span> · {[...new Set(sortedMandatos.map(m => m.partido_sigla))].join(', ')}</span>
         )}
@@ -1173,7 +1201,7 @@ const DeputadoDetalhes = () => {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <Briefcase style={{ width: '16px', height: '16px', marginRight: '8px' }} />
-                    <span>{deputado.profissao || 'Profissão não informada'}</span>
+                    <span>{deputado.profissao || 'Profissão não indicada'}</span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -1183,7 +1211,7 @@ const DeputadoDetalhes = () => {
 
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <Calendar style={{ width: '16px', height: '16px', marginRight: '8px' }} />
-                    <span>Mandato desde {new Date(deputado.mandato.inicio).toLocaleDateString('pt-PT')}</span>
+                    <span>{mandateLine(deputado.mandato, deputado.is_seated, deputado.legislatura_numero)}</span>
                   </div>
                 </div>
 
@@ -1451,7 +1479,9 @@ const DeputadoDetalhes = () => {
               color: tokens.colors.textSecondary,
               margin: 0,
             }}>
-              {deputado.estatisticas.total_mandatos} mandatos • {deputado.estatisticas.tempo_servico_anos} anos de serviço • Legislaturas {deputado.estatisticas.legislaturas_servidas}
+              {deputado.estatisticas.total_mandatos > 0
+                ? `${plural(deputado.estatisticas.total_mandatos, 'mandato', 'mandatos')} • ${formatDecimal(deputado.estatisticas.tempo_servico_anos, 1)} anos de serviço • ${String(deputado.estatisticas.legislaturas_servidas || '').includes(',') ? 'Legislaturas' : 'Legislatura'} ${deputado.estatisticas.legislaturas_servidas}`
+                : 'Sem período em exercício registado'}
             </p>
           </header>
 
@@ -1512,7 +1542,7 @@ const DeputadoDetalhes = () => {
                 return (
                   <div>
                     <div style={{ fontSize: '0.75rem', color: tokens.colors.textMuted, marginBottom: '8px' }}>
-                      {latest.legislatura} Legislatura{latest.aberta ? ' (em curso)' : ''}
+                      {legislatureName(latest.legislatura)}{latest.aberta ? ' (em curso)' : ''}
                     </div>
                     <SigningCounts assinatura={latest.assinatura} showNote={false} />
                     <div style={{ padding: '12px 0 0 0', marginTop: '12px', borderTop: `1px solid ${tokens.colors.border}` }}>
@@ -1607,16 +1637,18 @@ const DeputadoDetalhes = () => {
                 }}>
                   <Award style={{ width: '20px', height: '20px', color: '#FFFFFF' }} />
                 </div>
-                <span style={{
-                  padding: '4px 10px',
-                  backgroundColor: '#F3E8FF',
-                  borderRadius: '12px',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: '#7C3AED',
-                }}>
-                  {deputado.estatisticas.nivel_experiencia}
-                </span>
+                {deputado.estatisticas.nivel_experiencia && (
+                  <span style={{
+                    padding: '4px 10px',
+                    backgroundColor: '#F3E8FF',
+                    borderRadius: '12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: '#7C3AED',
+                  }}>
+                    {deputado.estatisticas.nivel_experiencia}
+                  </span>
+                )}
               </header>
 
               <h4 style={{
@@ -1638,7 +1670,7 @@ const DeputadoDetalhes = () => {
                   {deputado.estatisticas.total_mandatos}
                 </span>
                 <span style={{ fontSize: '0.875rem', color: tokens.colors.textSecondary, marginLeft: '8px' }}>
-                  mandatos
+                  {deputado.estatisticas.total_mandatos === 1 ? 'mandato' : 'mandatos'}
                 </span>
               </div>
 
@@ -1649,7 +1681,7 @@ const DeputadoDetalhes = () => {
                 color: tokens.colors.textSecondary,
               }}>
                 <div style={{ marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 600 }}>{deputado.estatisticas.tempo_servico_anos}</span> anos de serviço
+                  <span style={{ fontWeight: 600 }}>{formatDecimal(deputado.estatisticas.tempo_servico_anos, 1)}</span> anos de serviço
                 </div>
                 <div style={{ fontSize: '0.75rem', color: tokens.colors.textMuted }}>
                   {deputado.estatisticas.legislaturas_servidas}
@@ -1657,6 +1689,39 @@ const DeputadoDetalhes = () => {
               </div>
             </article>
           </div>
+
+          {/* Written questions to the Government in the latest legislature (#114) */}
+          {deputado.perguntas_escritas && (() => {
+            const perguntas = deputado.perguntas_escritas;
+            return (
+              <p
+                data-testid="perguntas-escritas"
+                style={{
+                  margin: '0 0 24px 0',
+                  padding: '12px 16px',
+                  backgroundColor: tokens.colors.bgSecondary,
+                  border: `1px solid ${tokens.colors.border}`,
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  color: tokens.colors.textSecondary,
+                }}
+              >
+                Perguntas escritas ao Governo nesta legislatura:{' '}
+                <strong style={{ color: tokens.colors.textPrimary, fontFamily: tokens.fonts.mono }}>
+                  {perguntas.total.toLocaleString('pt-PT')}
+                </strong>{' '}
+                (como autor ou coautor).{' '}
+                <a
+                  href={perguntas.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: tokens.colors.primary, textDecoration: 'underline' }}
+                >
+                  Ver as perguntas da {perguntas.legislatura} Legislatura no site do Parlamento
+                </a>
+              </p>
+            );
+          })()}
 
           {/* INITIATIVE TYPES BREAKDOWN */}
           {deputado.estatisticas.iniciativas_por_tipo && deputado.estatisticas.iniciativas_por_tipo.length > 0 && (
@@ -1737,7 +1802,7 @@ const DeputadoDetalhes = () => {
                             minWidth: '48px',
                             textAlign: 'right',
                           }}>
-                            {percentage.toFixed(0)}%
+                            {formatDecimal(percentage, 0)}%
                           </span>
                         </div>
                       </div>
@@ -1898,39 +1963,6 @@ const DeputadoDetalhes = () => {
                 })()}
               </div>
 
-              {/* Trend indicator */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                paddingTop: '12px',
-                borderTop: `1px solid ${tokens.colors.border}`,
-                fontSize: '0.8125rem',
-                color: tokens.colors.textSecondary,
-              }}>
-                {(() => {
-                  const evolution = deputado.estatisticas.evolucao_legislaturas;
-                  if (evolution.length < 2) return null;
-                  const oldest = evolution[evolution.length - 1];
-                  const newest = evolution[0];
-                  const oldTotal = oldest.iniciativas + oldest.intervencoes;
-                  const newTotal = newest.iniciativas + newest.intervencoes;
-                  const isGrowing = newTotal >= oldTotal;
-
-                  return (
-                    <>
-                      {isGrowing ? (
-                        <TrendingUp style={{ width: '16px', height: '16px', color: tokens.colors.success }} />
-                      ) : (
-                        <TrendingDown style={{ width: '16px', height: '16px', color: tokens.colors.warning }} />
-                      )}
-                      <span>
-                        Atividade {isGrowing ? 'crescente' : 'decrescente'} ao longo das legislaturas
-                      </span>
-                    </>
-                  );
-                })()}
-              </div>
             </section>
           )}
 
@@ -2206,7 +2238,7 @@ const DeputadoDetalhes = () => {
                   />
                 )}
 
-                {/* Phase 2: Timeline and Achievements Section */}
+                {/* Phase 2: Timeline Section */}
                 {atividades && atividades.intervencoes?.length > 0 && (
                   <div style={{
                     display: 'grid',
@@ -2252,48 +2284,6 @@ const DeputadoDetalhes = () => {
                         color={tokens.colors.primary}
                         showTrend={true}
                       />
-                    </div>
-
-                    {/* Achievement Badges */}
-                    <div style={{
-                      backgroundColor: tokens.colors.bgSecondary,
-                      border: `1px solid ${tokens.colors.border}`,
-                      borderRadius: '4px',
-                      padding: '16px 20px',
-                    }}>
-                      <h4 style={{
-                        margin: '0 0 12px 0',
-                        fontFamily: tokens.fonts.body,
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        color: tokens.colors.textMuted,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}>
-                        Reconhecimentos
-                      </h4>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {atividades.intervencoes?.filter(i => i.tipo?.includes('Pergunta')).length >= 20 && (
-                          <AchievementBadge type="topQuestioner" size="small" showDescription={false} />
-                        )}
-                        {atividades.intervencoes?.length >= 50 && (
-                          <AchievementBadge type="debateParticipant" size="small" showDescription={false} />
-                        )}
-                        {atividades.intervencoes?.length < 5 && atividades.intervencoes?.length > 0 && (
-                          <RedFlagIndicator
-                            type="lowActivity"
-                            value={atividades.intervencoes?.length}
-                            showDetails={false}
-                          />
-                        )}
-                        {atividades.intervencoes?.filter(i => i.tipo?.includes('Pergunta')).length === 0 && atividades.intervencoes?.length >= 10 && (
-                          <RedFlagIndicator
-                            type="noQuestions"
-                            value={6}
-                            showDetails={false}
-                          />
-                        )}
-                      </div>
                     </div>
                   </div>
                 )}
@@ -3203,7 +3193,7 @@ const DeputadoDetalhes = () => {
                                       fontSize: '0.75rem',
                                       textTransform: 'uppercase',
                                       letterSpacing: '0.05em'
-                                    }}>Status:</span>
+                                    }}>Estado:</span>
                                     <p style={{
                                       fontFamily: tokens.fonts.body,
                                       color: tokens.colors.textPrimary,
@@ -3310,7 +3300,7 @@ const DeputadoDetalhes = () => {
                                       transition: 'background-color 0.2s ease'
                                     }}
                                   >
-                                    Link Oficial
+                                    Ligação oficial
                                   </button>
                                 </div>
                                 <p style={{
@@ -3439,7 +3429,7 @@ const DeputadoDetalhes = () => {
                       marginTop: '6px',
                       fontFamily: tokens.fonts.body,
                     }}>
-                      Declaração de interesses e atividades conforme Lei n.º 52/2019
+                      Declaração de interesses e atividades publicada nos dados abertos do Parlamento
                     </p>
                   </div>
                 </div>
@@ -3621,28 +3611,39 @@ const DeputadoDetalhes = () => {
                       </div>
                     </div>
                   </div>
-                ) : conflitosInteresse?.ept?.pendente ? null : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {/* Missing Declaration Status */}
-                    <InterestStatusCard
-                      data={{
-                        hasDeclaration: false,
-                        daysOverdue: 0, // Would need to calculate from mandate start date
-                      }}
-                      showDetails={false}
-                    />
-
-                    {/* Educational Context Box */}
-                    <EducationalBox title="Sobre a declaração de interesses">
-                      <p style={{ margin: '0 0 8px 0' }}>
-                        A Lei n.º 52/2019 obriga todos os deputados a submeter uma declaração de interesses
-                        no prazo de <strong>30 dias</strong> após tomada de posse.
+                ) : conflitosInteresse?.ept?.pendente || !conflitosInteresse?.sem_declaracao ? null : (
+                  // No declaration in the AR open data. A gap in the data is not a missing
+                  // declaration, so this never says one was not submitted.
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.6,
+                    color: tokens.colors.textSecondary,
+                    fontFamily: tokens.fonts.body,
+                  }}>
+                    <p style={{ margin: 0 }}>
+                      {conflitosInteresse.sem_declaracao.antes_da_cobertura && conflitosInteresse.cobertura
+                        ? `Os dados abertos do Parlamento não cobrem declarações de interesses antes da ${conflitosInteresse.cobertura.de} Legislatura, por isso não há declaração para a ${conflitosInteresse.sem_declaracao.legislatura} Legislatura.`
+                        : `Os dados abertos do Parlamento não incluem a declaração de interesses deste deputado para a ${conflitosInteresse.sem_declaracao.legislatura} Legislatura. Isso não significa que não tenha sido entregue.`}
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      O registo de interesses pode ser consultado no{' '}
+                      <a href={conflitosInteresse.sem_declaracao.url_parlamento} target="_blank" rel="noopener noreferrer" style={{ color: tokens.colors.info, fontWeight: 600 }}>
+                        site do Parlamento
+                      </a>{' '}
+                      e no{' '}
+                      <a href={conflitosInteresse.sem_declaracao.url_ept} target="_blank" rel="noopener noreferrer" style={{ color: tokens.colors.info, fontWeight: 600 }}>
+                        site da Entidade para a Transparência
+                      </a>.
+                    </p>
+                    {conflitosInteresse.sem_declaracao.lei_52_2019 && (
+                      <p style={{ margin: 0, fontSize: '0.8125rem', color: tokens.colors.textMuted }}>
+                        A Lei n.º 52/2019 (art. 13.º, n.º 1) fixa um prazo de 60 dias, a contar do início de funções,
+                        para entregar a declaração.
                       </p>
-                      <p style={{ margin: 0 }}>
-                        Esta informação pode não estar disponível por diversos motivos: declaração ainda em
-                        processamento, deputado recém-empossado, ou dados ainda não digitalizados pelo Parlamento.
-                      </p>
-                    </EducationalBox>
+                    )}
                   </div>
                 )}
               </div>
@@ -3749,11 +3750,12 @@ const DeputadoDetalhes = () => {
                               }}>
                                 <Calendar style={{ height: '16px', width: '16px', marginRight: '0.5rem' }} />
                                 <span>
-                                  {new Date(mandato.mandato_inicio).toLocaleDateString('pt-PT')} - {' '}
-                                  {mandato.mandato_fim
-                                    ? new Date(mandato.mandato_fim).toLocaleDateString('pt-PT')
-                                    : 'Presente'
-                                  }
+                                  {mandato.mandato_inicio ? (
+                                    <>
+                                      {formatDay(mandato.mandato_inicio)} - {' '}
+                                      {mandato.mandato_fim ? formatDay(mandato.mandato_fim) : 'Presente'}
+                                    </>
+                                  ) : 'Sem período em exercício registado nesta legislatura'}
                                 </span>
                               </div>
 
@@ -3768,17 +3770,30 @@ const DeputadoDetalhes = () => {
                                 <span>{mandato.circulo}</span>
                               </div>
 
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.875rem',
-                                color: tokens.colors.textSecondary
-                              }}>
-                                <Briefcase style={{ height: '16px', width: '16px', marginRight: '0.5rem' }} />
-                                <span>{mandato.partido_sigla}</span>
-                              </div>
+                              {mandato.partido_sigla && (
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  fontFamily: tokens.fonts.body,
+                                  fontSize: '0.875rem',
+                                  color: tokens.colors.textSecondary
+                                }}>
+                                  <Briefcase style={{ height: '16px', width: '16px', marginRight: '0.5rem' }} />
+                                  <span>{mandato.partido_sigla}</span>
+                                </div>
+                              )}
                             </div>
+
+                            {situationLine(mandato.situacao, mandato.situacao_inicio, mandato.situacao_fim) && (
+                              <p style={{
+                                fontFamily: tokens.fonts.body,
+                                fontSize: '0.8125rem',
+                                color: tokens.colors.textMuted,
+                                margin: 0
+                              }}>
+                                Última situação registada: {situationLine(mandato.situacao, mandato.situacao_inicio, mandato.situacao_fim)}
+                              </p>
+                            )}
                           </div>
 
                           {mandato.is_current && (
@@ -3831,14 +3846,14 @@ const DeputadoDetalhes = () => {
                       fontWeight: '500',
                       marginBottom: '0.5rem'
                     }}>
-                      Apenas um mandato registrado
+                      Apenas um mandato registado
                     </p>
                     <p style={{
                       fontFamily: tokens.fonts.body,
                       fontSize: '0.875rem',
                       color: tokens.colors.textMuted
                     }}>
-                      Este deputado só tem registro de mandato na legislatura atual
+                      Este deputado só tem registo de mandato na legislatura atual
                     </p>
                   </div>
                 )}

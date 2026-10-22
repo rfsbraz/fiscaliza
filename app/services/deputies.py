@@ -7,9 +7,11 @@ context (F09) and the family fields of the interest register (F15). Attendance (
 app.services.attendance; the card here reads its latest rate (``estatisticas.assiduidade``).
 """
 
+from datetime import date
+
 from app.data import repository
 from app.data.deputy_rows import DeputyRows
-from app.services.core import PICTURE_URL, NotFound, _iso, _periodo
+from app.services.core import PICTURE_URL, NotFound, _iso, _periodo, legislature_designation
 
 MAX_PER_PAGE = 100
 MAX_INITIATIVES = 100
@@ -17,7 +19,15 @@ MAX_INITIATIVES = 100
 # not authorised publishing it yet; the AR open data stops at XV.
 EPT_FROM = "XVI"
 EPT_URL = "https://entidadetransparencia.pt/"
+# The person's interest register on the AR site.
+AR_INTERESTS_URL = "https://www.parlamento.pt/DeputadoGP/Paginas/RegistoInteressesInfo.aspx?bid={}"
+# Lei n.º 52/2019 came into force on the first day of the XIV Legislature (art. 26.º), and its
+# declarations apply to whoever starts, renews or ends functions from then on (art. 25.º, n.º 2).
+# Its deadline is 60 days from the start of functions (art. 13.º, n.º 1).
+LAW_52_2019_IN_FORCE = date(2019, 10, 25)
 INITIATIVE_URL = "https://www.parlamento.pt/ActividadeParlamentar/Paginas/DetalheIniciativa.aspx?BID={}"
+# The deputy's activity in a legislature on parlamento.pt, which lists their perguntas.
+ACTIVITY_URL = "https://www.parlamento.pt/DeputadoGP/Paginas/ActividadeDeputado.aspx?BID={}&lg={}"
 # An approval rate needs at least this many decided initiatives (passed or failed).
 MIN_DECIDED = 10
 # A group average needs at least this many other people in the comparison population.
@@ -34,17 +44,20 @@ def _rows(con, cadastro_id, rows):
 
 
 def _person(con, cadastro_id, rows=None):
-    """The person and their seats, oldest legislature first. Only people who held a seat have
-    a page, the same as in the deputies list."""
+    """The person and every legislature they were elected or held a seat in, oldest first
+    (``seated`` tells them apart). Only those people have a page, the same as in the deputies
+    list; a substitute who never sat has none."""
     rows = _rows(con, cadastro_id, rows)
     person = rows.deputy(cadastro_id)
-    career = rows.career(cadastro_id) if person else []
+    career = rows.elections(cadastro_id) if person else []
     if not career:
         raise NotFound(f"deputy {cadastro_id} not found")
     return person, career
 
 
 def _experience(mandates):
+    if not mandates:
+        return None
     if mandates >= 4:
         return "Veterano"
     if mandates >= 2:
@@ -126,15 +139,28 @@ def _interventions_comparison(rows, cadastro_id, legislature, is_open):
     return _comparison(rows, cadastro_id, legislature, "interventions")
 
 
+def _written_questions(rows, cadastro_id, legislature):
+    """Perguntas to the Government in the deputy's latest legislature, as author or coauthor,
+    with their activity page on parlamento.pt (#114). None where the release has no perguntas
+    for that legislature (before the X)."""
+    total = rows.written_questions(cadastro_id, legislature)
+    if total is None:
+        return None
+    return {"legislatura": legislature, "total": total, "url": ACTIVITY_URL.format(cadastro_id, legislature)}
+
+
 def detalhes(con, cadastro_id, rows=None):
     from app.services import attendance
 
     rows = _rows(con, cadastro_id, rows)
-    person, career = _person(con, cadastro_id, rows)
+    person, elected = _person(con, cadastro_id, rows)
     current = rows.current_legislature()
     if current is None:
         raise NotFound("no legislature in the data")
-    latest = career[-1]
+    # The header and the history show every legislature the person was elected in, with the
+    # situation; the figures count the legislatures they held a seat in.
+    career = [c for c in elected if c["seated"]]
+    latest = elected[-1]
     leg = latest["legislature"]
     seated = rows.is_seated(cadastro_id)
     periods = {p["legislature"]: p for p in rows.seat_periods(cadastro_id)}
@@ -162,15 +188,21 @@ def detalhes(con, cadastro_id, rows=None):
         "picture_url": PICTURE_URL.format(cadastro_id),
         "partido": {"id": group, "sigla": group, "nome": names.get((leg, group)) or group} if group else None,
         "circulo": latest["circle"],
-        "legislatura": {"numero": leg, "designacao": f"{leg} Legislatura", "ativa": latest["is_open"]},
+        "legislatura": {"numero": leg, "designacao": legislature_designation(leg), "ativa": latest["is_open"]},
         "legislatura_numero": leg,
         "mandato": {
-            "inicio": _iso(periods[leg]["seat_start"]) if leg in periods else _iso(latest["legislature_start"]),
-            "fim": _iso(periods[leg]["seat_end"]) if leg in periods else _iso(latest["legislature_end"]),
+            "inicio": _iso(periods[leg]["seat_start"]) if leg in periods else None,
+            "fim": _iso(periods[leg]["seat_end"]) if leg in periods else None,
+            # The latest situation in the AR record, as published, and its dates.
+            "situacao": latest["situation"],
+            "situacao_inicio": _iso(latest["situation_start"]),
+            "situacao_fim": _iso(latest["situation_end"]),
+            "em_exercicio": latest["seated"],
             "partido_sigla": group,
             "circulo_eleitoral": latest["circle"],
         },
         "is_seated": seated,
+        "perguntas_escritas": _written_questions(rows, cadastro_id, leg),
         "mandate_status": latest["situation"],
         "career_info": {
             "is_currently_active": seated,
@@ -206,7 +238,9 @@ def detalhes(con, cadastro_id, rows=None):
             # F08: within the group only. Initiatives on restricted lists in the latest
             # legislature; interventions in the latest closed one.
             "comparacao": {
-                "iniciativas_subscricao_restrita": _comparison(rows, cadastro_id, leg, "restricted_initiatives"),
+                "iniciativas_subscricao_restrita": _comparison(
+                    rows, cadastro_id, career[-1]["legislature"] if career else None, "restricted_initiatives"
+                ),
                 "intervencoes": interventions_comparison,
             },
         },
@@ -214,7 +248,7 @@ def detalhes(con, cadastro_id, rows=None):
             {
                 "deputado_id": c["deputy_id"],
                 "legislatura_numero": c["legislature"],
-                "legislatura_nome": f"{c['legislature']} Legislatura",
+                "legislatura_nome": legislature_designation(c["legislature"]),
                 "mandato_inicio": _iso(periods[c["legislature"]]["seat_start"])
                 if c["legislature"] in periods
                 else None,
@@ -222,9 +256,13 @@ def detalhes(con, cadastro_id, rows=None):
                 "circulo": c["circle"],
                 "partido_sigla": c["group_acronym"],
                 "partido_nome": names.get((c["legislature"], c["group_acronym"])),
+                "situacao": c["situation"],
+                "situacao_inicio": _iso(c["situation_start"]),
+                "situacao_fim": _iso(c["situation_end"]),
+                "em_exercicio": c["seated"],
                 "is_current": c["legislature"] == current["legislature"],
             }
-            for c in reversed(career)
+            for c in reversed(elected)
         ],
     }
 
@@ -298,7 +336,7 @@ def _atividades(con, cadastro_id, legislatura, rows, interventions):
     leg = rows.legislature(name)
     if leg is None:
         raise NotFound(f"legislature {name!r} not found")
-    served = any(c["legislature"] == name for c in career)
+    served = any(c["legislature"] == name and c["seated"] for c in career)
     items, metadata = interventions(name)
     initiatives = rows.initiatives(cadastro_id, name, MAX_INITIATIVES)
     signing = rows.signing(cadastro_id, name)
@@ -308,7 +346,7 @@ def _atividades(con, cadastro_id, legislatura, rows, interventions):
             "nome": person["parliamentary_name"],
             "served_in_legislature": served,
         },
-        "legislatura": {"numero": name, "designacao": f"{name} Legislatura"},
+        "legislatura": {"numero": name, "designacao": legislature_designation(name)},
         "intervencoes": [_intervention(r) for r in items],
         "intervention_metadata": metadata,
         "nota_intervencoes": _interventions_note(rows, leg) if served else None,
@@ -347,8 +385,23 @@ def atividades_completas(rows, cadastro_id, legislatura):
     )
 
 
+def missing_declaration(cadastro_id, legislature, legislature_start, coverage_start):
+    """What the page needs when the AR open data has no declaration for the person. A record
+    missing from the open data is not evidence that a declaration was not submitted, so the page
+    never says it was. ``legislature`` is the latest the person held a seat in; before the first
+    legislature with open data declarations the data does not cover the period at all. The legal
+    deadline is shown only for mandates under Lei n.º 52/2019."""
+    return {
+        "legislatura": legislature,
+        "antes_da_cobertura": coverage_start is None or legislature_start < coverage_start,
+        "lei_52_2019": legislature_start >= LAW_52_2019_IN_FORCE,
+        "url_parlamento": AR_INTERESTS_URL.format(cadastro_id),
+        "url_ept": EPT_URL,
+    }
+
+
 def conflitos_interesse(con, cadastro_id):
-    person, _ = _person(con, cadastro_id)
+    person, career = _person(con, cadastro_id)
     pending = repository.seated_since(con, cadastro_id, EPT_FROM)
     coverage = repository.declaration_coverage(con)
     out = {
@@ -367,6 +420,13 @@ def conflitos_interesse(con, cadastro_id):
     }
     declaration = repository.latest_declaration(con, cadastro_id)
     if declaration is None:
+        latest = career[-1]
+        out["sem_declaracao"] = missing_declaration(
+            cadastro_id,
+            latest["legislature"],
+            latest["legislature_start"],
+            coverage["first_start"] if coverage else None,
+        )
         return out
     items = repository.declaration_items(
         con, declaration["legislature"], declaration["declaration_key"], ["activity", "society"]

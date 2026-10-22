@@ -205,7 +205,7 @@ const InterestStatusCard = ({
                   fontWeight: 500,
                 }}
               >
-                Prazo legal: 30 dias após tomada de posse (Lei n.º 52/2019)
+                Prazo legal: 60 dias a contar do início de funções (Lei n.º 52/2019, art. 13.º, n.º 1)
               </p>
               <p
                 style={{

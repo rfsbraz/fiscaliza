@@ -2,64 +2,78 @@
 
 [![CI](https://github.com/rfsbraz/parliament/actions/workflows/ci.yml/badge.svg)](https://github.com/rfsbraz/parliament/actions/workflows/ci.yml)
 
-Portuguese Parliament open data analysis platform for government transparency, at [fiscaliza.pt](https://fiscaliza.pt).
+Atividade da Assembleia da República a partir dos dados abertos: deputados, votações, presenças, iniciativas e agenda, em [fiscaliza.pt](https://fiscaliza.pt).
 
-## Architecture
+> O histórico deste repositório anterior à mudança para português, em outubro de 2026 (commits, issues e pull requests), está em inglês. A partir daí, a documentação, as issues, os pull requests e as mensagens de commit estão em português de Portugal.
 
-| Layer | Technology |
-|-------|-----------|
-| **Data** | [parlamento-aberto](https://github.com/rfsbraz/parlamento-aberto) releases, loaded into a local read-only DuckDB file |
-| **Backend** | Flask 3.0 over DuckDB, served by gunicorn |
-| **Frontend** | React 18 + Vite, calling `/api` on the same origin |
+## Como funciona
+
+O Fiscaliza é um site estático. Nenhum servidor responde a pedidos em tempo real.
+
+| Camada | Tecnologia |
+|---|---|
+| **Dados** | O [parlamento-aberto](https://github.com/rfsbraz/parlamento-aberto) no commit fixado em `deploy/data-pin`, carregado num ficheiro DuckDB local só de leitura |
+| **Exportação** | `fiscaliza_data.export` escreve em ficheiros JSON todas as respostas de que o frontend precisa |
+| **Frontend** | React 18 e Vite, que lê esses ficheiros em `/api` na mesma origem |
+| **Alojamento** | Cloudflare Pages, com um deploy por cada push para `master` e uma pré-visualização por pull request ([docs/DEPLOY.md](docs/DEPLOY.md)) |
 
 ```
-├── app/                    # Flask API: routes, services, data/repository.py (all SQL)
-├── fiscaliza_data/         # Sync tool, seating rule and site views
-├── frontend/src/           # React components
-└── tests/                  # pytest, including the endpoint contracts
+├── app/                    # Serviços e consultas SQL (data/repository.py) que a exportação usa; também correm como API Flask local
+├── deploy/                 # pages.py (build e deploy), data-pin (o commit dos dados), _headers
+├── docs/                   # DEPLOY.md, STATIC_EXPORT.md
+├── fiscaliza_data/         # Sincronização, regra dos lugares, vistas e exportação estática
+├── frontend/src/           # Componentes React
+└── tests/                  # pytest, incluindo os contratos dos endpoints
 ```
 
-There is no database server. The sync builds `fiscaliza-<tag>.duckdb` from a release, checks it, and points `current.duckdb` at it. The API opens `$FISCALIZA_DATA_DIR/current.duckdb` read-only and picks up a new file within a minute, with no restart.
+A sincronização cria `fiscaliza-<tag>.duckdb` a partir de uma release de dados do parlamento-aberto, verifica-o e aponta `current.duckdb` para ele. A exportação lê esse ficheiro e escreve os JSON em `frontend/public/api`. O build do Vite copia-os para `dist/api`. Os detalhes estão em [docs/STATIC_EXPORT.md](docs/STATIC_EXPORT.md).
 
-## Quick Start
+## Arranque rápido
+
+É preciso Python 3.12, Node.js 20 ou mais recente, o [uv](https://docs.astral.sh/uv/) e o git.
 
 ```bash
+git clone https://github.com/rfsbraz/parliament.git
+cd parliament
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# Build the data file from a local parlamento-aberto `release build` output
-# (a folder, its manifest.json, or a .tar.gz/.tgz/.zip of the folder)
-python -m fiscaliza_data.sync --from ../parlamento-aberto/dist --data-dir data
+# O parlamento-aberto ainda não publica releases: os dados constroem-se no commit fixado.
+git clone --depth 1 --no-checkout https://github.com/rfsbraz/parlamento-aberto.git ../parlamento-aberto
+python deploy/pages.py build --parlamento-aberto ../parlamento-aberto
 
-# API on :5000, then the frontend dev server, which proxies /api to it
-FISCALIZA_DATA_DIR=data flask --app app.main run --port 5000
-cd frontend && npm install && npm run dev
+cd frontend && npm ci && npm run dev
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup.
+O `build` demora cerca de dois minutos e escreve `data/current.duckdb` e `frontend/public/api` (ambos ignorados pelo git). O servidor do Vite serve o site em <http://localhost:5173> com os dados em `/api`.
 
-## Data sync
+O [CONTRIBUTING.md](CONTRIBUTING.md) tem o guia completo.
+
+## Sincronização dos dados
 
 ```bash
-python -m fiscaliza_data.sync [--tag TAG] [--from PATH] [--data-dir DIR]
+python -m fiscaliza_data.sync [--tag TAG] [--from CAMINHO] [--data-dir PASTA]
 ```
 
-- With no `--from`, it reads the latest parlamento-aberto release on GitHub (or `--tag`), one unauthenticated API call.
-- `--from PATH` reads a local `release build` output instead: the folder, its `manifest.json`, or a `.tar.gz`, `.tgz` or `.zip` of the folder. Use it before parlamento-aberto publishes releases. `--from-dir` still works as the old name.
-- `--data-dir` defaults to `$FISCALIZA_DATA_DIR`, then `data`.
-- `python -m fiscaliza_data sync` is the same command.
+- Sem `--from`, lê a release mais recente do parlamento-aberto no GitHub (ou `--tag`), com um pedido à API sem autenticação. Enquanto o parlamento-aberto não publicar releases, o comando para e indica o `deploy/pages.py build`.
+- `--from CAMINHO` lê um resultado local de `release build`: a pasta, o seu `manifest.json`, ou um `.tar.gz`, `.tgz` ou `.zip` da pasta. `--from-dir` continua a funcionar como nome antigo.
+- `--data-dir` usa por omissão `$FISCALIZA_DATA_DIR` e depois `data`.
+- `python -m fiscaliza_data sync` é o mesmo comando.
 
-Every source goes through the same checks: SHA-256 of each Parquet file against the manifest, the schema major version, 230 seated deputies in the current legislature, and no table more than 5% smaller than the live one. A failure exits non-zero and leaves the previous file live. The last two files are kept.
+Todas as fontes passam pelas mesmas verificações: o SHA-256 de cada ficheiro Parquet contra o manifest, a versão principal do esquema, 230 deputados em funções na legislatura atual, e nenhuma tabela mais de 5% menor do que a que está em uso. Uma falha termina com código diferente de zero e deixa em uso o ficheiro anterior. Ficam guardados os dois últimos ficheiros.
 
-## Not served yet
+## Ainda não disponível
 
-Attendance (`/api/deputados/<id>/attendance`) and the agenda for today and this week (`/api/agenda/hoje`, `/api/agenda/semana`) wait for their parlamento-aberto marts. They answer 503 with a reason, and the frontend shows its "indisponível" notice.
+As presenças (`/api/deputados/<id>/attendance`) e a agenda de hoje e da semana (`/api/agenda/hoje`, `/api/agenda/semana`) esperam pelos marts respetivos do parlamento-aberto. Respondem 503 com o motivo, e o frontend mostra o aviso "indisponível".
 
-## Contributing
+## Contribuir
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, and PR guidelines.
+O [CONTRIBUTING.md](CONTRIBUTING.md) explica como preparar o ambiente, as verificações antes de um pull request e as convenções de commits.
 
-## License
+## Licença
 
-[AGPL-3.0](LICENSE) - You are free to use, modify, and distribute this software. If you run a modified version on a network server, you must make the source code available to users.
+Código: [AGPL-3.0-or-later](LICENSE). Pode usar, alterar e distribuir este software. Se correr uma versão alterada num servidor acessível pela rede, tem de disponibilizar o código-fonte a quem a usa. Copyright © Rodrigo Braz e contribuidores.
 
-The data comes from the Assembleia da República open data, reused under its terms, through parlamento-aberto (CC BY 4.0 for its derived tables). The site footer carries the attribution.
+O nome Fiscaliza e o logótipo não estão abrangidos pela AGPL. Quem publicar um fork tem de usar outro nome e outro logótipo.
+
+Dados: vêm dos dados abertos da Assembleia da República, reutilizados nos termos da AR, através do parlamento-aberto, cujas tabelas derivadas estão sob CC BY 4.0. Os termos completos estão no [LICENSE-DATA](https://github.com/rfsbraz/parlamento-aberto/blob/main/LICENSE-DATA) do parlamento-aberto. O rodapé do site tem a atribuição.

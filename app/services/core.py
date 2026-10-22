@@ -32,11 +32,17 @@ def _legislature(con, name=None):
     return leg
 
 
+def legislature_designation(name):
+    """The name shown for a legislature: "XVII Legislatura", but the first assembly, elected in
+    1975 to write the Constitution, is the Assembleia Constituinte (#108, #112)."""
+    return "Assembleia Constituinte" if name == "Constituinte" else f"{name} Legislatura"
+
+
 def _legislature_dict(leg):
     return {
         "id": leg["legislature_id"],
         "numero": leg["legislature"],
-        "designacao": f"{leg['legislature']} Legislatura",
+        "designacao": legislature_designation(leg["legislature"]),
         "data_inicio": _iso(leg["start_date"]),
         "data_fim": _iso(leg["end_date"]),
         "ativa": leg["is_open"],
@@ -44,10 +50,32 @@ def _legislature_dict(leg):
 
 
 def legislaturas(con):
+    # intervencoes_publicadas: what the AR has published so far, which the methodology page
+    # quotes for the legislature in progress (#113).
+    interventions = repository.interventions_by_legislature(con)
     return {
         "legislaturas": [
-            {**_legislature_dict(leg), "total_deputados": leg["people_seated"]} for leg in repository.legislatures(con)
-        ]
+            {
+                **_legislature_dict(leg),
+                "total_deputados": leg["people_seated"],
+                "intervencoes_publicadas": interventions.get(leg["legislature"], 0),
+            }
+            for leg in repository.legislatures(con)
+        ],
+        # Who the AR open data has an interest declaration for, which the methodology page quotes.
+        "cobertura_declaracoes": _declaration_coverage(con),
+    }
+
+
+def _declaration_coverage(con):
+    coverage = repository.declaration_coverage(con)
+    if not coverage or not coverage["seated"]:
+        return None
+    return {
+        "de": coverage["first_legislature"],
+        "ate": coverage["last_legislature"],
+        "com_declaracao": coverage["declared"],
+        "total": coverage["seated"],
     }
 
 
@@ -112,8 +140,11 @@ def _periodo(row):
 
 
 def _deputy(person, career, groups, shown_legislature, current):
+    """``career``: every legislature the person was elected or seated in (repository.elections).
+    The mandate counts are of the legislatures they held a seat in."""
     shown = next((c for c in career if c["legislature"] == shown_legislature), career[-1])
-    completed = [c for c in career if not c["is_open"]]
+    served = [c for c in career if c["seated"]]
+    completed = [c for c in served if not c["is_open"]]
     in_current = any(c["legislature"] == current for c in career)
     seated = bool(person["is_seated"])
     status = shown["situation"]
@@ -135,8 +166,8 @@ def _deputy(person, career, groups, shown_legislature, current):
             "is_currently_active": in_current,
             "is_seated": seated,
             "mandate_status": status,
-            "is_multi_term": len(career) > 1,
-            "total_mandates": len(career),
+            "is_multi_term": len(served) > 1,
+            "total_mandates": len(served),
             "first_mandate": career[0]["legislature"],
             "latest_mandate": career[-1]["legislature"],
             "latest_completed_mandate": (
@@ -161,7 +192,7 @@ def deputados(con, page=1, per_page=20, search=None, legislatura=None, active_on
         total, records = repository.deputies_count(con, current, **query)
     ids = [r["cadastro_id"] for r in rows]
     careers, groups = {}, {}
-    for c in repository.careers(con, ids):
+    for c in repository.elections(con, ids):
         careers.setdefault(c["cadastro_id"], []).append(c)
     for g in repository.groups_served(con, ids):
         groups.setdefault(g["cadastro_id"], []).append(g["group_acronym"])

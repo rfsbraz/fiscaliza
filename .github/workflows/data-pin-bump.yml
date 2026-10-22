@@ -1,0 +1,58 @@
+name: Data Pin Bump
+
+# Moves deploy/data-pin when parlamento-aberto main changes (docs/DEPLOY.md, "Automatic pin
+# moves"). parlamento-aberto sends a repository_dispatch (data-updated, payload {sha}) on every
+# push to its main; a manual run takes the SHA as input. deploy/pin_bump.py does the rest:
+# - no-op when the pin already has that commit, or the commit is older than the pin;
+# - otherwise it resets data/pin-bump from master, writes the pin, force-pushes that branch
+#   (the only force-push anywhere) and opens the pin PR, or updates the open one.
+# The merge is a separate short job, data-pin-merge.yml, so no job sits waiting while CI runs.
+on:
+  repository_dispatch:
+    types: [data-updated]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'parlamento-aberto commit on main, all 40 characters'
+        required: true
+        type: string
+
+# GITHUB_TOKEN reads and comments. The push and the PR use PIN_BOT_TOKEN, because a PR opened
+# with GITHUB_TOKEN starts no CI and no Deploy.
+permissions:
+  contents: read
+  pull-requests: write
+
+# A newer parlamento-aberto commit supersedes an older one.
+concurrency:
+  group: data-pin-bump
+  cancel-in-progress: true
+
+jobs:
+  bump:
+    name: Pin Bump
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check PIN_BOT_TOKEN
+        env:
+          PIN_BOT_TOKEN: ${{ secrets.PIN_BOT_TOKEN }}
+        run: |
+          if [ -z "$PIN_BOT_TOKEN" ]; then
+            echo "::error::PIN_BOT_TOKEN is not set. See docs/DEPLOY.md, Automatic pin moves."
+            exit 1
+          fi
+      # master, whatever ref a manual run picked; the token lets git push data/pin-bump.
+      - uses: actions/checkout@v7
+        with:
+          ref: master
+          token: ${{ secrets.PIN_BOT_TOKEN }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Move the pin
+        env:
+          SHA: ${{ github.event.client_payload.sha || inputs.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PIN_BOT_TOKEN: ${{ secrets.PIN_BOT_TOKEN }}
+        run: python deploy/pin_bump.py bump --sha "$SHA"

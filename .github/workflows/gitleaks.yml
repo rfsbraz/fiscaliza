@@ -1,0 +1,42 @@
+name: gitleaks
+
+# Scans every commit reachable from master (or, on a pull request, from its merge commit)
+# with the default gitleaks rules plus the *_PASSWORD= rule in .gitleaks.toml. The history
+# is small, so the full scan takes about a second and runs on every push and pull request.
+# The weekly run catches anything a newer gitleaks rule now flags.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: "0 7 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: gitleaks (full history)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Pinned and checked against its SHA-256, into the job's temp dir instead of the system PATH.
+      - name: Install gitleaks
+        run: |
+          cd "$RUNNER_TEMP"
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}"
+          echo "${GITLEAKS_SHA256}  ${tarball}" | sha256sum -c -
+          tar -xzf "$tarball" gitleaks
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      # HEAD, not the gitleaks default --all, so other branches' commits stay out.
+      - name: Scan the full history
+        run: gitleaks git --redact --verbose --exit-code 1 --config .gitleaks.toml --log-opts="--full-history HEAD" .

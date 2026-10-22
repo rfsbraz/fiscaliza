@@ -5,6 +5,7 @@ import { Users, TrendingUp, ArrowRight, Building, Handshake } from 'lucide-react
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner, PageHeader } from './common';
+import { formatDecimal, legislatureName } from '../utils/format';
 
 const PartidosPage = () => {
   const [partidos, setPartidos] = useState([]);
@@ -76,11 +77,11 @@ const PartidosPage = () => {
     const dataFim = legislaturaInfo.data_fim ? new Date(legislaturaInfo.data_fim).getFullYear() : null;
 
     if (dataInicio && dataFim) {
-      return `${numero} Legislatura (${dataInicio}-${dataFim})`;
+      return `${legislatureName(numero)} (${dataInicio}-${dataFim})`;
     } else if (dataInicio) {
-      return `${numero} Legislatura (${dataInicio}-presente)`;
+      return `${legislatureName(numero)} (${dataInicio}-presente)`;
     } else {
-      return `${numero} Legislatura`;
+      return legislatureName(numero);
     }
   };
 
@@ -384,7 +385,7 @@ const PartidosPage = () => {
                         >
                           <span>Representação</span>
                           <span style={{ fontFamily: tokens.fonts.mono }}>
-                            {((partido.num_deputados / 230) * 100).toFixed(1)}%
+                            {formatDecimal((partido.num_deputados / 230) * 100, 1)}%
                           </span>
                         </div>
                         <div
@@ -626,7 +627,7 @@ const PartidosPage = () => {
                       )}
 
                       {/* Dates */}
-                      {(coligacao.data_formacao || coligacao.data_dissolucao) && (
+                      {coligacao.data_dissolucao && (
                         <div
                           style={{
                             fontFamily: tokens.fonts.body,
@@ -635,9 +636,6 @@ const PartidosPage = () => {
                             marginBottom: '0.75rem',
                           }}
                         >
-                          {coligacao.data_formacao && (
-                            <p>Formada: {new Date(coligacao.data_formacao).getFullYear()}</p>
-                          )}
                           {coligacao.data_dissolucao && (
                             <p>Dissolvida: {new Date(coligacao.data_dissolucao).getFullYear()}</p>
                           )}

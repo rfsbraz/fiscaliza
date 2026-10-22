@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { Activity, Info } from 'lucide-react';
 import { tokens } from '../../styles/tokens';
+import { legislatureName } from '../../utils/format';
 
 // Under this many sittings one absence moves the rate by several points.
 const FEW_MEETINGS = 20;
@@ -64,10 +65,10 @@ export const AttendanceCard = ({ assiduidade, onOpen }) => (
       <div style={{ padding: '10px', backgroundColor: tokens.colors.primary, borderRadius: '4px' }}>
         <Activity style={{ width: '20px', height: '20px', color: '#FFFFFF' }} />
       </div>
-      <span style={{ fontSize: '0.75rem', color: tokens.colors.textMuted }}>{assiduidade.legislatura} Legislatura</span>
+      <span style={{ fontSize: '0.75rem', color: tokens.colors.textMuted }}>{legislatureName(assiduidade.legislatura)}</span>
     </header>
     <h4 style={{ fontSize: '0.75rem', fontWeight: 600, color: tokens.colors.primary, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
-      Presença no Plenário
+      Presente ou em funções parlamentares
     </h4>
     <div style={{ marginBottom: '8px' }}>
       <span style={{ fontSize: '2rem', fontWeight: 700, fontFamily: tokens.fonts.mono, color: tokens.colors.textPrimary }}>
@@ -187,21 +188,21 @@ const Legislature = ({ leg, atualizado }) => {
   if (!leg.com_listas) {
     return (
       <Notice>
-        A AR não publica listas de presenças da {leg.legislatura} Legislatura. Há listas a partir da VI Legislatura.
+        A AR não publica listas de presenças da {legislatureName(leg.legislatura)}. Há listas a partir da VI Legislatura.
       </Notice>
     );
   }
   if (!leg.reunioes) {
     return (
       <Notice>
-        Este deputado não consta das listas de presenças das reuniões ordinárias ou extraordinárias da {leg.legislatura} Legislatura.
+        Este deputado não consta das listas de presenças das reuniões ordinárias ou extraordinárias da {legislatureName(leg.legislatura)}.
       </Notice>
     );
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-        <Rate label="Taxa de presença" value={leg.taxa_presenca} note={`em ${sessions(leg.reunioes)}`} />
+        <Rate label="Presente ou em funções parlamentares" value={leg.taxa_presenca} note={`em ${sessions(leg.reunioes)}`} />
         <Rate label="Só presenças no Plenário" value={leg.taxa_presenca_estrita} note="sem missões nem outros órgãos" />
         <Rate label={`Todos os deputados da ${leg.legislatura}`} value={leg.legislatura_taxa_presenca} note="todos os lugares nas mesmas listas" />
       </div>
@@ -267,8 +268,8 @@ const AttendancePanel = ({ data }) => {
       <div style={box}>
         <h4 style={heading}>Como se conta</h4>
         <ul style={{ margin: '0 0 16px 0', paddingLeft: '18px', fontSize: '0.8125rem', color: tokens.colors.textSecondary, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <li><strong>Taxa de presença:</strong> {data.definicao.taxa_presenca}</li>
-          <li><strong>Só presenças:</strong> {data.definicao.taxa_presenca_estrita}</li>
+          <li><strong>Presente ou em funções parlamentares:</strong> {data.definicao.taxa_presenca}</li>
+          <li><strong>Só presenças no Plenário:</strong> {data.definicao.taxa_presenca_estrita}</li>
           <li>{data.definicao.solenes}</li>
           <li>{data.definicao.por_justificar}</li>
           <li>{data.definicao.cobertura} {data.definicao.motivo}</li>
