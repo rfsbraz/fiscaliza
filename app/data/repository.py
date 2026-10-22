@@ -993,7 +993,9 @@ def deputy_initiatives_in(con, cadastro_ids, limit=100):
 
 def latest_declaration(con, cadastro_id):
     """The person's latest interest declaration in the AR open data: latest legislature first,
-    then the latest version within it."""
+    then the latest version within it. The XIV declarations have no id and no version date; the
+    AR lists a person's declarations newest first, and the key ends in their place in that list
+    (legislature-cadastro_id-n), so the lowest n is the newest."""
     return _one(
         con,
         """
@@ -1001,7 +1003,8 @@ def latest_declaration(con, cadastro_id):
         from interest_declarations d
         left join legislatures l on l.legislature = d.legislature
         where d.cadastro_id = ?
-        order by l.start_date desc nulls last, d.version_date desc nulls last, d.declaration_id desc nulls last
+        order by l.start_date desc nulls last, d.version_date desc nulls last, d.declaration_id desc nulls last,
+                 try_cast(split_part(d.declaration_key, '-', -1) as integer) nulls last, d.declaration_key
         limit 1
         """,
         [cadastro_id],
