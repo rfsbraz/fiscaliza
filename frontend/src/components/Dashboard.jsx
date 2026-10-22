@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { tokens, partidoCores } from '../styles/tokens'
 import { LoadingSpinner } from './common'
+import { formatDecimal, formatNumber, legislatureName, plural } from '../utils/format'
 
 /**
  * Dashboard - Data Observatory Style
@@ -25,7 +26,7 @@ const Dashboard = ({ stats }) => {
   const partidosData = (distribuicao_partidos || []).map(partido => ({
     ...partido,
     cor: partidoCores[partido.sigla] || '#78716C',
-    percentagem: ((partido.deputados / (totais.deputados || 1)) * 100).toFixed(1)
+    percentagem: formatDecimal((partido.deputados / (totais.deputados || 1)) * 100, 1)
   })).sort((a, b) => b.deputados - a.deputados)
 
   // Top circles
@@ -35,7 +36,7 @@ const Dashboard = ({ stats }) => {
   const calcularFragmentacao = () => {
     const total = totais.deputados || 1
     const enp = 1 / partidosData.reduce((sum, p) => sum + Math.pow(p.deputados / total, 2), 0)
-    return enp.toFixed(1)
+    return formatDecimal(enp, 1)
   }
 
   const governoPartidos = ['PSD', 'CDS-PP']
@@ -48,7 +49,7 @@ const Dashboard = ({ stats }) => {
   // Legislature text
   const getLegislatureText = () => {
     if (!legislatura.numero) return 'XVII Legislatura'
-    return `${legislatura.numero} Legislatura`
+    return legislatureName(legislatura.numero)
   }
 
   return (
@@ -131,19 +132,19 @@ const Dashboard = ({ stats }) => {
       }}>
         <MetricCard
           value={seatedDeputados}
-          label="Em Exercício"
-          sublabel={`de ${totalElected} eleitos · ${totais.partidos || 0} partidos`}
+          label="Em exercício na data dos dados"
+          sublabel={`${formatNumber(totalElected)} deputados tiveram lugar nesta legislatura · ${plural(totais.partidos || 0, 'partido', 'partidos')}`}
         />
         <MetricCard
           value={governoDeputados}
           label="Governo"
-          sublabel={`${((governoDeputados / seatedDeputados) * 100).toFixed(0)}% dos assentos`}
+          sublabel={`${formatDecimal((governoDeputados / seatedDeputados) * 100, 0)}% dos assentos`}
           accent="primary"
         />
         <MetricCard
           value={oposicaoDeputados}
           label="Oposição"
-          sublabel={`${((oposicaoDeputados / seatedDeputados) * 100).toFixed(0)}% dos assentos`}
+          sublabel={`${formatDecimal((oposicaoDeputados / seatedDeputados) * 100, 0)}% dos assentos`}
           accent="accent"
         />
         <MetricCard
@@ -297,7 +298,7 @@ const Dashboard = ({ stats }) => {
                     fontWeight: 600,
                     color: '#FFFFFF',
                   }}>
-                    {((governoDeputados / seatedDeputados) * 100).toFixed(0)}%
+                    {formatDecimal((governoDeputados / seatedDeputados) * 100, 0)}%
                   </span>
                 </div>
               </div>
@@ -345,7 +346,7 @@ const Dashboard = ({ stats }) => {
                     fontWeight: 600,
                     color: '#FFFFFF',
                   }}>
-                    {((oposicaoDeputados / seatedDeputados) * 100).toFixed(0)}%
+                    {formatDecimal((oposicaoDeputados / seatedDeputados) * 100, 0)}%
                   </span>
                 </div>
               </div>
@@ -712,7 +713,7 @@ const MetricCard = ({ value, label, sublabel, accent }) => (
       lineHeight: 1,
       marginBottom: '0.5rem',
     }}>
-      {value}
+      {typeof value === 'number' ? formatNumber(value) : value}
     </div>
     <div style={{
       fontSize: '0.6875rem',
