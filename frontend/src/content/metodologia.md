@@ -6,7 +6,7 @@ Esta página explica de onde vêm os dados do Fiscaliza, como se calcula cada n�
 
 Todos os números do Fiscaliza vêm dos dados abertos da Assembleia da República (AR). Não usamos outras fontes nem acrescentamos dados à mão.
 
-Os dados chegam ao Fiscaliza através do parlamento-aberto, um repositório público que descarrega os ficheiros de dados abertos da AR, os normaliza e publica, em cada versão (release), um conjunto de tabelas prontas a consultar. O Fiscaliza usa uma versão fixa dessas tabelas e só muda de versão de forma deliberada, por isso todas as páginas do site mostram os mesmos dados.
+Os dados chegam ao Fiscaliza através do parlamento-aberto, um repositório público que descarrega os ficheiros de dados abertos da AR, os normaliza e publica, em cada versão (release), um conjunto de tabelas prontas a consultar. Os dados são atualizados automaticamente sempre que o parlamento-aberto publica alterações, e só depois de o site passar todos os testes. A data dos dados está indicada no site.
 
 Licenças:
 

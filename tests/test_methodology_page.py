@@ -66,6 +66,21 @@ def test_declaration_coverage_line_as_confirmed():
     assert "- **Declarações de interesses:** só da XI à XV nos dados abertos da AR. A XVI" in text
 
 
+UPDATES = (
+    "Os dados são atualizados automaticamente sempre que o parlamento-aberto publica alterações, "
+    "e só depois de o site passar todos os testes. A data dos dados está indicada no site."
+)
+
+
+def test_update_line_describes_the_automatic_pin_move():
+    text = CONTENT.read_text()
+    assert UPDATES in text
+    assert "de forma deliberada" not in text
+    # The site does show the data date: in the footer on every page and on this page.
+    assert "atualizados a ${sourceUpdated}" in (SRC / "components" / "DataAttribution.jsx").read_text()
+    assert "- Dados da AR atualizados a: {source_updated}" in text
+
+
 def test_errors_go_to_the_correction_form_with_no_contact_address():
     text = CONTENT.read_text()
     assert FORM in text
