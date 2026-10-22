@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { Activity, Info } from 'lucide-react';
 import { tokens } from '../../styles/tokens';
+import { legislatureName } from '../../utils/format';
 
 // Under this many sittings one absence moves the rate by several points.
 const FEW_MEETINGS = 20;
@@ -64,7 +65,7 @@ export const AttendanceCard = ({ assiduidade, onOpen }) => (
       <div style={{ padding: '10px', backgroundColor: tokens.colors.primary, borderRadius: '4px' }}>
         <Activity style={{ width: '20px', height: '20px', color: '#FFFFFF' }} />
       </div>
-      <span style={{ fontSize: '0.75rem', color: tokens.colors.textMuted }}>{assiduidade.legislatura} Legislatura</span>
+      <span style={{ fontSize: '0.75rem', color: tokens.colors.textMuted }}>{legislatureName(assiduidade.legislatura)}</span>
     </header>
     <h4 style={{ fontSize: '0.75rem', fontWeight: 600, color: tokens.colors.primary, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
       Presença no Plenário
@@ -187,14 +188,14 @@ const Legislature = ({ leg, atualizado }) => {
   if (!leg.com_listas) {
     return (
       <Notice>
-        A AR não publica listas de presenças da {leg.legislatura} Legislatura. Há listas a partir da VI Legislatura.
+        A AR não publica listas de presenças da {legislatureName(leg.legislatura)}. Há listas a partir da VI Legislatura.
       </Notice>
     );
   }
   if (!leg.reunioes) {
     return (
       <Notice>
-        Este deputado não consta das listas de presenças das reuniões ordinárias ou extraordinárias da {leg.legislatura} Legislatura.
+        Este deputado não consta das listas de presenças das reuniões ordinárias ou extraordinárias da {legislatureName(leg.legislatura)}.
       </Notice>
     );
   }
