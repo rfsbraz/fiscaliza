@@ -185,7 +185,7 @@ Isto corre, por ordem:
    mantém o `404.html` do build (de novo a aplicação) e verifica os limites do Pages (menos de
    20 000 ficheiros, cada um com menos de 25 MiB). Escreve também um HTML por cada rota da
    aplicação, com o título, a descrição, o canonical e o `og:url` dessa rota (ver "Ligações
-   diretas"). Qualquer outro caminho sem ficheiro recebe o `404.html` e o estado 404, e a aplicação
+   diretas"), e o `sitemap.xml` com essas mesmas rotas (ver "Sitemap"). Qualquer outro caminho sem ficheiro recebe o `404.html` e o estado 404, e a aplicação
    mostra a vista "Página não encontrada". Uma rota nova em `frontend/src/App.jsx` precisa de
    entrar em `route_heads` no `deploy/pages.py`, e `tests/test_route_heads.py` verifica isso.
 6. `wrangler pages deploy dist --project-name fiscaliza --branch <ramo>`.
@@ -235,14 +235,24 @@ próprio `/` é o `index.html`.
 O `deploy/_redirects` não tem regras para as rotas. O Pages aplica uma regra 200 antes de procurar
 o ficheiro, por isso uma regra `/deputados/* / 200` esconderia estas páginas. As únicas regras são
 301 de páginas que deixaram de existir: `/coligacoes/AD` e `/coligacoes/Madeira Primeiro` passaram a
-uma página por lista (#111) e levam à lista mais recente. Com cerca de 3 300
-ficheiros da exportação e 3 066 páginas de rotas, o deploy fica perto dos 6 400 ficheiros, longe
-do limite de 20 000.
+uma página por lista (#111) e levam à lista mais recente. Com cerca de 3 300 ficheiros da
+exportação, 3 070 páginas de rotas e o sitemap, o deploy fica perto dos 6 400 ficheiros, longe do
+limite de 20 000.
 
-Qualquer outro caminho sem ficheiro, como `/sobre` ou `/sitemap.xml`, recebe o `404.html` de topo
-com o estado 404. Esse ficheiro é de novo a aplicação, escrito pelo build, e a aplicação mostra a
-vista "Página não encontrada" com `noindex`. O `/robots.txt` é um ficheiro real de
-`frontend/public`. Não há sitemap.
+Qualquer outro caminho sem ficheiro, como `/sobre`, recebe o `404.html` de topo com o estado 404.
+Esse ficheiro é de novo a aplicação, escrito pelo build, e a aplicação mostra a vista "Página não
+encontrada" com `noindex`.
+
+## Sitemap
+
+O passo do Pages escreve o `sitemap.xml` com a mesma lista de rotas das páginas acima, mais o `/`,
+cada uma com o seu URL canonical. Um deputado, partido ou coligação novo entra no sitemap no deploy
+seguinte. Com os dados atuais são cerca de 3 070 URLs e 175 KB. Acima de 50 000 URLs, o limite de
+um sitemap, o passo escreve `sitemap-1.xml`, `sitemap-2.xml` e assim por diante, e o `sitemap.xml`
+passa a ser o índice desses ficheiros. Um ficheiro acima de 50 MB faz o deploy parar.
+
+O `/robots.txt` é um ficheiro real de `frontend/public`: permite tudo e indica
+`https://fiscaliza.pt/sitemap.xml`.
 
 Um ficheiro de dados que não existe em `/api` também responde 404. O frontend trata tudo o que não
 é JSON como não encontrado.
