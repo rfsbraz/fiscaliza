@@ -1,145 +1,152 @@
 # Deploy
 
-Fiscaliza is a static site on Cloudflare Pages, project `fiscaliza`, uploaded with
-`wrangler pages deploy` (direct upload, no Git integration). The production branch is `master`, at
-`fiscaliza-ceg.pages.dev`; anything else is a preview at `<branch>.fiscaliza-ceg.pages.dev` (Pages
-turns `/` and other characters in the branch name into `-`).
+O Fiscaliza é um site estático no Cloudflare Pages, projeto `fiscaliza`, enviado com
+`wrangler pages deploy` (envio direto, sem integração com o Git). O ramo de produção é `master`, em
+`fiscaliza-ceg.pages.dev`; qualquer outro ramo é uma pré-visualização em
+`<ramo>.fiscaliza-ceg.pages.dev` (o Pages troca `/` e outros caracteres do nome do ramo por `-`).
 
-Deploys run in CI, in `.github/workflows/deploy.yml`, on my Homeberry runner. The workflow only
-calls `deploy/pages.py`; everything a deploy does is in that script.
+Os deploys correm na CI, em `.github/workflows/deploy.yml`, no runner self-hosted do repositório.
+O workflow só chama `deploy/pages.py`; tudo o que um deploy faz está nesse script.
 
-## When it deploys
+## Quando há deploy
 
-| Trigger | Deploys |
+| Evento | Deploy |
 |---|---|
-| Push to `master` | production |
-| Pull request from this repo that changes the site, or has the `preview` label | a preview on a Pages branch named after the PR's head branch |
+| Push para `master` | produção |
+| Pull request deste repositório que muda o site, ou tem a etiqueta `preview` | uma pré-visualização num ramo do Pages com o nome do ramo do pull request |
 
-There is no schedule: the data only changes when the pin moves, and moving the pin is a pull
-request, which deploys production when it merges.
+Não há agendamento: os dados só mudam quando o pin muda, e mudar o pin é um pull request, que faz
+o deploy de produção quando é integrado.
 
-Pull requests from forks don't deploy, and neither do Dependabot's: neither gets the repository
-secrets.
+Pull requests de forks não têm deploy, nem os do Dependabot: nenhum deles recebe os segredos do
+repositório.
 
-A deploy holds my single runner for about half an hour, so a pull request only gets a preview when
-it needs one. A short `Preview Needed` job diffs the PR against master and lets the deploy run when
-something changed under `frontend/`, `fiscaliza_data/`, `app/` or `deploy/`, or in
-`.github/workflows/deploy.yml` (`PREVIEW_PATHS` in the workflow). Anything else, such as docs or
-tests, gets no deploy job.
+Um deploy ocupa o runner durante bastante tempo, por isso um pull request só tem pré-visualização
+quando precisa. Um job curto, `Preview Needed`, compara o pull request com `master` e deixa correr
+o deploy quando algo mudou em `frontend/`, `fiscaliza_data/`, `app/` ou `deploy/`, ou em
+`.github/workflows/deploy.yml` (`PREVIEW_PATHS` no workflow). O resto, como documentação ou
+testes, não tem job de deploy.
 
-To get a preview for any other pull request, add the `preview` label. Adding it starts a deploy
-right away, and every later push to that PR deploys again until the label comes off. Adding any
-other label starts nothing.
+Para ter pré-visualização noutro pull request, adicione a etiqueta `preview`. Isso começa logo um
+deploy, e cada push seguinte para esse pull request faz novo deploy até a etiqueta sair. Adicionar
+outra etiqueta não começa nada.
 
-There is one concurrency group for every trigger, with `cancel-in-progress: false`: a deploy
-waits for the one before it to finish and is never cancelled halfway through an upload. The group
-is on the deploy job, so a pull request that needs no preview doesn't wait behind a running deploy
-just to skip.
+Há um só grupo de concorrência para todos os eventos, com `cancel-in-progress: false`: um deploy
+espera que o anterior acabe e nunca é cancelado a meio de um envio. O grupo está no job de
+deploy, por isso um pull request que não precisa de pré-visualização não fica à espera de um deploy
+em curso só para o saltar.
 
-The workflow needs:
+O workflow precisa de:
 
-- the `CLOUDFLARE_API_TOKEN` secret, a Cloudflare API token with Pages: Edit on the account;
-- `CLOUDFLARE_ACCOUNT_ID`, set in the workflow as plain env (an account id isn't a secret).
+- o segredo `CLOUDFLARE_API_TOKEN`, um token da API da Cloudflare com Pages: Edit na conta;
+- `CLOUDFLARE_ACCOUNT_ID`, definido no workflow como variável de ambiente simples (o ID de uma conta
+  não é segredo).
 
-The project already exists. Nothing creates it, and nothing prints the token.
+O projeto já existe. Nada o cria, e nada imprime o token.
 
-## The data pin
+## O pin dos dados
 
-`deploy/data-pin` holds the parlamento-aberto commit the site is built from, and its release tag
-when there is one. It is the only place the data version is set, and every deploy, production and
-preview, builds exactly that commit.
+`deploy/data-pin` guarda o commit do parlamento-aberto a partir do qual o site é construído, e a
+tag da release quando existe. É o único sítio onde a versão dos dados é definida, e todos os
+deploys, de produção e de pré-visualização, constroem exatamente esse commit.
 
-Production is pinned because CI starts from an empty data folder each time: the sync's check that
-no table lost more than 5% of its rows has nothing to compare against, so a bad commit on
-parlamento-aberto `main` would go straight to production. Moving the pin is a small pull request of
-its own, after checking the new data; its preview shows the new data before it merges.
+A produção está fixada porque a CI começa sempre com a pasta de dados vazia: a verificação da
+sincronização de que nenhuma tabela perdeu mais de 5% das linhas não tem com que comparar, por isso
+um commit mau no `main` do parlamento-aberto iria direto para produção. Mudar o pin é um pull
+request próprio, depois de verificar os dados novos; a sua pré-visualização mostra os dados novos
+antes de ser integrado.
 
-When parlamento-aberto turns on data releases (`DATA_RELEASES`), the pin moves to a release tag.
+Quando o parlamento-aberto ligar as releases de dados (`DATA_RELEASES`), o pin passa para uma tag
+de release.
 
-## What a deploy runs
+## O que um deploy corre
 
 ```bash
 python deploy/pages.py deploy --parlamento-aberto ~/src/parlamento-aberto --branch my-preview
 ```
 
-This runs, in order:
+Isto corre, por ordem:
 
-1. A fetch of the pinned SHA when the clone doesn't have it (one commit deep in a shallow clone),
-   then `git worktree add --detach` of the pinned commit, and
-   `uv run python -m parlamento_aberto.release build` there (the same command as its release
-   workflow), into a scratch folder.
-2. `python -m fiscaliza_data sync --from-dir <release>` into a scratch DuckDB folder.
-3. `python -m fiscaliza_data.export --out frontend/public/api` (the static export, see
+1. Um fetch do SHA fixado quando o clone não o tem (com profundidade um num clone raso), depois
+   `git worktree add --detach` do commit fixado e, aí,
+   `uv run python -m parlamento_aberto.release build` (o mesmo comando do seu workflow de release),
+   para uma pasta temporária.
+2. `python -m fiscaliza_data sync --from-dir <release>` para uma pasta DuckDB temporária.
+3. `python -m fiscaliza_data.export --out frontend/public/api` (a exportação estática, ver
    [STATIC_EXPORT.md](STATIC_EXPORT.md)).
-4. `npm ci` and `npm run build` in `frontend/`.
-5. The Pages step on `frontend/dist`: it deletes `404.html` and copies `deploy/_headers` in, and
-   checks the Pages limits (fewer than 20,000 files, every file under 25 MiB).
-6. `wrangler pages deploy dist --project-name fiscaliza --branch <branch>`.
+4. `npm ci` e `npm run build` em `frontend/`.
+5. O passo do Pages sobre `frontend/dist`: apaga `404.html`, copia `deploy/_headers` para lá e
+   verifica os limites do Pages (menos de 20 000 ficheiros, cada um com menos de 25 MiB).
+6. `wrangler pages deploy dist --project-name fiscaliza --branch <ramo>`.
 
-The scratch folder and the parlamento-aberto worktree are removed at the end. CI clones
-parlamento-aberto with `--depth 1 --no-checkout`, so its data is checked out once, by step 1, and
-fetches the pinned commit if `main` has moved past it.
+A pasta temporária e o worktree do parlamento-aberto são removidos no fim. A CI clona o
+parlamento-aberto com `--depth 1 --no-checkout`, por isso os dados são extraídos uma só vez, no
+passo 1, e o commit fixado é descarregado se o `main` já o tiver ultrapassado.
 
-Options:
+`python deploy/pages.py build --parlamento-aberto CAMINHO` corre só os passos 1 a 3, com os dados
+em `data/` (ou `--data-dir`), sem build do frontend nem envio. É o caminho para preparar os dados
+num clone novo (ver o [CONTRIBUTING.md](../CONTRIBUTING.md)).
 
-- `--branch NAME` picks the preview branch (default `preview`).
-- `--production` deploys `master`. `--branch master` without it is refused.
-- `--release DIR` takes a `release build` folder you already have. Its `manifest.json` must name
-  the pinned commit as `data_commit`, or the script stops.
-- With no source and a `tag=` in the pin, the sync downloads that release from GitHub.
-- `EXPORT_WORKERS` sets the export's processes. Without it the export uses the cgroup CPU limit
-  (`/sys/fs/cgroup/cpu.max`), and without that the CPU count. Each process uses one DuckDB thread.
-  The runner reports the host's 8 CPUs, so CI leaves `EXPORT_WORKERS` unset and the export follows
-  the runner's `cpu.max`. The deploy step stops after 80 minutes and the job after 90; a deploy
-  takes about 5 minutes on 8 cores.
-- `--work DIR` keeps the scratch files in that folder instead of a temporary one.
-- `--dry-run` prints every command and runs nothing.
-- `WRANGLER` overrides the wrangler command. The default is `npx --yes wrangler@4.151.3`, pinned
-  so CI and a local run use the same version. Wrangler 4 needs Node 22 or newer; the workflow sets
-  up Node 22.
-- `python deploy/pages.py prepare frontend/dist` runs only step 5.
+Opções:
 
-Run by hand, wrangler uses whatever Cloudflare login the machine has (`wrangler whoami` shows it),
-or `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` when they are set. The script never logs in
-and never creates tokens.
+- `--branch NOME` escolhe o ramo da pré-visualização (por omissão `preview`).
+- `--production` faz o deploy de `master`. `--branch master` sem esta opção é recusado.
+- `--release PASTA` usa uma pasta de `release build` que já tenha. O seu `manifest.json` tem de
+  indicar o commit fixado como `data_commit`, ou o script para.
+- Sem fonte e com um `tag=` no pin, a sincronização descarrega essa release do GitHub.
+- `EXPORT_WORKERS` define os processos da exportação. Sem ele, a exportação usa o limite de CPU do
+  cgroup (`/sys/fs/cgroup/cpu.max`) e, sem esse, o número de CPUs. Cada processo usa uma thread do
+  DuckDB. A CI deixa `EXPORT_WORKERS` por definir, por isso a exportação segue o limite do runner.
+  O passo de deploy para ao fim de 80 minutos e o job ao fim de 90.
+- `--work PASTA` guarda os ficheiros temporários nessa pasta em vez de numa temporária.
+- `--dry-run` mostra todos os comandos e não corre nada.
+- `WRANGLER` substitui o comando do wrangler. Por omissão é `npx --yes wrangler@4.151.3`, fixado
+  para que a CI e uma execução local usem a mesma versão. O Wrangler 4 precisa do Node 22 ou mais
+  recente; o workflow instala o Node 22.
+- `python deploy/pages.py prepare frontend/dist` corre só o passo 5.
 
-## Deep links
+Corrido à mão, o wrangler usa o login da Cloudflare que a máquina tiver (`wrangler whoami`
+mostra-o), ou `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` quando estão definidos. O script
+nunca faz login e nunca cria tokens.
 
-The app routes in the browser. On Pages, a build without a top-level `404.html` is treated as a
-single-page app: any path with no file of its own gets `index.html` with status 200. The Pages step
-deletes `404.html` for that reason. The plain `npm run build` keeps writing it, because GitHub
-Pages, S3 and nginx with `error_page` need it.
+## Ligações diretas
 
-A data file that doesn't exist under `/api` then answers with `index.html` too. The frontend
-reads anything that isn't JSON as not found.
+A aplicação trata das rotas no browser. No Pages, um build sem `404.html` na raiz é tratado como
+aplicação de página única: qualquer caminho sem ficheiro próprio recebe `index.html` com o estado
+200. É por isso que o passo do Pages apaga `404.html`. O `npm run build` simples continua a
+escrevê-lo, porque o GitHub Pages, o S3 e o nginx com `error_page` precisam dele.
 
-## Headers
+Um ficheiro de dados que não existe em `/api` também recebe então `index.html`. O frontend trata
+tudo o que não é JSON como não encontrado.
 
-`deploy/_headers`, copied into the build:
+## Cabeçalhos
 
-| Path | Header |
+`deploy/_headers`, copiado para o build:
+
+| Caminho | Cabeçalho |
 |---|---|
-| `/assets/*` | `Cache-Control: public, max-age=31536000, immutable` (Vite hashes these names) |
+| `/assets/*` | `Cache-Control: public, max-age=31536000, immutable` (o Vite põe um hash nestes nomes) |
 | `/`, `/index.html` | `Cache-Control: no-cache` |
-| `/api/*` | `Cache-Control: public, max-age=300` (the data changes per deploy, the names don't) |
-| everything | HSTS for a year with subdomains, no preload; `X-Content-Type-Options: nosniff`; `Referrer-Policy: strict-origin-when-cross-origin`; `X-Frame-Options: DENY`; a `Permissions-Policy` that turns off camera, microphone and location; the CSP below |
+| `/api/*` | `Cache-Control: public, max-age=300` (os dados mudam a cada deploy, os nomes não) |
+| tudo | HSTS durante um ano com subdomínios, sem preload; `X-Content-Type-Options: nosniff`; `Referrer-Policy: strict-origin-when-cross-origin`; `X-Frame-Options: DENY`; uma `Permissions-Policy` que desliga câmara, microfone e localização; a CSP abaixo |
 
-Deep links fall under Pages' own default for HTML, `public, max-age=0, must-revalidate`.
-Pages joins the same header from every matching rule with a comma, so `Cache-Control` is never
-set on `/*`.
+As ligações diretas ficam com a predefinição do Pages para HTML,
+`public, max-age=0, must-revalidate`. O Pages junta com uma vírgula o mesmo cabeçalho de todas as
+regras que coincidem, por isso o `Cache-Control` nunca é definido em `/*`.
 
-The CSP: scripts, data and frames from the site itself only (`frame-ancestors 'none'`), styles
-from the site and Google Fonts (`'unsafe-inline'` for the style attributes Recharts and
-framer-motion set), fonts from `fonts.gstatic.com`, and images from the site, `data:`,
-`app.parlamento.pt` (the deputy photos in `picture_url`) and `www.parlamento.pt` (the photos on the
-party demographics). A new external image, font or script host needs a line here,
-and `tests/test_pages_deploy.py` fails when the frontend or `PICTURE_URL` uses an image host the CSP
-doesn't allow.
+A CSP: scripts, dados e frames só do próprio site (`frame-ancestors 'none'`), estilos do site e do
+Google Fonts (`'unsafe-inline'` para os atributos de estilo que o Recharts e o framer-motion
+definem), tipos de letra de `fonts.gstatic.com`, e imagens do site, `data:`, `app.parlamento.pt`
+(as fotografias dos deputados em `picture_url`) e `www.parlamento.pt` (as fotografias na
+demografia dos partidos). Um novo anfitrião externo de imagens, tipos de letra ou scripts precisa de
+uma linha aqui, e `tests/test_pages_deploy.py` falha quando o frontend ou `PICTURE_URL` usam um
+anfitrião de imagens que a CSP não permite.
 
-If the API files ever move to another origin (`VITE_API_BASE_URL`), add it to `connect-src`.
+Se os ficheiros da API passarem para outra origem (`VITE_API_BASE_URL`), acrescente-a a
+`connect-src`.
 
-## Before the custom domain
+## Antes do domínio próprio
 
-- A production deploy from `master` checked on `fiscaliza-ceg.pages.dev`.
-- The `fiscaliza.pt` custom domain added to the Pages project (Cloudflare adds the DNS record,
-  since the zone is on Cloudflare).
+- Um deploy de produção a partir de `master` verificado em `fiscaliza-ceg.pages.dev`.
+- O domínio próprio `fiscaliza.pt` adicionado ao projeto do Pages (a Cloudflare acrescenta o
+  registo DNS, já que a zona está na Cloudflare).

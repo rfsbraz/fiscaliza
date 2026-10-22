@@ -1,99 +1,91 @@
-# Contributing to Fiscaliza
+# Como contribuir
 
-Thank you for your interest in contributing to Fiscaliza! This project aims to bring transparency to Portuguese Parliament operations through open data analysis.
+Obrigado pelo interesse no Fiscaliza. Este site mostra a atividade da Assembleia da República a partir dos dados abertos, através do [parlamento-aberto](https://github.com/rfsbraz/parlamento-aberto). Este guia explica como preparar o ambiente, que verificações correr antes de abrir um pull request e que convenções seguir.
 
-## Development Setup
+## Antes de começar
 
-### Prerequisites
+- Um número errado pode vir dos dados ou do cálculo. Se o dado está errado na origem, reporte-o no parlamento-aberto com o formulário [Correção de dados](https://github.com/rfsbraz/parlamento-aberto/issues/new?template=correcao-de-dados.yml). Se o dado está certo e o site o mostra mal, abra uma issue aqui.
+- Para reportar uma vulnerabilidade, siga o [SECURITY.md](SECURITY.md) e não abra uma issue pública.
+- Para uma alteração maior (uma página nova, uma métrica nova), abra primeiro uma issue a descrever a ideia.
 
-- Python 3.12
-- Node.js 20+
-- A parlamento-aberto `release build` output, or network access to its GitHub releases
+## Preparar o ambiente
 
-No database server is needed.
-
-### Backend
+É preciso Python 3.12, Node.js 20 ou mais recente, o [uv](https://docs.astral.sh/uv/) (para construir os dados do parlamento-aberto) e o git. Não é preciso nenhum servidor de base de dados.
 
 ```bash
-python -m venv venv
-source venv/bin/activate
+git clone https://github.com/rfsbraz/parliament.git
+cd parliament
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 pip install pytest ruff==0.17.1
+cd frontend && npm ci && cd ..
 ```
 
-### Data
+### Dados
 
-The API serves one read-only DuckDB file. Build it with the sync:
+O site lê um ficheiro DuckDB só de leitura, construído a partir do commit do parlamento-aberto fixado em `deploy/data-pin`. O parlamento-aberto ainda não publica releases de dados, por isso constroem-se localmente:
 
 ```bash
-# From a local parlamento-aberto build: the folder, its manifest.json, or an archive of it
-python -m fiscaliza_data.sync --from ../parlamento-aberto/dist --data-dir data
-
-# Or from a published release
-python -m fiscaliza_data.sync --tag data-2026-10-20 --data-dir data
+git clone --depth 1 --no-checkout https://github.com/rfsbraz/parlamento-aberto.git ../parlamento-aberto
+python deploy/pages.py build --parlamento-aberto ../parlamento-aberto
 ```
 
-The command exits non-zero when a check fails and leaves the previous file live. Run it again with a newer build to swap the file in; the running API picks it up within a minute.
+O comando vai buscar o commit fixado ao clone (mesmo que o `main` já tenha avançado), constrói a release com `uv`, sincroniza-a para `data/` e exporta os JSON para `frontend/public/api`. Demora cerca de dois minutos. `--data-dir` muda a pasta dos dados e `--dry-run` mostra os passos sem correr nada.
 
-### Running locally
+Se já tiver um resultado de `release build` feito a partir do commit fixado, use `--release PASTA` em vez de `--parlamento-aberto`. Quando o parlamento-aberto publicar releases, `python -m fiscaliza_data.sync` passa a descarregá-las diretamente.
+
+### Correr o site
+
+```bash
+cd frontend && npm run dev
+```
+
+O Vite serve o site em <http://localhost:5173> e os ficheiros de `frontend/public/api` em `/api`, como o alojamento estático. Depois de mudar um serviço ou uma vista, volte a correr `python -m fiscaliza_data.export --out frontend/public/api`.
+
+Para depurar uma resposta sem exportar tudo, a API Flask em `app/` dá as mesmas respostas:
 
 ```bash
 FISCALIZA_DATA_DIR=data flask --app app.main run --port 5000
-cd frontend && npm install && npm run dev   # proxies /api to :5000
 ```
 
-## Running Tests
+## Verificações antes de um pull request
+
+A CI corre estas verificações em cada pull request. Corra-as localmente antes de enviar:
 
 ```bash
-pytest                 # everything, including tests/contracts
-pytest tests/contracts # the endpoint contracts only
-cd frontend && npm run build
+ruff check .
+ruff format --check .
+pytest                    # tudo, incluindo tests/contracts
+cd frontend && npm test && npm run build
 ```
 
-The tests build tiny synthetic releases. They need no network and no real data.
+- `ruff` 0.17.1 verifica o estilo e a formatação (`ruff format .` corrige a formatação).
+- Os testes constroem releases sintéticas minúsculas. Não usam a rede nem dados reais, mas o teste da exportação estática precisa do `node`.
+- `pytest tests/contracts` corre só os contratos: as chaves que o frontend lê em cada endpoint.
 
-## Code Style
+Os hooks de pre-commit (`pip install pre-commit && pre-commit install`) correm o ruff e o gitleaks antes de cada commit.
 
-### Python
+## Código
 
-We use [ruff](https://docs.astral.sh/ruff/) 0.17.1 for linting and formatting:
+- Todo o SQL está em `app/data/repository.py`, `app/data/deputy_rows.py` e `fiscaliza_data/*.sql`. As rotas leem os argumentos, chamam um serviço em `app/services/` e devolvem o seu dicionário em JSON. A exportação chama os mesmos serviços.
+- No frontend: componentes funcionais com hooks, pedidos através de `apiFetch()` em `config/api.js`, e números formatados com `utils/format.js` (formato de Portugal).
+- Comentários, nomes de variáveis, funções e chaves de JSON ficam em inglês (ou nos nomes portugueses que já existem, como `deputados`). Todo o texto que um leitor vê no site, incluindo mensagens de erro, fica em português de Portugal.
 
-```bash
-ruff check .          # Lint
-ruff format .         # Format
-```
+## Rigor dos dados
 
-All SQL lives in `app/data/repository.py` and `fiscaliza_data/*.sql`. Routes parse arguments, call a service in `app/services/`, and return its dict as JSON.
+O site só vale o que valem os seus números:
 
-### JavaScript/React
+- Nunca invente dados nem ponha valores por omissão onde falta um dado real.
+- Se um número está errado, corrija-o onde é calculado: no parlamento-aberto para os marts, ou nas vistas e serviços deste repositório. Nunca altere o ficheiro de dados à mão.
+- Quando um mart ainda não existe, o endpoint diz isso (503 com o motivo) e a página mostra um aviso. Nada de números provisórios.
 
-Follow existing patterns in the codebase. Key conventions:
-- Functional components with hooks
-- API calls through `apiFetch()` from `config/api.js`
+## Commits e pull requests
 
-### Pre-commit Hooks
+- Abra cada pull request a partir de `master`, com uma alteração por pull request. Para atualizar um ramo, faça merge de `master` no ramo.
+- Use [Conventional Commits](https://www.conventionalcommits.org/) na forma `tipo(âmbito): assunto`, com o tipo e o âmbito em inglês e o assunto em português de Portugal, por exemplo `fix(voting): mostra a posição do grupo em vez de uma taxa de alinhamento` ou `docs: traduz o README`.
+- Escreva o título, a descrição, as issues e os comentários em português de Portugal.
+- Preencha o modelo de pull request: o que muda, porquê, que issue fecha e como foi testado. Uma alteração visível no site leva capturas de ecrã de antes e depois.
 
-```bash
-pip install pre-commit
-pre-commit install
-```
+## Licença
 
-## Data Integrity
-
-This project is entirely reliant on data accuracy. Key principles:
-
-- **Never generate artificial data** or provide defaults where real data is missing.
-- If a figure is wrong, fix it where it is computed: in parlamento-aberto for the marts, or in this repo's views and services. Never patch the data file.
-- When a mart does not exist yet, the endpoint says so (503 with a reason) and the page shows a notice. No placeholder numbers.
-
-## Pull Request Process
-
-1. Create a feature branch from `master`
-2. Make your changes following the code style guidelines
-3. Ensure all tests pass
-4. Submit a PR with a clear description of changes
-5. Wait for code review
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the AGPL-3.0 license.
+Ao contribuir, aceita que o código que enviar fica sob a licença AGPL-3.0-or-later ([LICENSE](LICENSE)).
