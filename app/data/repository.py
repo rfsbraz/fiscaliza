@@ -871,6 +871,11 @@ def interventions_count(con, cadastro_id, legislature, kind=None):
     ).fetchone()[0]
 
 
+def interventions_by_legislature(con):
+    """Interventions published per legislature, all speakers, as {legislature: count}."""
+    return dict(con.execute("select legislature, count(*) from interventions group by legislature").fetchall())
+
+
 def legislature_interventions(con, legislature):
     """Interventions published for a legislature, all speakers."""
     return con.execute("select count(*) from interventions where legislature = ?", [legislature]).fetchone()[0]

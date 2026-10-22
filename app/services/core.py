@@ -50,9 +50,17 @@ def _legislature_dict(leg):
 
 
 def legislaturas(con):
+    # intervencoes_publicadas: what the AR has published so far, which the methodology page
+    # quotes for the legislature in progress (#113).
+    interventions = repository.interventions_by_legislature(con)
     return {
         "legislaturas": [
-            {**_legislature_dict(leg), "total_deputados": leg["people_seated"]} for leg in repository.legislatures(con)
+            {
+                **_legislature_dict(leg),
+                "total_deputados": leg["people_seated"],
+                "intervencoes_publicadas": interventions.get(leg["legislature"], 0),
+            }
+            for leg in repository.legislatures(con)
         ]
     }
 

@@ -21,6 +21,12 @@
       "read_at": "frontend/src/components/LegislatureDropdown.jsx:198"
     },
     {
+      "path": "legislaturas[].intervencoes_publicadas",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/Metodologia.jsx:121"
+    },
+    {
       "path": "legislaturas[].numero",
       "type": "scalar",
       "nullable": false,

@@ -110,7 +110,8 @@ and never creates tokens.
 ## Deep links
 
 The app routes in the browser. `deploy/_redirects` rewrites each of the app's routes
-(`/deputados`, `/deputados/*`, `/partidos`, `/partidos/*`, `/coligacoes/*`, `/agenda`) to `/`
+(`/deputados`, `/deputados/*`, `/partidos`, `/partidos/*`, `/coligacoes/*`, `/agenda`,
+`/metodologia`) to `/`
 with status 200, so a deep link loads the app. The rewrite goes to `/`, not `/index.html`, because
 Pages turns `/index.html` into `/` and the rewrite would loop. `/` itself is `index.html`.
 
