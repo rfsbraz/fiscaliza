@@ -241,9 +241,10 @@ class DeputySection:
     """One deputy endpoint, kept in the deputy's file.
 
     ``endpoint`` is the path after ``deputados/{id}/``. ``module`` is the service module behind
-    it; the section is left out while that module does not exist. ``render(service, con,
-    cadastro_id, legislatures)`` returns the fields it adds to the file (legislatures: the ones
-    the person served in, oldest first). The browser side (frontend/src/config/staticApi.js,
+    it; the section is left out while that module does not exist. ``render(service, rows,
+    cadastro_id, legislatures)`` returns the fields it adds to the file (rows: the DeputyRows of
+    the batch the person is in, with the connection in ``rows.con``; legislatures: the ones the
+    person served in, oldest first). The browser side (frontend/src/config/staticApi.js,
     DEPUTY_SECTIONS) reads the same fields.
     """
 
@@ -252,27 +253,13 @@ class DeputySection:
     render: Callable
 
 
-def _activities(deputies, con, cadastro_id, legislature):
-    """The activities answer for a legislature with every intervention, newest first; the
-    browser filters, sorts and pages them."""
-    first, items = _all_pages(
-        lambda page, n: deputies.atividades(con, cadastro_id, legislatura=legislature, page=page, per_page=n),
-        "intervencoes",
-        deputies.MAX_PER_PAGE,
-    )
-    first = dict(first)
-    first.pop("intervention_metadata")
-    first["intervencoes"] = items
-    return first
-
-
-def _voting(voting, con, cadastro_id, legislatures):
+def _voting(voting, rows, cadastro_id, legislatures):
     from app.services.core import NotFound
 
     found = {}
     for leg in legislatures:
         try:
-            found[leg] = voting.deputado_voting_analytics(con, cadastro_id, leg)
+            found[leg] = voting.deputado_voting_analytics(rows.con, cadastro_id, leg, rows=rows)
         except NotFound:
             pass
     fields = {"voting_analytics": found}
@@ -280,7 +267,7 @@ def _voting(voting, con, cadastro_id, legislatures):
         # The default (no legislatura) is the latest legislature served, which the service
         # finds even where it refuses that legislature by name (the Constituinte).
         try:
-            fields["voting_analytics_atual"] = voting.deputado_voting_analytics(con, cadastro_id)
+            fields["voting_analytics_atual"] = voting.deputado_voting_analytics(rows.con, cadastro_id, rows=rows)
         except NotFound:
             pass
     return fields
@@ -289,22 +276,26 @@ def _voting(voting, con, cadastro_id, legislatures):
 # Every endpoint of the deputy page. A new one is one more entry here and one in
 # DEPUTY_SECTIONS in staticApi.js.
 DEPUTY_SECTIONS = (
-    DeputySection("detalhes", "app.services.deputies", lambda s, con, cad, legs: {"detalhes": s.detalhes(con, cad)}),
+    DeputySection(
+        "detalhes",
+        "app.services.deputies",
+        lambda s, rows, cad, legs: {"detalhes": s.detalhes(rows.con, cad, rows=rows)},
+    ),
     DeputySection(
         "conflitos-interesse",
         "app.services.deputies",
-        lambda s, con, cad, legs: {"conflitos_interesse": s.conflitos_interesse(con, cad)},
+        lambda s, rows, cad, legs: {"conflitos_interesse": s.conflitos_interesse(rows.con, cad)},
     ),
     DeputySection(
         "atividades",
         "app.services.deputies",
-        lambda s, con, cad, legs: {"atividades": {leg: _activities(s, con, cad, leg) for leg in legs}},
+        lambda s, rows, cad, legs: {"atividades": {leg: s.atividades_completas(rows, cad, leg) for leg in legs}},
     ),
     DeputySection("voting-analytics", "app.services.voting", _voting),
     DeputySection(
         "attendance",
         "app.services.attendance",
-        lambda s, con, cad, legs: {"attendance": s.deputado_attendance(con, cad)},
+        lambda s, rows, cad, legs: {"attendance": s.deputado_attendance(rows.con, cad)},
     ),
 )
 
@@ -319,22 +310,12 @@ def _deputy_sections():
     return found
 
 
-def deputy_bundle(con, sections, cadastro_id):
-    """Everything the deputy page reads about one person."""
-    legs = [
-        r[0]
-        for r in con.execute(
-            """
-            select dl.legislature from deputy_legislatures dl
-            join legislature_days l using (legislature)
-            where dl.cadastro_id = ? order by l.start_date
-            """,
-            [cadastro_id],
-        ).fetchall()
-    ]
+def deputy_bundle(rows, sections, cadastro_id):
+    """Everything the deputy page reads about one person, from the DeputyRows of their batch."""
+    legs = [c["legislature"] for c in rows.career(cadastro_id)]
     bundle = {"id_cadastro": cadastro_id, "legislatura_atual": legs[-1]}
     for section, module in sections:
-        bundle.update(section.render(module, con, cadastro_id, legs))
+        bundle.update(section.render(module, rows, cadastro_id, legs))
     return bundle
 
 
@@ -356,10 +337,16 @@ def default_workers(env=os.environ, cpu_max=CPU_MAX):
 
 
 def _render_deputies(con, root, ids):
+    """The files of ``ids``, CHUNK people at a time: each query of the deputy page runs once per
+    chunk for all of them (app.data.deputy_rows), and a chunk's rows are dropped when it is done."""
+    from app.data.deputy_rows import DeputyRows
+
     sections = _deputy_sections()
     w = _Writer(root)
-    for cadastro_id in ids:
-        w.write(f"deputados/{cadastro_id}.json", deputy_bundle(con, sections, cadastro_id))
+    for i in range(0, len(ids), CHUNK):
+        rows = DeputyRows(con, ids[i : i + CHUNK])
+        for cadastro_id in rows.ids:
+            w.write(f"deputados/{cadastro_id}.json", deputy_bundle(rows, sections, cadastro_id))
     return w.files
 
 
