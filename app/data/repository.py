@@ -928,8 +928,9 @@ def declaration_flags(con, legislature, declaration_key):
 
 
 def declaration_coverage(con):
-    """Over the legislatures with AR open data declarations (first and last): the people seated
-    in each, counted once per legislature, and how many of those have a declaration in it."""
+    """Over the legislatures with AR open data declarations (first and last): the people with an
+    effective mandate in any of them, each counted once, and how many of those have a declaration
+    in the AR open data (#106, #113)."""
     return _one(
         con,
         """
@@ -940,13 +941,16 @@ def declaration_coverage(con):
             where d.source = 'ar_open_data'
         ),
         seated as (
-            select distinct m.legislature, m.cadastro_id
+            select distinct m.cadastro_id
             from mandates m
             join legs using (legislature)
             where m.is_effective
         ),
         declared as (
-            select distinct legislature, cadastro_id from interest_declarations where source = 'ar_open_data'
+            select distinct d.cadastro_id
+            from interest_declarations d
+            join legs using (legislature)
+            where d.source = 'ar_open_data'
         )
         select
             (select arg_min(legislature, start_date) from legs) as first_legislature,
@@ -955,7 +959,7 @@ def declaration_coverage(con):
             count(*) as seated,
             count(d.cadastro_id) as declared
         from seated s
-        left join declared d on d.legislature = s.legislature and d.cadastro_id = s.cadastro_id
+        left join declared d on d.cadastro_id = s.cadastro_id
         """,
     )
 
