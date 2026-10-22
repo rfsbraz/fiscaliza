@@ -331,8 +331,28 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <div className="text-sm font-medium text-gray-900 line-clamp-3 leading-relaxed mb-2">
-            {vote.objeto}
+            {vote.iniciativa ? (
+              <>
+                <a
+                  href={vote.iniciativa.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-700 hover:underline"
+                >
+                  {vote.iniciativa.tipo}
+                  {vote.iniciativa.numero != null && ` n.º ${vote.iniciativa.numero}/${vote.iniciativa.legislatura}`}
+                </a>
+                {vote.iniciativa.titulo && `: ${vote.iniciativa.titulo}`}
+                {vote.outras_iniciativas > 0 &&
+                  ` e mais ${vote.outras_iniciativas} ${vote.outras_iniciativas === 1 ? 'iniciativa' : 'iniciativas'}`}
+              </>
+            ) : (
+              vote.objeto
+            )}
           </div>
+          {vote.iniciativa?.fase && (
+            <div className="text-xs text-gray-500 mb-2">{vote.iniciativa.fase}</div>
+          )}
           <div className="flex items-center gap-3 flex-wrap text-xs text-gray-500">
             <span>{vote.data ? new Date(vote.data).toLocaleDateString('pt-PT') : 'Data não disponível'}</span>
             {close && (
