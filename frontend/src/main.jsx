@@ -9,10 +9,10 @@ import './index.css'
 
 initSentry()
 
-// TEMPORARY (#178): ?sentry-test=1 throws once so the preview can prove an error reaches Sentry.
+// TEMPORARY (#178): ?sentry-test=1 throws while rendering so the preview can prove an error
+// reaches Sentry and show the fallback.
 const SentryTestTrigger = () => {
-  if (new URLSearchParams(window.location.search).get('sentry-test') === '1' && !window.__sentryTestThrown) {
-    window.__sentryTestThrown = true
+  if (new URLSearchParams(window.location.search).get('sentry-test') === '1') {
     throw new Error('Fiscaliza Sentry test error (temporary preview trigger)')
   }
   return null
