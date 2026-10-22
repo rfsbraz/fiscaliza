@@ -110,6 +110,11 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           HEAD_REF: ${{ github.head_ref }}
+          # Sentry error reporting (frontend/src/sentry.js). The DSN is public; Vite inlines it.
+          # TODO(sentry): set the DSN of the fiscaliza Sentry project, and add its ingest host to
+          # connect-src in deploy/_headers. Empty means the build sends nothing.
+          VITE_SENTRY_DSN: ''
+          VITE_SENTRY_ENVIRONMENT: ${{ github.event_name == 'push' && 'production' || 'preview' }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
             target=(--branch "$HEAD_REF")

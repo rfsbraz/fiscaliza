@@ -285,7 +285,7 @@ def test_csp_is_strict_where_it_can_be(headers):
     assert policy["object-src"] == ["'none'"]
     assert "'unsafe-inline'" not in policy["script-src"]
     assert "'unsafe-eval'" not in policy["script-src"]
-    assert policy["connect-src"] == ["'self'", "https://cloudflareinsights.com"]
+    assert policy["connect-src"] == ["'self'", "https://cloudflareinsights.com", *sentry_ingest()]
 
 
 def test_csp_allows_what_the_app_loads(headers):
@@ -318,7 +318,7 @@ def test_csp_allows_cloudflare_web_analytics(headers):
     # and the beacon reports to cloudflareinsights.com.
     policy = csp(headers)
     assert policy["script-src"] == ["'self'", "https://static.cloudflareinsights.com"]
-    assert policy["connect-src"] == ["'self'", "https://cloudflareinsights.com"]
+    assert policy["connect-src"] == ["'self'", "https://cloudflareinsights.com", *sentry_ingest()]
 
 
 def test_csp_allows_the_deputy_photos_the_api_points_to(headers):
@@ -420,3 +420,52 @@ def test_build_defaults_the_data_dir_to_data():
 def test_build_takes_no_pages_branch():
     with pytest.raises(SystemExit):
         pages.parse_args(["build", "--parlamento-aberto", "/pa", "--branch", "x"])
+
+
+# Sentry (errors only)
+
+SENTRY_JS = FRONTEND / "src" / "sentry.js"
+DEPLOY_WORKFLOW = ROOT / ".github" / "workflows" / "deploy.yml"
+
+
+def sentry_dsn():
+    m = re.search(r"^\s+VITE_SENTRY_DSN: '?([^'\s#]*)'?", DEPLOY_WORKFLOW.read_text(), re.M)
+    return m.group(1) if m else ""
+
+
+def test_sentry_reports_errors_only_without_personal_data():
+    src = SENTRY_JS.read_text()
+    assert "sendDefaultPii: false" in src
+    for banned in (
+        "browserTracingIntegration",
+        "replayIntegration",
+        "tracesSampleRate",
+        "tracesSampler",
+        "replaysSessionSampleRate",
+        "replaysOnErrorSampleRate",
+        "profilesSampleRate",
+        "browserProfilingIntegration",
+    ):
+        assert banned not in src, banned
+    # Only the app's entry point initialises it.
+    main = (FRONTEND / "src" / "main.jsx").read_text()
+    assert "initSentry()" in main
+    assert "AppErrorBoundary" in main
+
+
+def test_no_sentry_auth_files_are_committed():
+    for name in (".env.sentry-build-plugin", ".sentryclirc"):
+        assert not (FRONTEND / name).exists(), name
+        assert not (ROOT / name).exists(), name
+
+
+def sentry_ingest():
+    """The ingest origin of the DSN in deploy.yml, as a list: empty while no DSN is set."""
+    dsn = sentry_dsn()
+    return [f"https://{re.match(r'https://[^@]+@([^/]+)/', dsn).group(1)}"] if dsn else []
+
+
+def test_csp_allows_the_sentry_ingest_host(headers):
+    if not sentry_dsn():
+        pytest.skip("VITE_SENTRY_DSN is not set in deploy.yml yet")
+    assert sentry_ingest()[0] in csp(headers)["connect-src"]
