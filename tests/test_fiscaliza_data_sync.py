@@ -419,3 +419,22 @@ def test_module_entry_point_exits_non_zero_on_failure(tmp_path, data_dir):
     done = _run_module("--from", str(release), "--data-dir", str(data_dir), cwd=tmp_path)
     assert done.returncode == 1
     assert "schema_version 2.0.0" in done.stderr
+
+
+class NoReleasesHttp(FakeHttp):
+    """GitHub before parlamento-aberto publishes its first release: releases/latest is a 404."""
+
+    def get_json(self, url):
+        self.calls.append(url)
+        raise sync.SyncError(f"GET {url}: HTTP 404")
+
+
+def test_no_release_on_github_points_at_the_pin_build(tmp_path, data_dir):
+    with pytest.raises(sync.SyncError, match=r"no published release.*deploy/pages\.py build --parlamento-aberto"):
+        sync.sync(data_dir, http=NoReleasesHttp(tmp_path))
+    assert not (data_dir / "current.duckdb").exists()
+
+
+def test_a_missing_named_tag_still_says_so(tmp_path, data_dir):
+    with pytest.raises(sync.SyncError, match="HTTP 404"):
+        sync.sync(data_dir, tag="data-2026-10-20", http=NoReleasesHttp(tmp_path))
