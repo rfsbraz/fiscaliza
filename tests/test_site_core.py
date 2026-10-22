@@ -158,15 +158,43 @@ def test_parties_have_their_seat_counts(con):
 
 def test_deputies_list_defaults_to_the_current_legislature_seated_first(con):
     page = core.deputados(con, per_page=100)
-    assert page["pagination"]["total"] == 234
+    # 234 elected or seated in XVII less 231, who resigned (#171).
+    assert page["pagination"]["total"] == 233
     assert all(d["is_seated"] for d in page["deputados"])
     last = core.deputados(con, page=3, per_page=100)["deputados"]
-    assert [(d["id_cadastro"], d["is_seated"], d["mandate_status"]) for d in last[-4:]] == [
-        (231, False, "Renunciou"),
+    assert [(d["id_cadastro"], d["is_seated"], d["mandate_status"]) for d in last[-3:]] == [
         (302, False, "Suspenso(Eleito)"),
         (303, False, "Suspenso(Eleito)"),
         (501, False, "Suspenso(Eleito)"),
     ]
+
+
+def test_a_resigned_deputy_is_found_through_the_legislature_filter(con):
+    # 231 resigned on 2026-01-01: out of the default list, still in XVII when asked for it.
+    default = core.deputados(con, page=3, per_page=100)["deputados"]
+    assert 231 not in [d["id_cadastro"] for d in default]
+    xvii = core.deputados(con, legislatura="XVII", per_page=100)
+    assert xvii["pagination"]["total"] == 234
+    found = {
+        d["id_cadastro"]: d
+        for p in (1, 2, 3)
+        for d in core.deputados(con, legislatura="XVII", page=p, per_page=100)["deputados"]
+    }
+    assert (found[231]["legislatura_nome"], found[231]["mandate_status"]) == ("XVII", "Renunciou")
+
+
+def test_a_resigned_deputy_is_in_the_current_legislature_but_not_in_office(con):
+    # 231 is no longer in office in XVII. A suspended mandate (302) is still a mandate of the
+    # current legislature.
+    found = {d["id_cadastro"]: d for d in core.deputados(con, legislatura="XVII", page=3, per_page=100)["deputados"]}
+    assert (found[231]["career_info"]["is_currently_active"], found[231]["career_info"]["in_current_legislature"]) == (
+        False,
+        True,
+    )
+    assert (found[302]["career_info"]["is_currently_active"], found[302]["career_info"]["in_current_legislature"]) == (
+        True,
+        True,
+    )
 
 
 def test_deputies_list_of_everyone_who_ever_sat(con):

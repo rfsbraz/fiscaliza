@@ -95,6 +95,7 @@ function deputyList(index, params) {
   const matched = [];
   let records = 0;
   index.deputados.forEach((d, i) => {
+    // In office, as the API lists it: a resigned deputy is not (#171).
     if (activeOnly && !d.career_info.is_currently_active) return;
     if (needle !== null && !fold(d.nome).includes(needle) && !fold(d.nome_completo).includes(needle)) return;
     matched.push(d);

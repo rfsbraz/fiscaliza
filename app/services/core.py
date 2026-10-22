@@ -134,6 +134,9 @@ def partidos(con, legislatura=None, active_only=True):
     }
 
 
+MANDATE_ENDED = repository.MANDATE_ENDED
+
+
 def _periodo(row):
     end = row["legislature_end"]
     return f"{row['legislature_start'].year}-{end.year}" if end else f"{row['legislature_start'].year}-"
@@ -145,7 +148,10 @@ def _deputy(person, career, groups, shown_legislature, current):
     shown = next((c for c in career if c["legislature"] == shown_legislature), career[-1])
     served = [c for c in career if c["seated"]]
     completed = [c for c in served if not c["is_open"]]
-    in_current = any(c["legislature"] == current for c in career)
+    in_current = next((c for c in career if c["legislature"] == current), None)
+    # In office: in the current legislature with a mandate that did not end for good. A
+    # suspended mandate is still a mandate; a resignation is not.
+    active = in_current is not None and in_current["situation"] not in MANDATE_ENDED
     seated = bool(person["is_seated"])
     status = shown["situation"]
     cad = person["cadastro_id"]
@@ -163,7 +169,8 @@ def _deputy(person, career, groups, shown_legislature, current):
         "is_seated": seated,
         "mandate_status": status,
         "career_info": {
-            "is_currently_active": in_current,
+            "is_currently_active": active,
+            "in_current_legislature": in_current is not None,
             "is_seated": seated,
             "mandate_status": status,
             "is_multi_term": len(served) > 1,

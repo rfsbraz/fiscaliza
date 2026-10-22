@@ -439,7 +439,7 @@ const DeputadosPage = () => {
                         <span style={{ color: tokens.colors.textMuted }}>Mandato Atual:</span>{' '}
                         {deputado.legislatura_nome}
                       </>
-                    ) : deputado.career_info?.latest_completed_mandate ? (
+                    ) : !deputado.career_info?.in_current_legislature && deputado.career_info?.latest_completed_mandate ? (
                       <>
                         <span style={{ color: tokens.colors.textMuted }}>Último mandato:</span>{' '}
                         {deputado.career_info.latest_completed_mandate.legislatura} ({deputado.career_info.latest_completed_mandate.periodo})

@@ -392,9 +392,13 @@ const situationLine = (situacao, inicio, fim) => {
 };
 
 // Header line: a suspended mandate says so with its date, never a reason the data does not give.
-const mandateLine = (mandato, isSeated, legislatura) => {
+// A seat that ended (a resignation, a closed legislature) gives its last day.
+export const mandateLine = (mandato, isSeated, legislatura) => {
   if (!isSeated && mandato?.situacao?.startsWith('Suspenso') && mandato.situacao_inicio) {
     return situationLine(mandato.situacao, mandato.situacao_inicio, mandato.situacao_fim);
+  }
+  if (!isSeated && mandato?.inicio && mandato?.fim) {
+    return `Mandato de ${formatDay(mandato.inicio)} a ${formatDay(mandato.fim)}`;
   }
   if (mandato?.inicio) return `Mandato desde ${formatDay(mandato.inicio)}`;
   return `Eleito na ${legislatura} Legislatura`;
