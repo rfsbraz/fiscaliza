@@ -216,9 +216,7 @@ const Dashboard = ({ stats }) => {
                     fontSize: '0.875rem',
                   }}
                 />
-                <Legend
-                  // recharts 3 sorts legend items by name by default; keep the seat order.
-                  itemSorter={null}
+                <Legend itemSorter={null}
                   formatter={(value, entry) => (
                     <span style={{ color: tokens.colors.textSecondary, fontSize: '0.75rem' }}>
                       {value}
