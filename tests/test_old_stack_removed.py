@@ -2,7 +2,7 @@
 
 The site reads only the DuckDB file the sync builds. Nothing may import the old database
 package, the importers or the AWS tooling, and their packages are out of the requirements.
-terraform/ stays until the `terraform destroy` is confirmed.
+terraform/ went once the AWS destroy was confirmed.
 """
 
 import ast
@@ -41,6 +41,7 @@ REMOVED = [
     "SERVERLESS_MIGRATION.md",
     "IMPORT_STATUS_FLOW_SUMMARY.md",
     "POLITICAL_RESEARCH_GUIDE.md",
+    "terraform",
 ]
 OLD_MODULES = {"database", "scripts", "ops", "config", "sqlalchemy", "flask_sqlalchemy", "alembic", "psycopg2", "boto3"}
 OLD_PACKAGES = {
@@ -71,8 +72,8 @@ def test_no_bat_or_powershell_scripts_left():
     assert [p.name for p in _tracked("*.bat", "*.ps1")] == []
 
 
-def test_terraform_stays_until_the_destroy_is_confirmed():
-    assert (ROOT / "terraform" / "main.tf").is_file()
+def test_no_terraform_files_left():
+    assert [p.name for p in _tracked("*.tf", "*.tfvars*", "*.tfstate*")] == []
 
 
 def test_no_python_file_imports_an_old_module():

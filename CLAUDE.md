@@ -19,8 +19,7 @@ Portuguese Parliament open data analysis platform for government transparency.
 │   └── routes/             # thin routes; pending.py answers 503 for data not released yet
 ├── fiscaliza_data/         # sync.py, seating.sql, views.sql
 ├── frontend/src/           # React components
-├── tests/                  # pytest; tests/contracts pins what the frontend reads
-└── terraform/              # Old AWS infrastructure, kept until its destroy is confirmed
+└── tests/                  # pytest; tests/contracts pins what the frontend reads
 ```
 
 ---
@@ -28,7 +27,7 @@ Portuguese Parliament open data analysis platform for government transparency.
 ## Critical Restrictions
 
 ### Do NOT Run
-- **Deploy scripts** or `terraform apply`/`destroy`
+- **Deploy scripts**
 - Anything that writes to GitHub releases or a production data directory
 
 ### Safe Operations

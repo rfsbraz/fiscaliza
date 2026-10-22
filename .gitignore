@@ -95,13 +95,10 @@ config/local.py
 ehthumbs.db
 Thumbs.db
 
-# Terraform
-terraform/terraform.tfvars
-terraform/.terraform/
-terraform/.terraform.lock.hcl
-terraform/terraform.tfstate*
-terraform/*.tfplan
-terraform/*.zip
+# Terraform state and variables, in case anyone runs it locally again
+*.tfstate*
+*.tfvars
+.terraform/
 
 # Claude Code
 .claude/
@@ -121,7 +118,6 @@ parliament_deploy_key
 
 # Windows artifacts
 nul
-terraform/tfplan
 
 # Site data files built by `python -m fiscaliza_data sync`
 data/*.duckdb

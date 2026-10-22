@@ -16,8 +16,7 @@ Portuguese Parliament open data analysis platform for government transparency, a
 ├── app/                    # Flask API: routes, services, data/repository.py (all SQL)
 ├── fiscaliza_data/         # Sync tool, seating rule and site views
 ├── frontend/src/           # React components
-├── tests/                  # pytest, including the endpoint contracts
-└── terraform/              # Old AWS infrastructure, kept until its destroy is confirmed
+└── tests/                  # pytest, including the endpoint contracts
 ```
 
 There is no database server. The sync builds `fiscaliza-<tag>.duckdb` from a release, checks it, and points `current.duckdb` at it. The API opens `$FISCALIZA_DATA_DIR/current.duckdb` read-only and picks up a new file within a minute, with no restart.

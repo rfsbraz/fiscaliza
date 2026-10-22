@@ -42,3 +42,9 @@ def test_every_job_runs_on_homeberry(workflow):
     assert jobs, f"{workflow.name} has no jobs"
     wrong = {job: runs_on for job, runs_on in jobs.items() if runs_on != HOMEBERRY}
     assert not wrong, f"{workflow.name}: jobs not on {HOMEBERRY}: {wrong}"
+
+
+@pytest.mark.parametrize("workflow", WORKFLOWS, ids=lambda p: p.name)
+def test_no_workflow_runs_terraform(workflow):
+    """The old AWS stack and terraform/ are gone, so no job may set up or run Terraform."""
+    assert "terraform" not in workflow.read_text().lower()
