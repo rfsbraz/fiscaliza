@@ -15,7 +15,7 @@ import pytest
 
 from app.data.connection import DataSource, DataUnavailable
 from app.services import core
-from tests.site_data import AD_ACORES, EXTRACT, KNOWN_SPLIT, TAG, build_site_data
+from tests.site_data import AD_ACORES, ELECTED_UNMATCHED, EXTRACT, KNOWN_SPLIT, TAG, build_site_data
 
 ROOT = Path(__file__).resolve().parent.parent
 PORTED_ROUTES = {
@@ -310,17 +310,35 @@ def test_each_list_and_run_is_its_own_page(con):
         ("CDS-PP", True),
         ("PPM", False),
     ]
+    xvi, xvii = _list_seats(con, "AD-LISTA", "XVI"), _list_seats(con, "AD-LISTA")
     assert national["legislaturas"] == [
         {
             "legislatura": "XVI",
             "ano_eleicao": 2024,
             "listas": ["AD-LISTA"],
-            "deputados": _list_seats(con, "AD-LISTA", "XVI"),
+            "deputados": xvi,
+            "em_funcoes": xvi,
+            "contagem": "eleitos",
         },
-        {"legislatura": "XVII", "ano_eleicao": 2025, "listas": ["AD-LISTA"], "deputados": _list_seats(con, "AD-LISTA")},
+        {
+            "legislatura": "XVII",
+            "ano_eleicao": 2025,
+            "listas": ["AD-LISTA"],
+            "deputados": xvii,
+            "em_funcoes": xvii,
+            "contagem": "eleitos",
+        },
     ]
+    n = acores["deputy_count"]
     assert acores["legislaturas"] == [
-        {"legislatura": "XVII", "ano_eleicao": 2025, "listas": ["AD-ACORES"], "deputados": acores["deputy_count"]}
+        {
+            "legislatura": "XVII",
+            "ano_eleicao": 2025,
+            "listas": ["AD-ACORES"],
+            "deputados": n,
+            "em_funcoes": n,
+            "contagem": "eleitos",
+        }
     ]
     assert {d["circulo"] for d in core.coligacao_deputados(con, "ad-acores-2025")["deputados"]} == {"Açores"}
     assert "Açores" not in {d["circulo"] for d in core.coligacao_deputados(con, "ad-2024")["deputados"]}
@@ -442,6 +460,7 @@ def test_coalition_deputies_keep_the_group_rule_without_seats_per_circle(data_di
     c = duckdb.connect(str(path))
     try:
         c.execute("delete from ballot_list_seats where legislature = 'XVI'")
+        c.execute("delete from ballot_list_elected where legislature = 'XVI'")
         assert c.execute("select count(*) from ballot_list_seats where legislature = 'XVI'").fetchone()[0] == 0
         xvi = core.coligacao_deputados(c, "ad-2024", "XVI")
         seated = c.execute(
@@ -451,6 +470,107 @@ def test_coalition_deputies_keep_the_group_rule_without_seats_per_circle(data_di
         assert xvi["legislatura"] == "XVI" and xvi["total_deputados"] == seated > 0
         assert {"Círculo 21", "Círculo 22"} <= {d["circulo"] for d in xvi["deputados"]}
         assert core.coligacao_deputados(c, "ad-2024")["total_deputados"] == _list_seats(c, "AD-LISTA")
+        legs = {leg["legislatura"]: leg for leg in core.coligacao(c, "ad-2024")["legislaturas"]}
+        assert legs["XVI"]["contagem"] == "em_funcoes" and legs["XVI"]["deputados"] == seated
+        assert legs["XVII"]["contagem"] == "eleitos"
+    finally:
+        c.close()
+
+
+# #197: a coalition page counts the deputies elected on its lists, as the election result has
+# them. Up to VI the release lists them (ballot_list_elected, XVI in the fixture); from VII on the
+# mandates give them: a mandate from the legislature's first day as Efetivo, Suspenso(Eleito) or
+# Renunciou, on the list of the person's first group in a circle where that list won seats (XVII
+# in the fixture). Who held the seat on the legislature's last day is a second figure.
+
+
+def _move_to_ch(c, legislature, cad, day):
+    """Move a deputy to CH from ``day`` on, as a deputy who leaves the coalition's group."""
+    end = c.execute(
+        "select end_date from group_memberships where legislature = ? and cadastro_id = ?", [legislature, cad]
+    ).fetchone()[0]
+    c.execute(
+        "update group_memberships set end_date = ?::date - 1, is_open = false where legislature = ? and cadastro_id = ?",
+        [day, legislature, cad],
+    )
+    c.execute(
+        "insert into group_memberships values (?, ?, 2, 'CH', ?, ?, ?)", [legislature, cad, day, end, end is None]
+    )
+
+
+def _ad_deputy(c, legislature, day):
+    return c.execute(
+        "select min(cadastro_id) from seated_detail(?::date) where legislature = ? and group_acronym = 'PSD' "
+        "and circle = 'Círculo 3'",
+        [day, legislature],
+    ).fetchone()[0]
+
+
+def test_coalition_count_is_the_deputies_elected_on_its_lists(data_dir, tmp_path):
+    path = tmp_path / "moved.duckdb"
+    shutil.copy(data_dir / "current.duckdb", path)
+    c = duckdb.connect(str(path))
+    try:
+        xvi_cad = _ad_deputy(c, "XVI", "2025-06-02")
+        xvii_cad = _ad_deputy(c, "XVII", EXTRACT)
+        _move_to_ch(c, "XVI", xvi_cad, "2025-01-01")
+        _move_to_ch(c, "XVII", xvii_cad, "2026-01-01")
+        xvi, xvii = _list_seats(c, "AD-LISTA", "XVI"), _list_seats(c, "AD-LISTA")
+        detail = core.coligacao(c, "ad-2024")
+        legs = {leg["legislatura"]: leg for leg in detail["legislaturas"]}
+        assert (legs["XVI"]["deputados"], legs["XVI"]["em_funcoes"]) == (xvi, xvi - 1)
+        assert (legs["XVII"]["deputados"], legs["XVII"]["em_funcoes"]) == (xvii, xvii - 1)
+        assert (detail["deputy_count"], detail["deputados_em_funcoes"]) == (xvii, xvii - 1)
+        assert (detail["contagem"], detail["legislatura_aberta"], detail["data_em_funcoes"]) == (
+            "eleitos",
+            True,
+            EXTRACT,
+        )
+        listed = {x["id"]: x for x in core.coligacoes(c)["coligacoes"]}["ad-2024"]
+        assert (listed["deputy_count"], listed["deputados_em_funcoes"]) == (xvii, xvii - 1)
+        for leg, cad, seats in (("XVI", xvi_cad, xvi), ("XVII", xvii_cad, xvii)):
+            page = core.coligacao_deputados(c, "ad-2024", leg)
+            assert page["total_deputados"] == len(page["deputados"]) == seats
+            moved = [d for d in page["deputados"] if d["id_cadastro"] == cad]
+            assert [d["partido_sigla"] for d in moved] == ["PSD"], leg  # the group they were elected for
+        frs = core.coligacao(c, "FRS")
+        assert (frs["legislatura_aberta"], frs["data_em_funcoes"]) == (False, "2025-06-02")
+    finally:
+        c.close()
+
+
+def test_elected_rows_without_a_cadastro_id_still_count(con):
+    # The release could not match one published name of the XVI AD list to a deputy.
+    page = core.coligacao_deputados(con, "ad-2024", "XVI")
+    assert page["total_deputados"] == len(page["deputados"]) == _list_seats(con, "AD-LISTA", "XVI")
+    unmatched = [d for d in page["deputados"] if d["id_cadastro"] is None]
+    assert unmatched == [
+        {
+            "id": None,
+            "id_cadastro": None,
+            "nome": ELECTED_UNMATCHED,
+            "nome_completo": ELECTED_UNMATCHED,
+            "partido_sigla": None,
+            "circulo": "Círculo 2",
+            "picture_url": None,
+        }
+    ]
+
+
+def test_the_list_and_the_mandates_give_the_same_elected(data_dir, tmp_path):
+    # A release without ballot_list_elected (before schema 1.6.0) takes the mandates for XVI too,
+    # and both ways give each list exactly its seats.
+    path = tmp_path / "no-elected.duckdb"
+    shutil.copy(data_dir / "current.duckdb", path)
+    c = duckdb.connect(str(path))
+    try:
+        from_list = {d["id_cadastro"] for d in core.coligacao_deputados(c, "ad-2024", "XVI")["deputados"]}
+        c.execute("drop table ballot_list_elected")
+        for page, ballot in [("ad-2024", "AD-LISTA"), ("CDU", "CDU-LISTA"), ("FRS", "FRS-LISTA")]:
+            for leg in core.coligacao(c, page)["legislaturas"]:
+                assert leg["deputados"] == _list_seats(c, ballot, leg["legislatura"]), (page, leg)
+        from_mandates = {d["id_cadastro"] for d in core.coligacao_deputados(c, "ad-2024", "XVI")["deputados"]}
+        assert len(from_mandates - from_list) == 1 and from_list - from_mandates == {None}
     finally:
         c.close()
 

@@ -398,10 +398,10 @@ def coalition_link(con, legislature, group):
 
 
 def _coalition_seated(con, rows, legislature, day):
-    """The deputies a coalition elected in a legislature: those seated on ``day`` in one of its
-    groups, in a circle where the list they belong to won seats (#181). A list that ran only in
-    Madeira or the Açores does not take the whole group. The release has seats per circle from
-    I-B on; in a legislature without them every deputy of the groups counts."""
+    """The deputies seated on ``day`` in one of the coalition's groups in a legislature, in a
+    circle where the list they belong to won seats (#181). A list that ran only in Madeira or the
+    Açores does not take the whole group. In a legislature without seats per circle every deputy
+    of the groups counts."""
     rows = [r for r in rows if r["legislature"] == legislature]
     groups = sorted({r["group_code"] for r in rows})
     seated = repository.seated_in_groups(con, legislature, day, groups) if groups else []
@@ -412,11 +412,32 @@ def _coalition_seated(con, rows, legislature, day):
     return [s for s in seated if (s["group_acronym"], s["circle"]) in allowed]
 
 
+def _coalition_elected(con, rows, legislature, day):
+    """(contagem, deputies): the deputies the coalition's lists elected in a legislature, as the
+    election result has them (#197), with contagem "eleitos". Up to VI the release lists them
+    (ballot_list_elected), with rows it could not match to a deputy. From VII on they come from
+    the mandates: a deputy elected for one of the coalition's groups, in a circle where its list
+    won seats. Both give each list exactly its seats (ballot_list_seats). A legislature with no
+    seats per circle (Constituinte and I-A, where no coalition won seats) falls back to the
+    deputies seated on ``day``, with contagem "em_funcoes"."""
+    rows = [r for r in rows if r["legislature"] == legislature]
+    ballots = sorted({r["ballot_acronym"] for r in rows})
+    if repository.has_list_elected(con, legislature):
+        return "eleitos", repository.list_elected(con, legislature, ballots)
+    circles = repository.list_seat_circles(con, legislature)
+    if not circles:
+        return "em_funcoes", _coalition_seated(con, rows, legislature, day)
+    allowed = {(r["group_code"], circle) for r in rows for circle in circles.get(r["ballot_acronym"], ())}
+    elected = repository.elected_by_mandate(con, legislature)
+    return "eleitos", [e for e in elected if (e["group_acronym"], e["circle"]) in allowed]
+
+
 def _head(c):
     return {"id": c["id"], "sigla": c["sigla"], "nome": c["nome"], "tipo_coligacao": "eleitoral"}
 
 
 def _coalition_dict(con, c, with_legislatures=False):
+    contagem, elected = _coalition_elected(con, c["rows"], c["legislature"], c["ref_day"])
     seated = _coalition_seated(con, c["rows"], c["legislature"], c["ref_day"])
     out = {
         **_head(c),
@@ -429,7 +450,13 @@ def _coalition_dict(con, c, with_legislatures=False):
         "component_parties": [
             {"sigla": p["sigla"], "nome": p["nome"], "com_lugares": p["com_lugares"]} for p in c["components"]
         ],
-        "deputy_count": len(seated),
+        # The deputies elected on the lists (#197); who held the seat on the legislature's last
+        # day (the data date for the open one) is the second figure.
+        "deputy_count": len(elected),
+        "contagem": contagem,
+        "deputados_em_funcoes": len(seated),
+        "data_em_funcoes": _iso(c["ref_day"]),
+        "legislatura_aberta": c["ativa"],
         # Editorial fields with no source in the release: left empty, the page guards them.
         "espectro_politico": None,
         "observacoes": None,
@@ -438,12 +465,16 @@ def _coalition_dict(con, c, with_legislatures=False):
         out["legislaturas"] = []
         for leg, year in zip(c["legislaturas"], c["eleicoes"], strict=True):
             rows = [r for r in c["rows"] if r["legislature"] == leg]
+            day = rows[0]["ref_day"]
+            leg_contagem, leg_elected = _coalition_elected(con, c["rows"], leg, day)
             out["legislaturas"].append(
                 {
                     "legislatura": leg,
                     "ano_eleicao": year,
                     "listas": sorted({r["ballot_acronym"] for r in rows}),
-                    "deputados": len(_coalition_seated(con, c["rows"], leg, rows[0]["ref_day"])),
+                    "deputados": len(leg_elected),
+                    "em_funcoes": len(_coalition_seated(con, c["rows"], leg, day)),
+                    "contagem": leg_contagem,
                 }
             )
     return out
@@ -462,22 +493,23 @@ def coligacao(con, coligacao_id):
 def coligacao_deputados(con, coligacao_id, legislatura=None):
     c = _coalition(con, coligacao_id)
     leg = _legislature(con, legislatura) if legislatura else {"legislature": c["legislature"], "ref_day": c["ref_day"]}
-    seated = _coalition_seated(con, c["rows"], leg["legislature"], leg["ref_day"])
+    contagem, elected = _coalition_elected(con, c["rows"], leg["legislature"], leg["ref_day"])
     return {
         "coligacao": _head(c),
         "deputados": [
             {
-                "id": s["cadastro_id"],
-                "id_cadastro": s["cadastro_id"],
-                "nome": s["parliamentary_name"],
-                "nome_completo": s["full_name"],
-                "partido_sigla": s["group_acronym"],
-                "circulo": s["circle"],
-                "picture_url": PICTURE_URL.format(s["cadastro_id"]),
+                "id": e["cadastro_id"],
+                "id_cadastro": e["cadastro_id"],
+                "nome": e["parliamentary_name"],
+                "nome_completo": e["full_name"],
+                "partido_sigla": e["group_acronym"],
+                "circulo": e["circle"],
+                "picture_url": PICTURE_URL.format(e["cadastro_id"]) if e["cadastro_id"] is not None else None,
             }
-            for s in seated
+            for e in elected
         ],
-        "total_deputados": len(seated),
+        "total_deputados": len(elected),
+        "contagem": contagem,
         "legislatura": leg["legislature"],
     }
 

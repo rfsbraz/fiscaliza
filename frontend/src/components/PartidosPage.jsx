@@ -584,7 +584,7 @@ const PartidosPage = () => {
                               letterSpacing: '0.03em',
                             }}
                           >
-                            deputados
+                            {coligacao.contagem === 'em_funcoes' ? 'em funções' : 'eleitos'}
                           </div>
                         </div>
                       </div>

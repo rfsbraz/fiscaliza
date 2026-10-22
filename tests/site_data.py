@@ -18,6 +18,10 @@ FRS (PS) in XVI only. In XVII AD has a second list, AD_ACORES, that won seats on
 PEV without seats. Seats per circle and list (ballot_list_seats) exist for both legislatures: PSD
 and CDS-PP deputies of circles 21 and 22 were not elected on an AD list. The coalition rows carry
 an election link ending in the election year (2024 for XVI, 2025 for XVII), as the seed does.
+The deputies elected on each list (ballot_list_elected) exist for XVI only, as the release has
+them up to VI: one per seat, the AD-LISTA row with the lowest list position in circle 2 without
+a cadastro_id (a published name the release could not match). XVII has none, so its elected
+deputies come from the mandates.
 
 Activity comes in sets (ACTIVITY_SETS below) that go into the same tables with their own ids,
 so a page test can load only the set its hand-checked figures come from; the contracts and the
@@ -210,6 +214,49 @@ def _ballot_list_seats(mandates, memberships):
             for (circle, ballot), n in sorted(seats.items())
         ]
     return out
+
+
+ELECTED_UNMATCHED = "Nome Publicado Sem Ligação"
+
+
+def _ballot_list_elected(mandates, memberships):
+    """The deputies elected on each list in XVI, one row per seat of _ballot_list_seats: the
+    deputies seated on its last day, in list order by cadastro_id. The first AD-LISTA row of
+    circle 2 has no cadastro_id."""
+    seats = [s for s in _ballot_list_seats(mandates, memberships) if s[0] == "XVI"]
+    groups = {cad: group for lg, cad, _, group, *_ in memberships if lg == "XVI"}
+    people = {}
+    for lg, cad, _, circle, _, effective, _, end in mandates:
+        if lg == "XVI" and effective and end == XVI[3] and cad in groups:
+            people.setdefault(circle, []).append(cad)
+    out = []
+    for _, election, code, _, ballot, n, _ in seats:
+        circle = int(code[:2])
+        on_list = [cad for cad in sorted(people[circle]) if _xvi_ballot(groups[cad], circle) == ballot]
+        assert len(on_list) == n, (circle, ballot)
+        for position, cad in enumerate(on_list, start=1):
+            unmatched = ballot == "AD-LISTA" and circle == 2 and position == 1
+            out.append(
+                (
+                    "XVI",
+                    election,
+                    code,
+                    circle_name(circle),
+                    ballot,
+                    position,
+                    ELECTED_UNMATCHED if unmatched else f"Nome Completo {cad}",
+                    None if unmatched else cad,
+                    "unmatched" if unmatched else "exact",
+                    None,
+                )
+            )
+    return out
+
+
+def _xvi_ballot(group, circle):
+    if group in ("PSD", "CDS-PP"):
+        return "AD-LISTA" if circle <= 20 else group
+    return {"PCP": "CDU-LISTA", "PS": "FRS-LISTA"}.get(group, group)
 
 
 def _activity():
@@ -576,6 +623,15 @@ def build_release(root, sets=tuple(ACTIVITY_SETS)):
     con.executemany(
         "insert into ballot_list_seats values (?, ?, ?, ?, ?, ?, ?)", _ballot_list_seats(mandates, memberships)
     )
+    con.execute(
+        "create table ballot_list_elected (legislature varchar, election_date date, circle_code varchar, "
+        "circle_name varchar, ballot_acronym varchar, list_position integer, published_name varchar, "
+        "cadastro_id bigint, match varchar, source_url varchar)"
+    )
+    con.executemany(
+        "insert into ballot_list_elected values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        _ballot_list_elected(mandates, memberships),
+    )
     tables = _tables(sets)
     for table, (columns, rows) in tables.items():
         con.execute(f"create table {table} ({columns})")
@@ -591,6 +647,7 @@ def build_release(root, sets=tuple(ACTIVITY_SETS)):
         "parliamentary_groups",
         "coalitions",
         "ballot_list_seats",
+        "ballot_list_elected",
         *tables,
     ):
         path = out / f"{mart}.parquet"
