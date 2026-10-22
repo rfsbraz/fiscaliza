@@ -135,8 +135,8 @@ O próximo commit do parlamento-aberto repõe o ramo e começa de novo.
 
 | Repositório | Segredo | Token |
 |---|---|---|
-| `rfsbraz/parliament` | `PIN_BOT_TOKEN` | token fine-grained, com acesso só ao repositório `rfsbraz/parliament`, com Contents: read and write e Pull requests: read and write (o Metadata: read vem incluído) |
-| `rfsbraz/parlamento-aberto` | `FISCALIZA_DISPATCH_TOKEN` | token fine-grained, com acesso só ao repositório `rfsbraz/parliament`, com Contents: read and write |
+| `rfsbraz/fiscaliza` | `PIN_BOT_TOKEN` | token fine-grained, com acesso só ao repositório `rfsbraz/fiscaliza`, com Contents: read and write e Pull requests: read and write (o Metadata: read vem incluído) |
+| `rfsbraz/parlamento-aberto` | `FISCALIZA_DISPATCH_TOKEN` | token fine-grained, com acesso só ao repositório `rfsbraz/fiscaliza`, com Contents: read and write |
 
 O `PIN_BOT_TOKEN` faz push de `data/pin-bump`, abre e edita o pull request e integra-o. Um pull
 request aberto ou integrado com o `GITHUB_TOKEN` não inicia workflows, por isso sem ele o pull
@@ -146,7 +146,7 @@ workflows param no primeiro passo com um erro que nomeia o `PIN_BOT_TOKEN` quand
 
 O `FISCALIZA_DISPATCH_TOKEN` só envia o dispatch. O GitHub pede Contents: write no repositório de
 destino para `POST /repos/{owner}/{repo}/dispatches`, por isso não pode ser menor. Um só token com
-Contents e Pull requests read and write em `rfsbraz/parliament` serviria para os dois, guardado com
+Contents e Pull requests read and write em `rfsbraz/fiscaliza` serviria para os dois, guardado com
 os dois nomes, mas mantenho dois para poder revogar cada um à parte. Nenhum deles vai para outro
 sítio além dos segredos do repositório.
 
@@ -252,13 +252,16 @@ As ligações diretas ficam com a predefinição do Pages para HTML,
 `public, max-age=0, must-revalidate`. O Pages junta com uma vírgula o mesmo cabeçalho de todas as
 regras que coincidem, por isso o `Cache-Control` nunca é definido em `/*`.
 
-A CSP: scripts, dados e frames só do próprio site (`frame-ancestors 'none'`), estilos do site e do
-Google Fonts (`'unsafe-inline'` para os atributos de estilo que o Recharts e o framer-motion
-definem), tipos de letra de `fonts.gstatic.com`, e imagens do site, `data:`, `app.parlamento.pt`
-(as fotografias dos deputados em `picture_url`) e `www.parlamento.pt` (as fotografias na
-demografia dos partidos). Um novo anfitrião externo de imagens, tipos de letra ou scripts precisa de
-uma linha aqui, e `tests/test_pages_deploy.py` falha quando o frontend ou `PICTURE_URL` usam um
-anfitrião de imagens que a CSP não permite.
+A CSP: scripts, dados e frames só do próprio site (`frame-ancestors 'none'`), com duas exceções
+para o Cloudflare Web Analytics (o script de `static.cloudflareinsights.com` e os envios para
+`cloudflareinsights.com`), estilos do site
+(`'unsafe-inline'` para os atributos de estilo que o Recharts e o framer-motion definem), tipos de
+letra só do site (estão alojados em `frontend/src/assets/fonts`, e o build nunca os embute como
+URIs `data:`), e imagens do site, `data:`, `app.parlamento.pt` (as fotografias dos deputados em
+`picture_url`) e `www.parlamento.pt` (as fotografias na demografia dos partidos). Um novo anfitrião
+externo de imagens, tipos de letra ou scripts precisa de uma linha aqui, e
+`tests/test_pages_deploy.py` falha quando o frontend ou `PICTURE_URL` usam um anfitrião de imagens
+que a CSP não permite.
 
 Se os ficheiros da API passarem para outra origem (`VITE_API_BASE_URL`), acrescente-a a
 `connect-src`.

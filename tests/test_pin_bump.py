@@ -21,7 +21,7 @@ OLD = "a" * 40
 NEW = "b" * 40
 HEAD = "c" * 40
 PA = "repos/rfsbraz/parlamento-aberto"
-REPO = "repos/rfsbraz/parliament"
+REPO = "repos/rfsbraz/fiscaliza"
 PIN_TEXT = (
     "# The parlamento-aberto commit Fiscaliza is built from.\n"
     f"commit={OLD}\n"
@@ -79,6 +79,10 @@ def pin_file(tmp_path):
 
 
 # Pure helpers
+
+
+def test_talks_to_the_renamed_repository():
+    assert pin_bump.REPO == "repos/rfsbraz/fiscaliza"
 
 
 def test_validate_sha_takes_40_hex_only():
@@ -198,7 +202,7 @@ def bump_routes(pin_status="ahead", main_status="ahead", old_schema="1.2.0", new
         ("GET", f"{PA}/contents/src/parlamento_aberto/models/schema.yml?ref={OLD}"): schema(old_schema),
         ("GET", f"{PA}/contents/src/parlamento_aberto/models/schema.yml?ref={NEW}"): schema(new_schema),
         ("GET", f"{REPO}/pulls?head=rfsbraz:data/pin-bump&base=master&state=open"): list(open_prs),
-        ("POST", f"{REPO}/pulls"): {"number": 140, "html_url": "https://github.com/rfsbraz/parliament/pull/140"},
+        ("POST", f"{REPO}/pulls"): {"number": 140, "html_url": "https://github.com/rfsbraz/fiscaliza/pull/140"},
     }
 
 
