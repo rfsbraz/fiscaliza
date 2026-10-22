@@ -17,6 +17,7 @@ import InterventionsSummaryBar, { ActivityBadge, VideoIndicator } from './deputy
 import TimelineSparkline, { ActivityHeatmap, TrendIndicator, BarSparkline } from './charts/TimelineSparkline';
 import PolicySpecializationChart, { PolicyRadar, TopicTag } from './charts/PolicySpecializationChart';
 import InterestTable, { ACTIVITY_COLUMNS, SHAREHOLDING_COLUMNS } from './deputy/InterestTable';
+import { formatDecimal, legislatureName, plural } from '../utils/format';
 
 // TODO: Deputy mandate linking limitation
 // Current system uses name-based linking to connect same person across legislaturas
@@ -206,12 +207,12 @@ const StatisticCard = ({
                 aria-valuenow={percentage}
                 aria-valuemin="0"
                 aria-valuemax="100"
-                aria-label={`${current} de ${total} (${percentage.toFixed(1)}%)`}
+                aria-label={`${current} de ${total} (${formatDecimal(percentage, 1)}%)`}
               />
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: '6px' }}>
               <span style={{ fontSize: '0.75rem', color: scheme.textLight }}>
-                {percentage.toFixed(1)}% do total
+                {formatDecimal(percentage, 1)}% do total
               </span>
               <span style={{ fontSize: '0.75rem', color: scheme.text }}>
                 {total.toLocaleString('pt-PT')} total
@@ -258,7 +259,7 @@ const StatisticCardSkeleton = ({ colorScheme = 'gray' }) => {
         fontFamily: tokens.fonts.body,
       }}
       role="listitem"
-      aria-label="Carregando estatística..."
+      aria-label="A carregar estatística..."
     >
       <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div style={{ padding: '10px', backgroundColor: scheme.primary || '#D1D5DB', borderRadius: '4px', opacity: 0.5 }}>
@@ -298,7 +299,7 @@ const StatisticsLoadingSkeleton = () => (
       marginBottom: '32px',
       fontFamily: tokens.fonts.body,
     }}
-    aria-label="Carregando estatísticas..."
+    aria-label="A carregar estatísticas..."
   >
     <header style={{ padding: '16px 24px', borderBottom: `1px solid ${tokens.colors.border}` }}>
       <div style={{ width: '256px', height: '24px', backgroundColor: '#D1D5DB', borderRadius: '2px', marginBottom: '8px' }} />
@@ -1172,7 +1173,7 @@ const DeputadoDetalhes = () => {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <Briefcase style={{ width: '16px', height: '16px', marginRight: '8px' }} />
-                    <span>{deputado.profissao || 'Profissão não informada'}</span>
+                    <span>{deputado.profissao || 'Profissão não indicada'}</span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -1450,7 +1451,7 @@ const DeputadoDetalhes = () => {
               color: tokens.colors.textSecondary,
               margin: 0,
             }}>
-              {deputado.estatisticas.total_mandatos} mandatos • {deputado.estatisticas.tempo_servico_anos} anos de serviço • Legislaturas {deputado.estatisticas.legislaturas_servidas}
+              {plural(deputado.estatisticas.total_mandatos, 'mandato', 'mandatos')} • {formatDecimal(deputado.estatisticas.tempo_servico_anos, 1)} anos de serviço • {String(deputado.estatisticas.legislaturas_servidas || '').includes(',') ? 'Legislaturas' : 'Legislatura'} {deputado.estatisticas.legislaturas_servidas}
             </p>
           </header>
 
@@ -1511,7 +1512,7 @@ const DeputadoDetalhes = () => {
                 return (
                   <div>
                     <div style={{ fontSize: '0.75rem', color: tokens.colors.textMuted, marginBottom: '8px' }}>
-                      {latest.legislatura} Legislatura{latest.aberta ? ' (em curso)' : ''}
+                      {legislatureName(latest.legislatura)}{latest.aberta ? ' (em curso)' : ''}
                     </div>
                     <SigningCounts assinatura={latest.assinatura} showNote={false} />
                     <div style={{ padding: '12px 0 0 0', marginTop: '12px', borderTop: `1px solid ${tokens.colors.border}` }}>
@@ -1637,7 +1638,7 @@ const DeputadoDetalhes = () => {
                   {deputado.estatisticas.total_mandatos}
                 </span>
                 <span style={{ fontSize: '0.875rem', color: tokens.colors.textSecondary, marginLeft: '8px' }}>
-                  mandatos
+                  {deputado.estatisticas.total_mandatos === 1 ? 'mandato' : 'mandatos'}
                 </span>
               </div>
 
@@ -1648,7 +1649,7 @@ const DeputadoDetalhes = () => {
                 color: tokens.colors.textSecondary,
               }}>
                 <div style={{ marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 600 }}>{deputado.estatisticas.tempo_servico_anos}</span> anos de serviço
+                  <span style={{ fontWeight: 600 }}>{formatDecimal(deputado.estatisticas.tempo_servico_anos, 1)}</span> anos de serviço
                 </div>
                 <div style={{ fontSize: '0.75rem', color: tokens.colors.textMuted }}>
                   {deputado.estatisticas.legislaturas_servidas}
@@ -1736,7 +1737,7 @@ const DeputadoDetalhes = () => {
                             minWidth: '48px',
                             textAlign: 'right',
                           }}>
-                            {percentage.toFixed(0)}%
+                            {formatDecimal(percentage, 0)}%
                           </span>
                         </div>
                       </div>
@@ -3127,7 +3128,7 @@ const DeputadoDetalhes = () => {
                                       fontSize: '0.75rem',
                                       textTransform: 'uppercase',
                                       letterSpacing: '0.05em'
-                                    }}>Status:</span>
+                                    }}>Estado:</span>
                                     <p style={{
                                       fontFamily: tokens.fonts.body,
                                       color: tokens.colors.textPrimary,
@@ -3234,7 +3235,7 @@ const DeputadoDetalhes = () => {
                                       transition: 'background-color 0.2s ease'
                                     }}
                                   >
-                                    Link Oficial
+                                    Ligação oficial
                                   </button>
                                 </div>
                                 <p style={{
@@ -3755,14 +3756,14 @@ const DeputadoDetalhes = () => {
                       fontWeight: '500',
                       marginBottom: '0.5rem'
                     }}>
-                      Apenas um mandato registrado
+                      Apenas um mandato registado
                     </p>
                     <p style={{
                       fontFamily: tokens.fonts.body,
                       fontSize: '0.875rem',
                       color: tokens.colors.textMuted
                     }}>
-                      Este deputado só tem registro de mandato na legislatura atual
+                      Este deputado só tem registo de mandato na legislatura atual
                     </p>
                   </div>
                 )}
