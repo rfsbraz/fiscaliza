@@ -19,7 +19,7 @@ export default defineConfig({
   plugins: [react(), spaFallback()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
   build: {
@@ -27,15 +27,18 @@ export default defineConfig({
     emptyOutDir: true,
     // Fonts stay files: the CSP's font-src is 'self' only, which blocks a data: URI font.
     assetsInlineLimit: (file) => (file.endsWith('.woff2') ? false : undefined),
-    rollupOptions: {
+    // Vite 8 bundles with Rolldown, which dropped the object form of manualChunks.
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          charts: ['recharts'],
-          animation: ['framer-motion'],
-        }
-      }
-    }
+        codeSplitting: {
+          groups: [
+            { name: 'vendor', test: /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom)[\\/]/, priority: 3 },
+            { name: 'charts', test: /[\\/]node_modules[\\/]recharts[\\/]/, priority: 2 },
+            { name: 'animation', test: /[\\/]node_modules[\\/]framer-motion[\\/]/, priority: 1 },
+          ],
+        },
+      },
+    },
   },
   server: {
     host: true, // Allow external access
