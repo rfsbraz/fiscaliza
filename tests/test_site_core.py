@@ -234,6 +234,21 @@ def test_elected_people_who_never_sat_are_listed_and_found(con):
     assert d["circulo"] == "Círculo 18"
 
 
+def test_a_current_mandate_needs_a_seat_in_the_current_legislature(con):
+    # #107: an election without a seat is not a mandate. 501 and 302 were elected to XVII and never
+    # sat in it (302 sat in XVI); 303 sat in XVII for a day and is suspended now; 1 is seated; 300
+    # sat only in XVI.
+    def career(cad):
+        found = core.deputados(con, search=f"deputado {cad}", active_only=False, per_page=100)["deputados"]
+        return next(d["career_info"] for d in found if d["id_cadastro"] == cad)
+
+    assert career(501)["seated_in_current_legislature"] is False
+    assert career(302)["seated_in_current_legislature"] is False
+    assert career(303)["seated_in_current_legislature"] is True
+    assert career(1)["seated_in_current_legislature"] is True
+    assert career(300)["seated_in_current_legislature"] is False
+
+
 def test_a_suspended_xvii_mandate_is_the_latest_legislature(con):
     [d] = core.deputados(con, search="deputado 302", active_only=False)["deputados"]
     assert d["legislatura_nome"] == "XVII" and d["mandate_status"] == "Suspenso(Eleito)"
