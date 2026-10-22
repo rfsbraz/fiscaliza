@@ -259,7 +259,7 @@ const DeputadosPage = () => {
                           color: tokens.colors.textSecondary,
                         }}
                       >
-                        {deputado.partido_sigla} · {deputado.circulo}
+                        {[deputado.partido_sigla, deputado.circulo].filter(Boolean).join(' · ')}
                       </span>
                       {/* Mandate Status Badge */}
                       {(() => {

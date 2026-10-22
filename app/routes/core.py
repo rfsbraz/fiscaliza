@@ -4,7 +4,7 @@ parties and coalitions. Each route parses its arguments, calls a service and ret
 from flask import Blueprint, current_app, jsonify, request
 
 from app.data.connection import DataUnavailable, data_source
-from app.services import core
+from app.services import core, questions
 
 core_bp = Blueprint("core", __name__)
 
@@ -74,3 +74,13 @@ def get_coligacao_deputados(coligacao_sigla):
 @core_bp.route("/coligacoes/<path:coligacao_sigla>/partidos", methods=["GET"])
 def get_coligacao_partidos(coligacao_sigla):
     return _serve(core.coligacao_partidos, coligacao_sigla)
+
+
+@core_bp.route("/perguntas", methods=["GET"])
+def get_perguntas():
+    return _serve(questions.perguntas)
+
+
+@core_bp.route("/perguntas/<path:legislatura>", methods=["GET"])
+def get_perguntas_legislatura(legislatura):
+    return _serve(questions.perguntas_legislatura, legislatura)
