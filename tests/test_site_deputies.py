@@ -523,3 +523,51 @@ def test_evolution_bars_are_scaled_to_their_values():
     assert "const EVOLUTION_TRACK_PX = " in source
     assert "Math.round((total / maxValue) * EVOLUTION_TRACK_PX)" in source
     assert "height: `${barHeight}px`" in source
+
+
+# Written questions to the Government (#114)
+
+ACTIVITY_URL = "https://www.parlamento.pt/DeputadoGP/Paginas/ActividadeDeputado.aspx?BID={}&lg={}"
+
+
+@pytest.fixture(scope="module")
+def questions_con(tmp_path_factory):
+    data_dir = build_site_data(tmp_path_factory.mktemp("questions"), sets=("questions",))
+    c = duckdb.connect(str(data_dir / "current.duckdb"), read_only=True)
+    yield c
+    c.close()
+
+
+@pytest.mark.parametrize(
+    ("cad", "legislature", "total"),
+    [
+        # 7001 alone and 7002 with person 90. Not 7006 (a requerimento) or 6001 (XVI).
+        (1, "XVII", 2),
+        # 7002 as coauthor, 7003, and 7007, which was returned.
+        (90, "XVII", 3),
+        # 7004, to two ministers, counts once; 7005 was withdrawn but was still written.
+        (2, "XVII", 2),
+        # The latest legislature of a former deputy.
+        (301, "XVI", 2),
+        (3, "XVII", 0),
+    ],
+)
+def test_written_questions_to_the_government_in_the_latest_legislature(questions_con, cad, legislature, total):
+    assert deputies.detalhes(questions_con, cad)["perguntas_escritas"] == {
+        "legislatura": legislature,
+        "total": total,
+        "url": ACTIVITY_URL.format(cad, legislature),
+    }
+
+
+def test_no_written_questions_line_for_a_legislature_without_question_data(con):
+    # The deputies set has no questions at all, as the release has none before the X.
+    assert deputies.detalhes(con, 1)["perguntas_escritas"] is None
+
+
+def test_component_shows_the_written_questions_line():
+    source = COMPONENT.read_text()
+    assert "deputado.perguntas_escritas" in source
+    assert "Perguntas escritas ao Governo nesta legislatura:" in source
+    assert "(como autor ou coautor)" in source
+    assert "perguntas.url" in source

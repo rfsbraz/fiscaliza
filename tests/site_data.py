@@ -26,6 +26,8 @@ static export load all of them.
   deputy set's 4 XVII interventions on 3 days of 2026.
 - votes (tests/site_votes.py): votes 1 to 9 and 20 to 34, initiatives 61 to 68 and 100 to 121,
   interventions 5001 to 5003. The voting tests load it alone.
+- questions (tests/site_questions.py): written questions 6001 to 6003 (XVI) and 7001 to 7007
+  (XVII), with their authors and recipients.
 
 Plenary attendance (_attendance below, the plenary_attendance mart) goes in with the deputies
 set. Each list holds whoever had a seat that day, everyone PR (present) unless listed here.
@@ -48,6 +50,7 @@ import duckdb
 
 from fiscaliza_data import sync
 from tests.site_agenda import agenda_tables
+from tests.site_questions import question_tables
 from tests.site_votes import voting_tables
 
 TAG = "data-2026-10-20"
@@ -421,7 +424,12 @@ def _deputies():
     return {**_activity(), **_attendance()}
 
 
-ACTIVITY_SETS = {"deputies": _deputies, "agenda": agenda_tables, "votes": voting_tables}
+ACTIVITY_SETS = {
+    "deputies": _deputies,
+    "agenda": agenda_tables,
+    "votes": voting_tables,
+    "questions": question_tables,
+}
 
 
 def _tables(sets):
