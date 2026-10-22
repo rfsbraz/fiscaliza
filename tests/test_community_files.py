@@ -55,3 +55,14 @@ def test_issue_forms_are_in_pt_pt():
 def test_wrong_number_form_points_to_the_source_data_form():
     t = (ROOT / ".github" / "ISSUE_TEMPLATE" / "numero-errado.yml").read_text()
     assert "parlamento-aberto/issues/new?template=correcao-de-dados.yml" in t
+
+
+BRAND_LINE = (
+    "O nome Fiscaliza e o logótipo não estão abrangidos pela AGPL. "
+    "Quem publicar um fork tem de usar outro nome e outro logótipo."
+)
+
+
+def test_readme_says_the_name_and_logo_are_not_under_the_agpl():
+    licence = (ROOT / "README.md").read_text().split("## Licença", 1)[1].split("\n## ", 1)[0]
+    assert BRAND_LINE in licence

@@ -74,4 +74,6 @@ O [CONTRIBUTING.md](CONTRIBUTING.md) explica como preparar o ambiente, as verifi
 
 Código: [AGPL-3.0-or-later](LICENSE). Pode usar, alterar e distribuir este software. Se correr uma versão alterada num servidor acessível pela rede, tem de disponibilizar o código-fonte a quem a usa. Copyright © Rodrigo Braz e contribuidores.
 
+O nome Fiscaliza e o logótipo não estão abrangidos pela AGPL. Quem publicar um fork tem de usar outro nome e outro logótipo.
+
 Dados: vêm dos dados abertos da Assembleia da República, reutilizados nos termos da AR, através do parlamento-aberto, cujas tabelas derivadas estão sob CC BY 4.0. Os termos completos estão no [LICENSE-DATA](https://github.com/rfsbraz/parlamento-aberto/blob/main/LICENSE-DATA) do parlamento-aberto. O rodapé do site tem a atribuição.
