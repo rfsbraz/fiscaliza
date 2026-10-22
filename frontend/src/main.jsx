@@ -9,19 +9,9 @@ import './index.css'
 
 initSentry()
 
-// TEMPORARY (#178): ?sentry-test=1 throws while rendering so the preview can prove an error
-// reaches Sentry and show the fallback.
-const SentryTestTrigger = () => {
-  if (new URLSearchParams(window.location.search).get('sentry-test') === '1') {
-    throw new Error('Fiscaliza Sentry test error (temporary preview trigger)')
-  }
-  return null
-}
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AppErrorBoundary>
-      <SentryTestTrigger />
       <App />
     </AppErrorBoundary>
   </React.StrictMode>,
