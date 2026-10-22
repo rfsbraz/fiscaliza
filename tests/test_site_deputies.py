@@ -485,6 +485,18 @@ def test_coverage_of_the_ar_declarations(con):
         }
 
 
+def test_no_recognition_badges_red_flags_or_activity_trend():
+    # #105: the badges and warnings were decided from the interventions on the page, and the
+    # trend compared raw counts across legislatures of different lengths. All gone.
+    source = COMPONENT.read_text()
+    for text in ("Reconhecimentos", "AchievementBadge", "RedFlagIndicator", "crescente", "decrescente"):
+        assert text not in source, text
+    assert not (ROOT / "frontend" / "src" / "components" / "deputy" / "AchievementBadge.jsx").exists()
+    frontend = "".join(p.read_text() for p in (ROOT / "frontend" / "src").rglob("*.js*"))
+    for text in ("Sem perguntas recentes", "Atividade reduzida", "Questionador Ativo", "Participante Ativo"):
+        assert text not in frontend, text
+
+
 def test_no_declaration_in_the_open_data_is_not_a_missing_declaration(con):
     # #106: 300 sat only in XVI, has no AR declaration and the EpT note covers XVI. The page gets
     # what it needs to say the open data lacks it, never that it was not submitted.
