@@ -5,9 +5,10 @@ import content from '../content/metodologia.md?raw';
 
 /**
  * /metodologia (#113). The copy is content/metodologia.md, the reviewed draft without the reviewer
- * notes. The page renders it as written and fills in three values from the data: {source_updated}
- * and {tag} from health.json (as the footer does) and {n}, the interventions published for the
- * XVII, from legislaturas.json. The page is indexable.
+ * notes. The page renders it as written and fills in values from the data: {source_updated} and
+ * {tag} from health.json (as the footer does); {n}, the interventions published for the XVII, and
+ * {com_declaracao} of {total}, the interest-declaration coverage, from legislaturas.json. The page
+ * is indexable.
  */
 const MISSING = '(indisponível)';
 const URL_PATTERN = /(https:\/\/[^\s]+)/;
@@ -120,6 +121,14 @@ const Metodologia = () => {
         const xvii = (body.legislaturas || []).find((leg) => leg.numero === 'XVII');
         if (xvii?.intervencoes_publicadas != null) {
           setValues((v) => ({ ...v, n: xvii.intervencoes_publicadas.toLocaleString('pt-PT') }));
+        }
+        const coverage = body.cobertura_declaracoes;
+        if (coverage?.com_declaracao != null && coverage?.total != null) {
+          setValues((v) => ({
+            ...v,
+            com_declaracao: coverage.com_declaracao.toLocaleString('pt-PT'),
+            total: coverage.total.toLocaleString('pt-PT'),
+          }));
         }
       })
       .catch(() => {});

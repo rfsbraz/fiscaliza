@@ -61,7 +61,21 @@ def legislaturas(con):
                 "intervencoes_publicadas": interventions.get(leg["legislature"], 0),
             }
             for leg in repository.legislatures(con)
-        ]
+        ],
+        # Who the AR open data has an interest declaration for, which the methodology page quotes.
+        "cobertura_declaracoes": _declaration_coverage(con),
+    }
+
+
+def _declaration_coverage(con):
+    coverage = repository.declaration_coverage(con)
+    if not coverage or not coverage["seated"]:
+        return None
+    return {
+        "de": coverage["first_legislature"],
+        "ate": coverage["last_legislature"],
+        "com_declaracao": coverage["declared"],
+        "total": coverage["seated"],
     }
 
 

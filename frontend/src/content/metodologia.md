@@ -92,7 +92,7 @@ As perguntas escritas ao Governo não são intervenções e não entram nesta co
 
 ## Declarações de interesses
 
-Os dados abertos da AR só têm declarações de interesses da XI à XV Legislatura.
+Os dados abertos da AR só têm declarações de interesses da XI à XV Legislatura. Mesmo nesse período, os ficheiros da AR só incluem as pessoas que constam das listas da XVII Legislatura, incluindo suplentes. Quem já não está nessas listas não tem declaração nos dados abertos, mesmo que a tenha entregue na altura. Os dados têm declaração para {com_declaracao} de {total} deputados com mandato da XI à XV Legislatura.
 
 Por isso, quando os dados não têm a declaração de um deputado, não concluímos nada. Dizemos que os dados abertos do Parlamento não incluem a declaração, e que isso não significa que não tenha sido entregue. Para legislaturas anteriores à XI, dizemos que os dados abertos não cobrem esse período. O registo de interesses pode ser consultado no site do Parlamento e no site da Entidade para a Transparência.
 
@@ -130,7 +130,7 @@ São lacunas na fonte. Não as corrigimos à mão.
 
 - **Presenças:** não há listas de presenças antes da VI Legislatura, além de uma reunião da V.
 - **Intervenções:** sem ficheiro para a Constituinte, a I e a III; lacunas grandes na II, IV, VII, XII e XIV; a legislatura em curso tem só parte das intervenções.
-- **Declarações de interesses:** só da XI à XV nos dados abertos da AR, e só para parte dos deputados. A XVI e a XVII estão na Entidade para a Transparência e aguardam autorização de reutilização.
+- **Declarações de interesses:** só da XI à XV nos dados abertos da AR. A XVI e a XVII estão na Entidade para a Transparência e aguardam autorização de reutilização.
 - **Votações:** há votações não unânimes sem o sentido de voto de cada grupo. Não existe votação nominal, deputado a deputado.
 - **Biografias:** a AR só publica registo biográfico de parte dos deputados das legislaturas anteriores. A idade e a profissão só contam para quem tem registo.
 - **Perguntas escritas ao Governo:** os ficheiros começam na VI Legislatura.
