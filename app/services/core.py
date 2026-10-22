@@ -174,6 +174,9 @@ def _deputy(person, career, groups, shown_legislature, current):
         "career_info": {
             "is_currently_active": active,
             "in_current_legislature": in_current is not None,
+            # Held a seat in the current legislature at some point (#107: an election without a
+            # seat is not a mandate). A suspended mandate that sat counts; one that never sat does not.
+            "seated_in_current_legislature": in_current is not None and bool(in_current["seated"]),
             "is_seated": seated,
             "mandate_status": status,
             "is_multi_term": len(served) > 1,

@@ -434,22 +434,14 @@ const DeputadosPage = () => {
                     </div>
                   )}
                   <div>
-                    {deputado.career_info?.is_currently_active ? (
-                      <>
-                        <span style={{ color: tokens.colors.textMuted }}>Mandato Atual:</span>{' '}
-                        {deputado.legislatura_nome}
-                      </>
-                    ) : !deputado.career_info?.in_current_legislature && deputado.career_info?.latest_completed_mandate ? (
-                      <>
-                        <span style={{ color: tokens.colors.textMuted }}>Último mandato:</span>{' '}
-                        {deputado.career_info.latest_completed_mandate.legislatura} ({deputado.career_info.latest_completed_mandate.periodo})
-                      </>
-                    ) : (
-                      <>
-                        <span style={{ color: tokens.colors.textMuted }}>Mandato:</span>{' '}
-                        {deputado.legislatura_nome}
-                      </>
-                    )}
+                    {(() => {
+                      const [label, value] = mandateSummary(deputado);
+                      return (
+                        <>
+                          <span style={{ color: tokens.colors.textMuted }}>{label}</span> {value}
+                        </>
+                      );
+                    })()}
                   </div>
                   {deputado.career_info?.is_multi_term && (
                     <div style={{ fontSize: '0.75rem', color: tokens.colors.primary }}>
@@ -491,5 +483,21 @@ const DeputadosPage = () => {
     </motion.div>
   )
 }
+
+// The mandate line of a card. "Mandato Atual" needs a seat held in the current legislature, even
+// if suspended now: an election without a seat is not a mandate (#107), so it reads "Eleito na",
+// as on the deputy page.
+export const mandateSummary = (deputado) => {
+  const career = deputado.career_info;
+  if (career?.is_currently_active && career?.seated_in_current_legislature) {
+    return ['Mandato Atual:', deputado.legislatura_nome];
+  }
+  if (career?.is_currently_active) return ['Eleito na', `${deputado.legislatura_nome} Legislatura`];
+  const completed = career?.latest_completed_mandate;
+  if (!career?.in_current_legislature && completed) {
+    return ['Último mandato:', `${completed.legislatura} (${completed.periodo})`];
+  }
+  return ['Mandato:', deputado.legislatura_nome];
+};
 
 export default DeputadosPage

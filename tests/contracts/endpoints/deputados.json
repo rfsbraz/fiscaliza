@@ -18,7 +18,7 @@
       "path": "deputados[].career_info.first_mandate",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadosPage.jsx:457"
+      "read_at": "frontend/src/components/DeputadosPage.jsx:449"
     },
     {
       "path": "deputados[].career_info.is_currently_active",
@@ -30,7 +30,7 @@
       "path": "deputados[].career_info.in_current_legislature",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadosPage.jsx:442"
+      "read_at": "frontend/src/components/DeputadosPage.jsx:497"
     },
     {
       "path": "deputados[].career_info.is_multi_term",
@@ -48,25 +48,25 @@
       "path": "deputados[].career_info.latest_completed_mandate",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadosPage.jsx:442"
+      "read_at": "frontend/src/components/DeputadosPage.jsx:496"
     },
     {
       "path": "deputados[].career_info.latest_completed_mandate.legislatura",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadosPage.jsx:445"
+      "read_at": "frontend/src/components/DeputadosPage.jsx:498"
     },
     {
       "path": "deputados[].career_info.latest_completed_mandate.periodo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadosPage.jsx:445"
+      "read_at": "frontend/src/components/DeputadosPage.jsx:498"
     },
     {
       "path": "deputados[].career_info.latest_mandate",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadosPage.jsx:457"
+      "read_at": "frontend/src/components/DeputadosPage.jsx:449"
     },
     {
       "path": "deputados[].career_info.mandate_status",
@@ -78,7 +78,13 @@
       "path": "deputados[].career_info.parties_served",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadosPage.jsx:458"
+      "read_at": "frontend/src/components/DeputadosPage.jsx:450"
+    },
+    {
+      "path": "deputados[].career_info.seated_in_current_legislature",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadosPage.jsx:492"
     },
     {
       "path": "deputados[].career_info.total_mandates",
@@ -102,7 +108,7 @@
       "path": "deputados[].id_cadastro",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadosPage.jsx:465"
+      "read_at": "frontend/src/components/DeputadosPage.jsx:457"
     },
     {
       "path": "deputados[].is_seated",
@@ -114,7 +120,7 @@
       "path": "deputados[].legislatura_nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadosPage.jsx:440"
+      "read_at": "frontend/src/components/DeputadosPage.jsx:493"
     },
     {
       "path": "deputados[].mandate_status",
