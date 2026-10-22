@@ -76,7 +76,8 @@ document, nginx with `error_page 404 /404.html`. Those answer deep links with st
 the app still renders. To answer them 200, use the host's own SPA rule instead: nginx
 `try_files $uri /index.html` or a rewrite to `/index.html` on a CDN. For Cloudflare Pages,
 `deploy/pages.py` writes one HTML file per app route with that route's head, which answers 200
-and keeps a real 404 for every other path (see [DEPLOY.md](DEPLOY.md)).
+and keeps a real 404 for every other path, and a `sitemap.xml` of the same routes (see
+[DEPLOY.md](DEPLOY.md)).
 
 A missing data file then comes back as `404.html` (or `index.html`) instead of JSON. The
 frontend reads anything that is not JSON as not found, so this is safe.
