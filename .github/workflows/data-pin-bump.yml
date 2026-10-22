@@ -43,11 +43,11 @@ jobs:
             exit 1
           fi
       # master, whatever ref a manual run picked; the token lets git push data/pin-bump.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: master
           token: ${{ secrets.PIN_BOT_TOKEN }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Move the pin
