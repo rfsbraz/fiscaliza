@@ -69,19 +69,26 @@ left join parliamentary_groups g
   on g.legislature = c.legislature and g.group_acronym = c.group_acronym
 group by all;
 
--- deputy_legislatures: one row per person and legislature in which they held a seat at some
--- point, with their latest situation, circle and group in it.
-create or replace view deputy_legislatures as
+-- deputy_elections: one row per person and legislature in which they were elected or held a
+-- seat: an effective period, or a Suspenso(Eleito) one (elected, with the mandate suspended for a
+-- reason the data does not give). seated says whether they held the seat at some point in it.
+-- situation, situation_start and situation_end are those of their latest period in it (latest
+-- start, then the longer one), with their circle, and their latest group in it.
+create or replace view deputy_elections as
 with m as (
+    -- The latest period as one struct: arg_max skips rows whose value is null, and an open
+    -- period has a null end_date.
     select
         legislature,
         cadastro_id,
-        arg_max(deputy_id, struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31'))) as deputy_id,
-        arg_max(circle_id, struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31'))) as circle_id,
-        arg_max(situation, struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31'))) as situation
+        arg_max(
+            struct_pack(deputy_id, circle_id, situation, start_date, end_date),
+            struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31'))
+        ) as latest,
+        bool_or(is_effective) as seated
     from mandates
     group by legislature, cadastro_id
-    having bool_or(is_effective)
+    having bool_or(is_effective) or bool_or(situation = 'Suspenso(Eleito)')
 ),
 g as (
     select legislature, cadastro_id, arg_max(group_acronym, start_date) as group_acronym
@@ -91,18 +98,28 @@ g as (
 select
     m.legislature,
     m.cadastro_id,
-    m.deputy_id,
-    m.circle_id,
+    m.latest.deputy_id,
+    m.latest.circle_id,
     c.name as circle,
-    m.situation,
+    m.latest.situation,
     g.group_acronym,
     l.start_date as legislature_start,
     l.end_date as legislature_end,
-    l.is_open
+    l.is_open,
+    m.seated,
+    m.latest.start_date as situation_start,
+    m.latest.end_date as situation_end
 from m
 join legislature_days l on l.legislature = m.legislature
-left join electoral_circles c on c.legislature = m.legislature and c.circle_id = m.circle_id
+left join electoral_circles c on c.legislature = m.legislature and c.circle_id = m.latest.circle_id
 left join g on g.legislature = m.legislature and g.cadastro_id = m.cadastro_id;
+
+-- deputy_legislatures: the rows of deputy_elections where the person held a seat. Seated-day
+-- figures (attendance, votes, time served, group counts) read this one.
+create or replace view deputy_legislatures as
+select * exclude (seated, situation_start, situation_end)
+from deputy_elections
+where seated;
 
 -- deputy_vote_positions: one row per plenary vote and deputy seated on its day (the seating
 -- rule), with their group that day and their position: the position the vote detail names
