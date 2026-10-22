@@ -425,6 +425,18 @@ def test_latest_declaration_with_activities_and_shareholdings(con):
     assert "has_conflict_potential" not in c
 
 
+def test_the_newest_of_several_declarations_in_one_legislature(con):
+    # #168: the AR publishes some XIV declarations without an id or a version date. The newest
+    # comes first in the file, so it is the one ending in -1; the older one listed no activity.
+    c = deputies.conflitos_interesse(con, 90)
+    assert c["legislatura"] == "XV"
+    assert [(a["function_type"], a["entity_name"]) for a in c["professional_activities"]] == [
+        ("Administrador", "Fundação Exemplo"),
+        ("Secretário de Estado", "Governo"),
+    ]
+    assert c["declara_outras_atividades"] is True
+
+
 def test_repeated_items_are_shown_once_and_other_periods_keep_their_dates(con):
     # Item 6 repeats item 1 as published; item 5 is the same post for a later period. Without the
     # dates the two periods looked like duplicate rows.
