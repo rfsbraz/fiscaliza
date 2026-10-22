@@ -1,7 +1,8 @@
-"""CI must run on my Homeberry self-hosted runner, never on GitHub-hosted minutes.
+"""Which runner each workflow's jobs use.
 
-This repo is private, so a hosted job bills Actions minutes. Every job in every
-workflow has to say ``runs-on: [self-hosted, homeberry]``.
+CI and Deploy stay on my self-hosted runner until they move to GitHub-hosted runners before
+the repo goes public. The data pin workflows are on ``ubuntu-latest`` from the start, so they
+need no change at the switch.
 """
 
 import re
@@ -11,6 +12,8 @@ import pytest
 
 WORKFLOWS = sorted((Path(__file__).resolve().parent.parent / ".github" / "workflows").glob("*.y*ml"))
 HOMEBERRY = "[self-hosted, homeberry]"
+HOSTED = "ubuntu-latest"
+ON_HOSTED = {"data-pin-bump.yml", "data-pin-merge.yml"}
 
 
 def _jobs(text):
@@ -37,8 +40,16 @@ def test_there_are_workflows():
 
 
 @pytest.mark.parametrize("workflow", WORKFLOWS, ids=lambda p: p.name)
-def test_every_job_runs_on_homeberry(workflow):
+def test_every_job_runs_on_its_runner(workflow):
+    expected = HOSTED if workflow.name in ON_HOSTED else HOMEBERRY
     jobs = _jobs(workflow.read_text())
     assert jobs, f"{workflow.name} has no jobs"
-    wrong = {job: runs_on for job, runs_on in jobs.items() if runs_on != HOMEBERRY}
-    assert not wrong, f"{workflow.name}: jobs not on {HOMEBERRY}: {wrong}"
+    wrong = {job: runs_on for job, runs_on in jobs.items() if runs_on != expected}
+    assert not wrong, f"{workflow.name}: jobs not on {expected}: {wrong}"
+
+
+@pytest.mark.parametrize("name", sorted(ON_HOSTED))
+def test_the_data_pin_workflows_never_mention_a_self_hosted_runner(name):
+    text = (WORKFLOWS[0].parent / name).read_text().lower()
+    assert "self-hosted" not in text
+    assert "homeberry" not in text

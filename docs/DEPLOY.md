@@ -83,6 +83,9 @@ logic (tested in `tests/test_pin_bump.py`).
    and Deploy are among them, it squash-merges the PR at that head. The push to `master` then
    deploys production.
 
+Both workflows run on GitHub-hosted runners (`ubuntu-latest`), so they don't run while the repo is
+private; they start working when it goes public.
+
 ### Guard stops
 
 `Pin Merge` doesn't merge, leaves the PR open with a comment saying why, and fails, when:
@@ -123,7 +126,7 @@ branch was last pushed, close the pin PR and delete the branch; the next run rec
 
 Actions, `Data Pin Bump`, Run workflow, with a parlamento-aberto commit SHA (all 40 characters).
 With the current pin it does nothing and opens no PR, which is the quickest check that the token
-and the runner work. `gh workflow run data-pin-bump.yml -f sha=<sha>` does the same.
+works. `gh workflow run data-pin-bump.yml -f sha=<sha>` does the same.
 
 When parlamento-aberto turns on data releases, the dispatch moves to `release: published` and the
 pin to the release tag (#57). Related: #132 (the last move by hand) and #128 (the methodology page

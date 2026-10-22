@@ -30,8 +30,9 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.head_branch == 'data/pin-bump' &&
       github.event.workflow_run.head_repository.full_name == github.repository
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    # GitHub-hosted, so nothing changes here when the repo goes public. It doesn't run while
+    # the repo is private.
+    runs-on: ubuntu-latest
     # A few API calls. It never waits for CI: the next run that finishes starts it again.
     timeout-minutes: 5
     steps:

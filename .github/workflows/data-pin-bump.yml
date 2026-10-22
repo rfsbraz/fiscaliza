@@ -31,8 +31,9 @@ concurrency:
 jobs:
   bump:
     name: Pin Bump
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    # GitHub-hosted, so nothing changes here when the repo goes public. It doesn't run while
+    # the repo is private.
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Check PIN_BOT_TOKEN
