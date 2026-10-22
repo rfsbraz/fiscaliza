@@ -12,7 +12,7 @@
       "path": "coligacoes[].ambito",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/utils/format.js:25"
+      "read_at": "frontend/src/utils/format.js:39"
     },
     {
       "path": "coligacoes[].ativa",
@@ -39,6 +39,12 @@
       "read_at": "frontend/src/components/PartidosPage.jsx:610"
     },
     {
+      "path": "coligacoes[].contagem",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/PartidosPage.jsx:587"
+    },
+    {
       "path": "coligacoes[].data_dissolucao",
       "type": "scalar",
       "nullable": true,
@@ -54,7 +60,7 @@
       "path": "coligacoes[].eleicoes",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/utils/format.js:25"
+      "read_at": "frontend/src/utils/format.js:39"
     },
     {
       "path": "coligacoes[].espectro_politico",

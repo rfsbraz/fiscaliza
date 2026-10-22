@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatNumber, formatDecimal, formatPercent, legislatureName, plural, seatsNote, coalitionScope } from './format.js';
+import { formatNumber, formatDecimal, formatPercent, legislatureName, plural, seatsNote, seatedNote, coalitionScope } from './format.js';
 
 test('integers use the pt-PT thousands separator', () => {
   assert.equal(formatNumber(16366).replace(/\s/g, ' '), '16 366');
@@ -42,4 +42,13 @@ test('a coalition page says which list and elections it is', () => {
   assert.equal(coalitionScope({ ambito: null, eleicoes: [1987, 1991, 1995] }), '1987 a 1995');
   assert.equal(coalitionScope({ ambito: 'Madeira', eleicoes: [] }), 'Madeira');
   assert.equal(coalitionScope({}), '');
+});
+
+test('a coalition page names who was in office as a second figure', () => {
+  const closed = { contagem: 'eleitos', deputados_em_funcoes: 78, data_em_funcoes: '1980-11-12', legislatura_aberta: false };
+  assert.equal(seatedNote(closed), '78 em funções no último dia da legislatura');
+  const open = { contagem: 'eleitos', deputados_em_funcoes: 87, data_em_funcoes: '2026-10-21', legislatura_aberta: true };
+  assert.equal(seatedNote(open), '87 em funções a 21/10/2026');
+  assert.equal(seatedNote({ ...closed, contagem: 'em_funcoes' }), null);
+  assert.equal(seatedNote({}), null);
 });

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
-import { coalitionScope, formatNumber, plural, seatsNote } from '../utils/format';
+import { coalitionScope, formatNumber, plural, seatedNote, seatsNote } from '../utils/format';
 
 // Coalition colors based on political spectrum
 const spectrumColors = {
@@ -303,10 +303,17 @@ const ColigacaoDetalhes = () => {
                       color: tokens.colors.primary,
                     }}
                   >
-                    {dados.deputy_count || deputados.length}
+                    {dados.deputy_count ?? deputados.length}
                   </span>
-                  <span style={{ fontFamily: tokens.fonts.body, marginLeft: '0.25rem' }}>deputados</span>
+                  <span style={{ fontFamily: tokens.fonts.body, marginLeft: '0.25rem' }}>
+                    {dados.contagem === 'em_funcoes' ? 'deputados em funções' : 'deputados eleitos'}
+                  </span>
                 </div>
+                {seatedNote(dados) && (
+                  <div style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary, marginBottom: '0.25rem' }}>
+                    {seatedNote(dados)}
+                  </div>
+                )}
                 <div style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textMuted }}>
                   {plural(partidos.length, 'partido componente', 'partidos componentes')}
                 </div>
@@ -456,7 +463,7 @@ const ColigacaoDetalhes = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                     {deputados.map((deputado, index) => (
                       <motion.div
-                        key={deputado.id}
+                        key={deputado.id ?? `${deputado.circulo}-${deputado.nome}`}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
@@ -470,30 +477,16 @@ const ColigacaoDetalhes = () => {
                         onMouseEnter={(e) => e.currentTarget.style.borderColor = tokens.colors.primary}
                         onMouseLeave={(e) => e.currentTarget.style.borderColor = tokens.colors.border}
                       >
-                        <Link
-                          to={`/deputados/${deputado.id_cadastro || deputado.id}`}
-                          style={{ textDecoration: 'none' }}
-                        >
-                          <h4
-                            style={{
-                              fontFamily: tokens.fonts.body,
-                              fontWeight: 600,
-                              color: tokens.colors.textPrimary,
-                              margin: 0,
-                              transition: 'color 150ms ease',
-                            }}
-                            onMouseEnter={(e) => e.target.style.color = tokens.colors.primary}
-                            onMouseLeave={(e) => e.target.style.color = tokens.colors.textPrimary}
+                        {deputado.id_cadastro ? (
+                          <Link
+                            to={`/deputados/${deputado.id_cadastro}`}
+                            style={{ textDecoration: 'none' }}
                           >
-                            {deputado.nome}
-                          </h4>
-                          <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary, marginTop: '0.25rem' }}>
-                            {deputado.partido_sigla}
-                          </p>
-                          <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.textMuted, marginTop: '0.5rem' }}>
-                            {deputado.circulo}
-                          </p>
-                        </Link>
+                            <DeputyCard deputado={deputado} linked />
+                          </Link>
+                        ) : (
+                          <DeputyCard deputado={deputado} />
+                        )}
                       </motion.div>
                     ))}
                   </div>
@@ -533,5 +526,31 @@ const ColigacaoDetalhes = () => {
     </div>
   );
 };
+
+// One deputy elected on the coalition's lists. A published name the data could not match to a
+// deputy (#197) still counts, without a page to link to or a group.
+const DeputyCard = ({ deputado, linked = false }) => (
+  <>
+    <h4
+      style={{
+        fontFamily: tokens.fonts.body,
+        fontWeight: 600,
+        color: tokens.colors.textPrimary,
+        margin: 0,
+        transition: 'color 150ms ease',
+      }}
+      onMouseEnter={linked ? (e) => { e.target.style.color = tokens.colors.primary; } : undefined}
+      onMouseLeave={linked ? (e) => { e.target.style.color = tokens.colors.textPrimary; } : undefined}
+    >
+      {deputado.nome}
+    </h4>
+    <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary, marginTop: '0.25rem' }}>
+      {deputado.partido_sigla || (linked ? null : 'sem página de deputado')}
+    </p>
+    <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.textMuted, marginTop: '0.5rem' }}>
+      {deputado.circulo}
+    </p>
+  </>
+);
 
 export default ColigacaoDetalhes;

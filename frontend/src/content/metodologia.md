@@ -114,6 +114,8 @@ Distinguimos quem foi eleito de quem esteve em funções.
 
 No topo da lista de deputados, "230 em exercício" é o número de deputados com lugar na data dos dados. O segundo número conta todas as pessoas que tiveram lugar em algum momento da legislatura, substitutos incluídos, por isso é maior do que os 230 lugares.
 
+Nas páginas das coligações, o número principal são os deputados eleitos pelas listas da coligação, como no resultado das eleições. Até à VI Legislatura vêm das listas de eleitos publicadas; a partir da VII, dos mandatos que começam no primeiro dia da legislatura, incluindo quem suspendeu o mandato ou renunciou logo nesse dia. Um nome da lista que não conseguimos ligar a um deputado conta na mesma, sem página. Por baixo mostramos quantos deputados dos partidos da coligação, nos círculos onde a lista elegeu, estavam em funções no último dia da legislatura (ou na data dos dados, se a legislatura está em curso). A diferença vem de substituições e de mudanças de grupo.
+
 ## I Legislatura: I-A e I-B
 
 A I Legislatura está dividida em duas partes nos dados da AR: a I-A, de 3 de junho de 1976 a 2 de janeiro de 1980, e a I-B, de 3 de janeiro a 12 de novembro de 1980. A AR publica a mesma lista de deputados nas duas partes. Para não mostrar deputados de 1976 a 1979 como se tivessem estado em funções em 1980, cada parte fica só com os períodos de mandato que se sobrepõem às suas datas. As datas publicadas não são cortadas, por isso um período que atravessa a mudança de parte aparece nas duas.
