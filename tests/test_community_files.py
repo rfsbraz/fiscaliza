@@ -32,9 +32,18 @@ def test_security_points_to_private_reporting():
 
 def test_pull_request_template_sections():
     t = (ROOT / ".github" / "pull_request_template.md").read_text()
-    for heading in ["## O quê e porquê?", "## Como foi testado?", "## Capturas de ecrã", "## Uso de IA"]:
-        assert heading in t
+    headings = re.findall(r"^## (.+)$", t, re.M)
+    assert headings == ["Resumo", "Antes / Depois", "Capturas de ecrã", "Testado"]
+    assert "| Antes | Depois |" in t
     assert "Closes #" in t
+
+
+def test_commits_are_english_conventional_commits():
+    for doc in ["AGENTS.md", "CONTRIBUTING.md"]:
+        t = (ROOT / doc).read_text()
+        assert "Conventional Commits" in t, doc
+        assert "`type(scope): subject`" in t, doc
+        assert "assunto em português" not in t, doc
 
 
 def test_issue_forms_are_in_pt_pt():
