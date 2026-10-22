@@ -41,6 +41,10 @@ PREVIEW_BRANCH = "preview"
 MAX_FILES = 20_000
 MAX_FILE_BYTES = 25 * 1024 * 1024
 SITE = "https://fiscaliza.pt"
+# sitemaps.org limits per sitemap file; more URLs go into numbered files under a sitemap index.
+SITEMAP_MAX_URLS = 50_000
+SITEMAP_MAX_BYTES = 50 * 1024 * 1024
+SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
 SUFFIX = " · Fiscaliza"
 # The head tags each route page sets, as (before the value)(value)(after). Each must be in
 # frontend/index.html once; the rest of the page stays the app.
@@ -205,9 +209,14 @@ def route_heads(api):
     return routes
 
 
+def route_url(path):
+    """The canonical URL of a route, percent-encoded."""
+    return SITE + quote(path, safe="/")
+
+
 def render_head(template, path, title, description):
     """The app's index.html with this route's title, description, canonical and og:url."""
-    url = SITE + quote(path, safe="/")
+    url = route_url(path)
     values = {
         "title": title + SUFFIX,
         "description": description,
@@ -225,7 +234,7 @@ def render_head(template, path, title, description):
     return out
 
 
-def write_route_pages(dist):
+def write_route_pages(dist, routes=None):
     """One HTML file per app route, where Pages serves it: /deputados/2105 is deputados/2105.html.
     Link previews read these heads; the browser loads the same app. Returns the number written."""
     dist = Path(dist)
@@ -233,7 +242,7 @@ def write_route_pages(dist):
     if "<head" not in template:
         return 0
     written = 0
-    for path, (title, description) in route_heads(dist / "api").items():
+    for path, (title, description) in (route_heads(dist / "api") if routes is None else routes).items():
         target = dist / f"{path.lstrip('/')}.html"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(render_head(template, path, title, description), encoding="utf-8")
@@ -241,11 +250,35 @@ def write_route_pages(dist):
     return written
 
 
+def _sitemap_file(dist, name, root, tag, urls):
+    body = "".join(f"<{tag}><loc>{html.escape(url)}</loc></{tag}>\n" for url in urls)
+    data = f'<?xml version="1.0" encoding="UTF-8"?>\n<{root} xmlns="{SITEMAP_NS}">\n{body}</{root}>\n'.encode()
+    if len(data) > SITEMAP_MAX_BYTES:
+        raise DeployError(f"{name} has {len(data)} bytes; a sitemap takes at most {SITEMAP_MAX_BYTES}")
+    (Path(dist) / name).write_bytes(data)
+
+
+def write_sitemap(dist, routes):
+    """sitemap.xml with / and every route that has a page. Over SITEMAP_MAX_URLS it is an index of
+    sitemap-1.xml, sitemap-2.xml, ... Returns the number of URLs."""
+    urls = [route_url("/")] + [route_url(path) for path in routes]
+    if len(urls) <= SITEMAP_MAX_URLS:
+        _sitemap_file(dist, "sitemap.xml", "urlset", "url", urls)
+        return len(urls)
+    parts = []
+    for i in range(0, len(urls), SITEMAP_MAX_URLS):
+        name = f"sitemap-{len(parts) + 1}.xml"
+        _sitemap_file(dist, name, "urlset", "url", urls[i : i + SITEMAP_MAX_URLS])
+        parts.append(route_url("/" + name))
+    _sitemap_file(dist, "sitemap.xml", "sitemapindex", "sitemap", parts)
+    return len(urls)
+
+
 def prepare(dist):
     """Turn a generic build into a Pages one: the _headers and _redirects files, a 404.html that
-    is the app, and one HTML file per app route with its own head (write_route_pages). A route's
-    file answers it with status 200; any other path with no file gets 404.html with status 404
-    (#113). Checks the Pages limits."""
+    is the app, one HTML file per app route with its own head (write_route_pages) and a
+    sitemap.xml of those routes (write_sitemap). A route's file answers it with status 200; any
+    other path with no file gets 404.html with status 404 (#113). Checks the Pages limits."""
     dist = Path(dist)
     if not (dist / "index.html").is_file():
         raise DeployError(f"{dist}/index.html is missing; run `npm run build` first")
@@ -253,7 +286,9 @@ def prepare(dist):
         shutil.copyfile(dist / "index.html", dist / "404.html")
     shutil.copyfile(HEADERS_FILE, dist / "_headers")
     shutil.copyfile(REDIRECTS_FILE, dist / "_redirects")
-    write_route_pages(dist)
+    routes = route_heads(dist / "api")
+    if write_route_pages(dist, routes):
+        write_sitemap(dist, routes)
     files = [p for p in dist.rglob("*") if p.is_file()]
     if len(files) >= MAX_FILES:
         raise DeployError(f"{dist} has {len(files)} files; Pages takes fewer than {MAX_FILES}")
