@@ -90,7 +90,7 @@ const DeputadosPage = () => {
               </span> mandatos totais · {' '}
               <span style={{ fontFamily: tokens.fonts.mono, fontWeight: 600, color: tokens.colors.primary }}>
                 {formatNumber(filters.seated_deputies_count || filters.active_deputies_count)}
-              </span> em exercício · {' '}
+              </span> em exercício na data dos dados · {' '}
               <span style={{ fontFamily: tokens.fonts.mono, fontWeight: 600 }}>
                 {formatNumber(filters.active_deputies_count)}
               </span> deputados tiveram lugar na legislatura atual

@@ -132,7 +132,7 @@ const Dashboard = ({ stats }) => {
       }}>
         <MetricCard
           value={seatedDeputados}
-          label="Em Exercício"
+          label="Em exercício na data dos dados"
           sublabel={`${formatNumber(totalElected)} deputados tiveram lugar nesta legislatura · ${plural(totais.partidos || 0, 'partido', 'partidos')}`}
         />
         <MetricCard
