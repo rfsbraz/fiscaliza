@@ -1,5 +1,6 @@
 import React from 'react';
 import { tokens } from '../../styles/tokens';
+import { formatNumber } from '../../utils/format';
 
 /**
  * Card - Reusable card container component
@@ -170,7 +171,7 @@ const MetricCard = ({ value, label, sublabel, accent }) => (
         marginBottom: '0.5rem',
       }}
     >
-      {value}
+      {typeof value === 'number' ? formatNumber(value) : value}
     </div>
     <div
       style={{

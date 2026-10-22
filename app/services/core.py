@@ -32,11 +32,17 @@ def _legislature(con, name=None):
     return leg
 
 
+def legislature_designation(name):
+    """The name shown for a legislature: "XVII Legislatura", but the first assembly, elected in
+    1975 to write the Constitution, is the Assembleia Constituinte (#108, #112)."""
+    return "Assembleia Constituinte" if name == "Constituinte" else f"{name} Legislatura"
+
+
 def _legislature_dict(leg):
     return {
         "id": leg["legislature_id"],
         "numero": leg["legislature"],
-        "designacao": f"{leg['legislature']} Legislatura",
+        "designacao": legislature_designation(leg["legislature"]),
         "data_inicio": _iso(leg["start_date"]),
         "data_fim": _iso(leg["end_date"]),
         "ativa": leg["is_open"],

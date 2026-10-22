@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, TrendingUp, Users, Target, Scale, PieChart, Activity, Shield, BookOpen } from 'lucide-react';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
+import { formatDecimal } from '../utils/format';
 
 const ABSENCE_NOTE =
   'O registo das votações só indica ausências quando as nomeia, por isso a maioria das faltas não aparece aqui. ' +
@@ -41,7 +42,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">Carregando análises de votação...</span>
+        <span className="ml-3 text-gray-600">A carregar análises de votação...</span>
       </div>
     );
   }
@@ -83,7 +84,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
       );
     }
 
-    const alignment = (party_discipline.overall_alignment * 100).toFixed(1);
+    const alignment = formatDecimal(party_discipline.overall_alignment * 100, 1);
 
     return (
       <div className="space-y-6">
@@ -153,7 +154,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {voteTypes.map(type => {
             const count = vote_distribution[type.key] || 0;
-            const percentage = total > 0 ? (count / total * 100).toFixed(1) : 0;
+            const percentage = formatDecimal(total > 0 ? (count / total) * 100 : 0, 1);
             
             return (
               <div key={type.key} className="bg-white border rounded-lg p-4 text-center">
@@ -179,7 +180,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
                   key={type.key}
                   className={type.color}
                   style={{ width: `${width}%` }}
-                  title={`${type.label}: ${count} (${width.toFixed(1)}%)`}
+                  title={`${type.label}: ${count} (${formatDecimal(width, 1)}%)`}
                 />
               );
             })}
@@ -219,7 +220,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
                   })}
                 </div>
                 <div className="text-sm text-gray-600">
-                  {day.participated}/{day.total_votes} votações ({(day.participation_rate * 100).toFixed(0)}%)
+                  {day.participated}/{day.total_votes} votações ({formatDecimal(day.participation_rate * 100, 0)}%)
                 </div>
               </div>
               
@@ -280,7 +281,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
               <div className="flex items-center justify-between mb-2">
                 <div className="text-sm font-medium text-gray-900">{party.party}</div>
                 <div className="text-sm text-gray-600">
-                  {(party.alignment_rate * 100).toFixed(1)}% alinhamento
+                  {formatDecimal(party.alignment_rate * 100, 1)}% alinhamento
                 </div>
               </div>
               

@@ -6,6 +6,7 @@ import PartyDemographics from './PartyDemographics';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
+import { plural } from '../utils/format';
 
 const PartidoDetalhes = () => {
   const { partidoId } = useParams();
@@ -242,7 +243,7 @@ const PartidoDetalhes = () => {
                   <span style={{ fontFamily: tokens.fonts.body, marginLeft: '0.25rem' }}>deputados</span>
                 </div>
                 <div style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textMuted }}>
-                  {dados.mandatos_ativos} mandatos ativos
+                  {plural(dados.mandatos_ativos, 'mandato ativo', 'mandatos ativos')}
                 </div>
               </div>
             </div>
@@ -291,7 +292,7 @@ const PartidoDetalhes = () => {
                       {dados.historico?.total_circulos || new Set(dados.deputados.map(d => d.circulo)).size}
                     </p>
                     <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.blue }}>
-                      distritos eleitorais
+                      círculos eleitorais
                     </p>
                   </div>
                 </div>
@@ -477,7 +478,7 @@ const PartidoDetalhes = () => {
                     borderRadius: '4px',
                     border: `1px solid ${tokens.colors.primary}25`,
                   }}>
-                    {dados.mandatos_ativos} ativos
+                    {plural(dados.mandatos_ativos, 'ativo', 'ativos')}
                   </div>
                 </div>
 
@@ -833,7 +834,7 @@ const PartidoDetalhes = () => {
                       marginTop: '6px',
                       fontFamily: tokens.fonts.body,
                     }}>
-                      Padrões de votação, alinhamentos e colaboração cross-party
+                      Padrões de votação, alinhamentos e colaboração entre grupos parlamentares
                     </p>
                   </div>
                 </div>

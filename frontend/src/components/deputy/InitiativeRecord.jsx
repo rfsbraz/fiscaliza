@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { tokens } from '../../styles/tokens';
+import { legislatureName } from '../../utils/format';
 
 const TYPE_LABELS = {
   J: 'Projetos de lei',
@@ -112,7 +113,7 @@ export const InitiativeRecordTable = ({ rows }) => {
             color: tokens.colors.primary,
             fontFamily: tokens.fonts.body,
           }}>
-            {row.legislatura} Legislatura{row.aberta ? ' (em curso)' : ''}
+            {legislatureName(row.legislatura)}{row.aberta ? ' (em curso)' : ''}
           </h5>
           <SigningCounts assinatura={row.assinatura} showNote={false} />
           <div style={{ marginTop: '10px' }}>
@@ -133,7 +134,7 @@ export const InitiativeRecordTable = ({ rows }) => {
 export const GroupComparison = ({ comparacao, label, closedLabel = false }) => {
   if (!comparacao) return null;
   const legislature = comparacao.legislatura
-    ? `${comparacao.legislatura} Legislatura${closedLabel ? ' (última concluída)' : ''}`
+    ? `${legislatureName(comparacao.legislatura)}${closedLabel ? ' (última concluída)' : ''}`
     : null;
   return (
     <div style={{ fontSize: '0.8125rem', color: tokens.colors.textSecondary, fontFamily: tokens.fonts.body }}>
