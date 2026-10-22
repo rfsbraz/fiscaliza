@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatNumber, formatDecimal, formatPercent, legislatureName, plural } from './format.js';
+import { formatNumber, formatDecimal, formatPercent, legislatureName, plural, seatsNote } from './format.js';
 
 test('integers use the pt-PT thousands separator', () => {
   assert.equal(formatNumber(16366).replace(/\s/g, ' '), '16 366');
@@ -28,4 +28,10 @@ test('plural picks the noun by count', () => {
 test('the first assembly is the Assembleia Constituinte', () => {
   assert.equal(legislatureName('Constituinte'), 'Assembleia Constituinte');
   assert.equal(legislatureName('XVII'), 'XVII Legislatura');
+});
+
+test('a coalition party that won no seats is marked', () => {
+  assert.equal(seatsNote({ sigla: 'PPM', com_lugares: false }), 'sem lugares');
+  assert.equal(seatsNote({ sigla: 'PSD', com_lugares: true }), null);
+  assert.equal(seatsNote({ sigla: 'PSD' }), null);
 });

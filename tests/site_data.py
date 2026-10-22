@@ -13,7 +13,9 @@ Ids and made-up names only, no real people. Two legislatures:
 
 Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) and every
 tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP) in both legislatures, and
-FRS (PS) in XVI only.
+FRS (PS) in XVI only. In XVII AD has a second list, AD_ACORES, with PPM as a component without
+seats, and CDU lists PEV without seats. Seats per circle and list (ballot_list_seats) exist for
+XVII only: PSD and CDS-PP deputies of circles 21 and 22 were not elected on an AD list.
 
 Activity comes in sets (ACTIVITY_SETS below) that go into the same tables with their own ids,
 so a page test can load only the set its hand-checked figures come from; the contracts and the
@@ -75,6 +77,7 @@ XVI_GROUPS = ["PSD", "PS", "CH", "IL", "BE", "PCP", "L", "CDS-PP", "PAN"]
 CIRCLES = 22
 XVI = ("XVI", 107, "2024-03-26", "2025-06-02")
 XVII = ("XVII", 108, "2025-06-03", None)
+AD_ACORES = "AD-ACORES"
 
 
 def _born(cad):
@@ -139,18 +142,42 @@ def _rows():
         for cad in people
     ]
     coalitions = []
-    for leg, name, members in [
-        (XVI, "AD", ["PSD", "CDS-PP"]),
-        (XVI, "CDU", ["PCP"]),
-        (XVI, "FRS", ["PS"]),
-        (XVII, "AD", ["PSD", "CDS-PP"]),
-        (XVII, "CDU", ["PCP"]),
+    for leg, name, ballot, members in [
+        (XVI, "AD", "AD-LISTA", ["PSD", "CDS-PP"]),
+        (XVI, "CDU", "CDU-LISTA", ["PCP"]),
+        (XVI, "FRS", "FRS-LISTA", ["PS"]),
+        (XVII, "AD", "AD-LISTA", ["PSD", "CDS-PP"]),
+        (XVII, "AD", AD_ACORES, ["PSD", "CDS-PP", "PPM"]),
+        (XVII, "CDU", "CDU-LISTA", ["PCP", "PEV"]),
     ]:
         for group in members:
+            has_seats = group not in ("PPM", "PEV")
             coalitions.append(
-                (leg[0], name, f"{name}-LISTA", f"Coligação {name}", group, f"Grupo {group}", None, None, None)
+                (leg[0], name, ballot, f"Coligação {name}", group, f"Grupo {group}", None, None, None, has_seats)
             )
     return mandates, memberships, deputies, coalitions
+
+
+def _ballot_list_seats(mandates, memberships):
+    """Seats per circle and list for XVII only, as the release has them from XI on; XVI has none,
+    like a legislature before XI. Each group's seats in a circle go to one list: PSD and CDS-PP to
+    AD-LISTA in circles 1 to 18 and 20, to AD_ACORES in circle 19 and to no coalition in 21 and 22,
+    PCP to CDU-LISTA, the rest to a list named after the group. Circle 5 carries the footnote mark
+    the AR gives some circles (as in "Viseu a)")."""
+    groups = {cad: group for leg, cad, _, group, *_ in memberships if leg == "XVII"}
+    seats = {}
+    for leg, cad, _, circle, _, effective, _, end in mandates:
+        if leg != "XVII" or not effective or end is not None or cad not in groups:
+            continue
+        group = groups[cad]
+        ballot = {"PCP": "CDU-LISTA"}.get(group, group)
+        if group in ("PSD", "CDS-PP"):
+            ballot = AD_ACORES if circle == 19 else "AD-LISTA" if circle <= 20 else group
+        seats[(circle, ballot)] = seats.get((circle, ballot), 0) + 1
+    return [
+        ("XVII", "2025-05-18", f"{circle:02d}0000", f"Círculo {circle}" + (" a)" if circle == 5 else ""), ballot, n, None)
+        for (circle, ballot), n in sorted(seats.items())
+    ]
 
 
 def _activity():
@@ -507,9 +534,14 @@ def build_release(root, sets=tuple(ACTIVITY_SETS)):
     con.execute(
         "create table coalitions (legislature varchar, coalition varchar, ballot_acronym varchar, "
         "coalition_name varchar, group_code varchar, group_name varchar, source_url varchar, "
-        "election_url varchar, note varchar)"
+        "election_url varchar, note varchar, has_seats boolean)"
     )
-    con.executemany("insert into coalitions values (?, ?, ?, ?, ?, ?, ?, ?, ?)", coalitions)
+    con.executemany("insert into coalitions values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", coalitions)
+    con.execute(
+        "create table ballot_list_seats (legislature varchar, election_date date, circle_code varchar, "
+        "circle_name varchar, ballot_acronym varchar, seats integer, source_url varchar)"
+    )
+    con.executemany("insert into ballot_list_seats values (?, ?, ?, ?, ?, ?, ?)", _ballot_list_seats(mandates, memberships))
     tables = _tables(sets)
     for table, (columns, rows) in tables.items():
         con.execute(f"create table {table} ({columns})")
@@ -524,6 +556,7 @@ def build_release(root, sets=tuple(ACTIVITY_SETS)):
         "electoral_circles",
         "parliamentary_groups",
         "coalitions",
+        "ballot_list_seats",
         *tables,
     ):
         path = out / f"{mart}.parquet"
