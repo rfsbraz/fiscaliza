@@ -27,9 +27,9 @@ def test_a_newer_bump_cancels_an_older_one():
     assert re.search(r"\nconcurrency:\n  group: data-pin-bump\n  cancel-in-progress: true\n", t)
 
 
-def test_merge_runs_when_ci_or_deploy_finish_on_the_pin_branch_only():
+def test_merge_runs_when_ci_deploy_or_gitleaks_finish_on_the_pin_branch_only():
     t = MERGE.read_text()
-    assert re.search(r"workflow_run:\n\s+workflows: \[CI, Deploy\]\n\s+types: \[completed\]", t)
+    assert re.search(r"workflow_run:\n\s+workflows: \[CI, Deploy, gitleaks\]\n\s+types: \[completed\]", t)
     assert "github.event.workflow_run.head_branch == 'data/pin-bump'" in t
     assert "github.event.workflow_run.event == 'pull_request'" in t
     assert "github.event.workflow_run.head_repository.full_name == github.repository" in t
@@ -87,3 +87,19 @@ def test_github_token_gets_only_what_the_reads_and_comments_need():
     assert re.search(r"\npermissions:\n  contents: read\n  pull-requests: write\n\n", bump)
     merge = MERGE.read_text()
     assert re.search(r"\npermissions:\n  actions: read\n  contents: read\n  pull-requests: write\n\n", merge)
+
+
+def _listened_workflows():
+    return re.search(r"workflow_run:\n\s+workflows: \[([^\]]*)\]", MERGE.read_text()).group(1).split(", ")
+
+
+def test_merge_runs_when_any_pull_request_workflow_finishes():
+    # Pin Merge only starts again when a listed workflow finishes. If an unlisted one finished
+    # last on the pin PR head, Pin Merge would stop at "pending" and never run again.
+    listened = _listened_workflows()
+    for path in sorted(MERGE.parent.glob("*.y*ml")):
+        t = path.read_text()
+        if not re.search(r"\n  pull_request:\n    branches: \[[^\]]*\bmaster\b", t):
+            continue
+        name = re.match(r"name: (.+)\n", t).group(1).strip()
+        assert name in listened, f"{path.name} runs on pull requests but Pin Merge doesn't listen to {name}"

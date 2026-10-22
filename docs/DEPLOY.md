@@ -99,9 +99,9 @@ workflows do the job instead, and `deploy/pin_bump.py` holds the logic (tested i
    and new SHAs and the parlamento-aberto commits in between. A newer dispatch cancels a running
    one and replaces the PR's head.
 3. The PR's CI and preview Deploy run as on any PR.
-4. `data-pin-merge.yml` (`Pin Merge`) runs each time CI or Deploy finishes on `data/pin-bump`. It
-   looks at every workflow run on the PR head: while one is still going it exits and waits for the
-   next one to finish, so it never sits on a runner while CI runs. When all of them passed, and CI
+4. `data-pin-merge.yml` (`Pin Merge`) runs each time CI, Deploy or gitleaks finishes on
+   `data/pin-bump`. It looks at every workflow run on the PR head: while one is still going it
+   exits and waits for the next one to finish, so it never sits on a runner while CI runs. When all of them passed, and CI
    and Deploy are among them, it squash-merges the PR at that head. The push to `master` then
    deploys production.
 

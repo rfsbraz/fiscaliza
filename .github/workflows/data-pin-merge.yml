@@ -3,12 +3,12 @@ name: Data Pin Merge
 # Squash-merges the pin PR from data/pin-bump once every workflow on its head has passed
 # (docs/DEPLOY.md, "Automatic pin moves"). This is the one exception to merging by hand, for
 # pin PRs only. The repo has no branch protection on the free plan, so GitHub's auto-merge
-# can't wait for CI; instead this runs each time CI or Deploy finishes on that branch and
+# can't wait for CI; instead this runs each time CI, Deploy or gitleaks finishes on that branch and
 # checks every run on the PR head. It doesn't merge, and leaves a comment, when a check failed,
 # the checks took too long, the schema major version changed or the PR changes more than the pin.
 on:
   workflow_run:
-    workflows: [CI, Deploy]
+    workflows: [CI, Deploy, gitleaks]
     types: [completed]
 
 # GITHUB_TOKEN reads the runs and comments. The merge uses PIN_BOT_TOKEN, so the push to master
@@ -18,7 +18,7 @@ permissions:
   contents: read
   pull-requests: write
 
-# CI and Deploy can finish together; one decision at a time, none cancelled.
+# CI, Deploy and gitleaks can finish together; one decision at a time, none cancelled.
 concurrency:
   group: data-pin-merge
   cancel-in-progress: false

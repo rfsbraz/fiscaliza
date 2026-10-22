@@ -57,7 +57,7 @@ def test_the_workflow_keeps_the_name_the_pin_merge_waits_for():
     # called Deploy on the pin PR head.
     assert text().startswith("name: Deploy\n")
     merge = (ROOT / ".github" / "workflows" / "data-pin-merge.yml").read_text()
-    assert "workflows: [CI, Deploy]" in merge
+    assert "workflows: [CI, Deploy, gitleaks]" in merge
     assert 'REQUIRED_WORKFLOWS = ("CI", "Deploy")' in (ROOT / "deploy" / "pin_bump.py").read_text()
 
 
