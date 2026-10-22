@@ -1,5 +1,5 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'
+import { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ExternalLink } from 'lucide-react'
 import Navigation from './components/Navigation'
@@ -16,11 +16,19 @@ const PerguntasPage = lazy(() => import('./components/PerguntasPage'))
 const NotFound = lazy(() => import('./components/NotFound'))
 const Metodologia = lazy(() => import('./components/Metodologia'))
 import { apiFetch } from './config/api'
+import { routeTitle } from './utils/routeTitle'
 import './App.css'
 
 const AppContent = () => {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const { pathname } = useLocation()
+  const landing = useRef({ path: pathname, title: document.title })
+
+  // A layout effect runs before the pages' own effects, so a page that sets its title still wins.
+  useLayoutEffect(() => {
+    document.title = routeTitle(landing.current, pathname)
+  }, [pathname])
 
   useEffect(() => {
     fetchStats()

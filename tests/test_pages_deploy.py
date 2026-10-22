@@ -132,7 +132,8 @@ def test_prepare_writes_404_html_when_the_build_has_none(tmp_path):
     assert (dist / "404.html").read_text() == (dist / "index.html").read_text()
 
 
-# The _redirects file: the app's routes answer 200 with the app, everything else 404 (#113).
+# The _redirects file: no rule hides a route's page (tests/test_route_heads.py), everything else
+# with no file answers 404 (#113).
 
 
 def redirect_rules():
@@ -142,21 +143,6 @@ def redirect_rules():
         if line and not line.startswith("#"):
             rules.append(tuple(line.split()))
     return rules
-
-
-def app_routes():
-    app = (FRONTEND / "src" / "App.jsx").read_text()
-    return re.findall(r'<Route path="(/[^"]*)"', app)
-
-
-def test_every_app_route_is_rewritten_to_the_app():
-    rules = {source: (target, code) for source, target, code in redirect_rules()}
-    for route in app_routes():
-        if route in ("/", "/*"):
-            continue
-        source = re.sub(r"/:[^/]+$", "/*", route)
-        # Pages turns /index.html into /, so a rewrite to it would loop; rewrite to / instead.
-        assert rules.get(source) == ("/", "200"), route
 
 
 def test_no_catch_all_and_no_api_rewrite():

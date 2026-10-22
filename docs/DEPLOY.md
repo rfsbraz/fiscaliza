@@ -183,11 +183,11 @@ Isto corre, por ordem:
 4. `npm ci` e `npm run build` em `frontend/`.
 5. O passo do Pages sobre `frontend/dist`: copia para lá `deploy/_headers` e `deploy/_redirects`,
    mantém o `404.html` do build (de novo a aplicação) e verifica os limites do Pages (menos de
-   20 000 ficheiros, cada um com menos de 25 MiB). O `_redirects` responde às rotas da aplicação com
-   a aplicação e o estado 200. Qualquer outro caminho sem ficheiro recebe o `404.html` e o estado
-   404, e a aplicação mostra a vista "Página não encontrada". Uma rota nova em
-   `frontend/src/App.jsx` precisa de uma linha em `_redirects`, e `tests/test_pages_deploy.py`
-   verifica isso.
+   20 000 ficheiros, cada um com menos de 25 MiB). Escreve também um HTML por cada rota da
+   aplicação, com o título, a descrição, o canonical e o `og:url` dessa rota (ver "Ligações
+   diretas"). Qualquer outro caminho sem ficheiro recebe o `404.html` e o estado 404, e a aplicação
+   mostra a vista "Página não encontrada". Uma rota nova em `frontend/src/App.jsx` precisa de
+   entrar em `route_heads` no `deploy/pages.py`, e `tests/test_route_heads.py` verifica isso.
 6. `wrangler pages deploy dist --project-name fiscaliza --branch <ramo>`.
 
 A pasta temporária e o worktree do parlamento-aberto são removidos no fim. A CI clona o
@@ -223,11 +223,19 @@ nunca faz login e nunca cria tokens.
 
 ## Ligações diretas
 
-A aplicação trata das rotas no browser. O `deploy/_redirects` reescreve cada rota da aplicação
-(`/deputados`, `/deputados/*`, `/partidos`, `/partidos/*`, `/coligacoes/*`, `/agenda`,
-`/metodologia`) para `/` com o estado 200, para que uma ligação direta carregue a aplicação. A
-reescrita vai para `/` e não para `/index.html`, porque o Pages transforma `/index.html` em `/` e a
-reescrita entraria em ciclo. O próprio `/` é o `index.html`.
+A aplicação trata das rotas no browser. Para que uma ligação direta carregue a aplicação e as
+pré-visualizações de ligações (WhatsApp, X, Telegram, que não correm JavaScript) mostrem a página
+certa, o passo do Pages escreve um HTML por rota: `deputados/2105.html` para `/deputados/2105`,
+`partidos/PS.html`, `coligacoes/AD.html`, `perguntas/XVII.html`, `deputados.html`,
+`metodologia.html`, e assim por diante. Cada um é o `index.html` do build com o título, a descrição,
+o canonical e o `og:url` dessa rota, e responde 200. As rotas saem dos ficheiros de índice da
+exportação, por isso um deputado, partido ou coligação novo tem a sua página no deploy seguinte. O
+próprio `/` é o `index.html`.
+
+O `deploy/_redirects` não tem regras para as rotas. O Pages aplica uma regra 200 antes de procurar
+o ficheiro, por isso uma regra `/deputados/* / 200` esconderia estas páginas. Com cerca de 3 300
+ficheiros da exportação e 3 066 páginas de rotas, o deploy fica perto dos 6 400 ficheiros, longe
+do limite de 20 000.
 
 Qualquer outro caminho sem ficheiro, como `/sobre` ou `/sitemap.xml`, recebe o `404.html` de topo
 com o estado 404. Esse ficheiro é de novo a aplicação, escrito pelo build, e a aplicação mostra a
