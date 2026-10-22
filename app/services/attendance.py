@@ -134,7 +134,7 @@ def deputado_attendance(con, cadastro_id):
     _, career = _person(con, cadastro_id)
     names = [c["legislature"] for c in career]
     by_leg = {}
-    for row in repository.attendance_by_legislature(con, cadastro_id):
+    for row in repository.attendance_by_legislature(con, [cadastro_id]):
         by_leg.setdefault(row["legislature"], {})[bool(row["is_ceremonial"])] = row
     pooled = {r["legislature"]: r for r in repository.attendance_legislatures(con, names)}
     records = {}
@@ -159,10 +159,11 @@ def deputado_attendance(con, cadastro_id):
     }
 
 
-def latest_rate(con, cadastro_id, career):
-    """The profile card: the latest legislature the person served in that has lists."""
+def latest_rate(attendance, career):
+    """The profile card: the latest legislature the person served in that has lists.
+    ``attendance``: the person's attendance_by_legislature rows."""
     rows = {}
-    for row in repository.attendance_by_legislature(con, cadastro_id):
+    for row in attendance:
         if not row["is_ceremonial"]:
             rows[row["legislature"]] = row
     for c in reversed(career):
