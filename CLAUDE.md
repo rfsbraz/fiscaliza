@@ -14,7 +14,7 @@ Portuguese Parliament open data analysis platform for government transparency.
 ### Structure
 ```
 ├── app/                    # Flask API
-│   ├── data/               # connection.py (read-only DuckDB, live swap) and repository.py (all SQL)
+│   ├── data/               # connection.py (read-only DuckDB, live swap), repository.py (all SQL), deputy_rows.py (deputy page rows for many people at once)
 │   ├── services/           # the dicts each endpoint returns
 │   └── routes/             # thin routes; pending.py answers 503 for data not released yet
 ├── fiscaliza_data/         # sync.py, seating.sql, views.sql
