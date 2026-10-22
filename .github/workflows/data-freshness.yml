@@ -1,0 +1,33 @@
+name: Data Freshness
+
+# Fails when the live data is older than MAX_DAYS (.github/scripts/data_freshness.py), so GitHub mails
+# the failed run. It only reads the public /api/health.json and needs no token.
+on:
+  schedule:
+    - cron: "0 9 * * *" # 10:00 Lisbon in winter, after the nightly and catch-up syncs
+  workflow_dispatch:
+    inputs:
+      max_days:
+        description: "Days source_updated may be old"
+        default: "7"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  freshness:
+    name: Data Freshness
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - env:
+          MAX_DAYS: ${{ inputs.max_days || '7' }}
+        run: python .github/scripts/data_freshness.py --max-days "$MAX_DAYS"
