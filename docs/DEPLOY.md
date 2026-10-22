@@ -55,6 +55,10 @@ no table lost more than 5% of its rows has nothing to compare against, so a bad 
 parlamento-aberto `main` would go straight to production. Moving the pin is a small pull request of
 its own, after checking the new data; its preview shows the new data before it merges.
 
+Before moving it, build a release from the new commit and run `tests/test_release_pin.py` on it
+with `FISCALIZA_RELEASE_DIR` set to that folder. The test checks the release was built from the
+pin and holds the figures the pin move is for; update them in the same pull request.
+
 When parlamento-aberto turns on data releases (`DATA_RELEASES`), the pin moves to a release tag.
 
 ## What a deploy runs
