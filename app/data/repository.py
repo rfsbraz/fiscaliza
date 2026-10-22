@@ -254,62 +254,71 @@ _GROUP_POSITIONS = """
     group by vote_id, group_code
     having count(*) = 1
 """
+# The same for every legislature at once.
+_ALL_GROUP_POSITIONS = """
+    select legislature, vote_id, group_code, any_value(position) as position
+    from vote_group_positions
+    where body = 'plenary' and deputies is null
+    group by legislature, vote_id, group_code
+    having count(*) = 1
+"""
 
 
-def deputy_votes(con, cadastro_id, legislature):
-    """Every plenary vote of the legislature the deputy was seated for, oldest first, with
+def deputy_votes(con, cadastro_ids):
+    """Every plenary vote each person was seated for, per legislature and oldest first, with
     their group that day, the group's position as a whole and theirs (null when unknown)."""
     return _rows(
         con,
         """
-        select vote_id, date, group_acronym, group_position, position, named
+        select cadastro_id, legislature, vote_id, date, group_acronym, group_position, position, named
         from deputy_vote_positions
-        where cadastro_id = ? and legislature = ?
-        order by date, vote_id
+        where cadastro_id in (select unnest(?))
+        order by cadastro_id, legislature, date, vote_id
         """,
-        [cadastro_id, legislature],
+        [list(cadastro_ids)],
     )
 
 
-def deputy_group_agreement(con, cadastro_id, legislature):
-    """For each other group, the votes where the deputy and that group as a whole both cast
-    a vote (favour, against or abstention), and how many of them match."""
+def deputy_group_agreement(con, cadastro_ids):
+    """Per person and legislature, for each other group: the votes where the deputy and that
+    group as a whole both cast a vote (favour, against or abstention), and how many of them match."""
     return _rows(
         con,
         f"""
         with mine as (
-            select vote_id, group_acronym, position
+            select cadastro_id, legislature, vote_id, group_acronym, position
             from deputy_vote_positions
-            where cadastro_id = $cadastro_id and legislature = $legislature and list_contains($cast, position)
+            where cadastro_id in (select unnest($cadastro_ids)) and list_contains($cast, position)
         ),
-        groups as ({_GROUP_POSITIONS})
-        select g.group_code as group_acronym,
+        groups as ({_ALL_GROUP_POSITIONS})
+        select m.cadastro_id, m.legislature, g.group_code as group_acronym,
                count(*) as total_votes,
                count(*) filter (g.position = m.position) as aligned_votes
         from mine m
-        join groups g on g.vote_id = m.vote_id and g.group_code is distinct from m.group_acronym
+        join groups g
+          on g.legislature = m.legislature and g.vote_id = m.vote_id and g.group_code is distinct from m.group_acronym
         where list_contains($cast, g.position)
-        group by g.group_code
-        order by g.group_code
+        group by m.cadastro_id, m.legislature, g.group_code
+        order by m.cadastro_id, m.legislature, g.group_code
         """,  # noqa: S608 - a fixed SQL fragment, values are bound
-        {"cadastro_id": cadastro_id, "legislature": legislature, "cast": list(CAST)},
+        {"cadastro_ids": list(cadastro_ids), "cast": list(CAST)},
     )
 
 
-def deputy_close_votes(con, cadastro_id, legislature, margin):
-    """Plenary votes the deputy has a known position on whose tally is complete and decided
-    by ``margin`` or fewer (favour minus against), newest first."""
+def deputy_close_votes(con, cadastro_ids, margin):
+    """Per person and legislature, the plenary votes they have a known position on whose tally
+    is complete and decided by ``margin`` or fewer (favour minus against), newest first."""
     return _rows(
         con,
         """
-        select p.vote_id, p.position, t.favour, t.against, t.abstention
+        select p.cadastro_id, p.legislature, p.vote_id, p.position, t.favour, t.against, t.abstention
         from deputy_vote_positions p
         join vote_tallies t on t.vote_id = p.vote_id
-        where p.cadastro_id = ? and p.legislature = ? and p.position is not null
+        where p.cadastro_id in (select unnest(?)) and p.position is not null
           and t.complete and abs(t.favour - t.against) <= ?
-        order by p.date desc, p.vote_id desc
+        order by p.cadastro_id, p.legislature, p.date desc, p.vote_id desc
         """,
-        [cadastro_id, legislature, margin],
+        [list(cadastro_ids), margin],
     )
 
 
@@ -319,7 +328,7 @@ def votes_by_id(con, vote_ids):
         return []
     return _rows(
         con,
-        "select vote_id, date, description, result from votes where list_contains(?, vote_id)",
+        "select vote_id, date, description, result from votes where vote_id in (select unnest(?))",
         [list(vote_ids)],
     )
 
@@ -333,7 +342,7 @@ def whole_group_positions(con, vote_ids):
         """
         select vote_id, group_code, any_value(position) as position
         from vote_group_positions
-        where body = 'plenary' and deputies is null and list_contains(?, vote_id)
+        where body = 'plenary' and deputies is null and vote_id in (select unnest(?))
         group by vote_id, group_code
         having count(*) = 1
         order by vote_id, group_code
@@ -604,22 +613,34 @@ def group_seated(con, legislature, day, group_acronym):
 # Deputy page (S5)
 
 
-def deputy(con, cadastro_id):
-    return _one(con, "select * from deputies where cadastro_id = ?", [cadastro_id])
+# The deputy page reads these for a set of people at once (app.data.deputy_rows): each returns
+# rows for every person in ``cadastro_ids``, carrying their cadastro_id.
 
 
-def is_seated(con, cadastro_id):
-    return con.execute("select count(*) from deputy_current where cadastro_id = ?", [cadastro_id]).fetchone()[0] > 0
+def deputies_by_id(con, cadastro_ids):
+    return _rows(con, "select * from deputies where cadastro_id in (select unnest(?))", [list(cadastro_ids)])
 
 
-def seat_periods(con, cadastro_id):
-    """Per legislature the person held a seat in, oldest first: the first day and the last day
-    of their effective mandates (null while still seated in an open legislature) and the days
+def seated(con, cadastro_ids):
+    """Which of the people are seated now."""
+    return {
+        r[0]
+        for r in con.execute(
+            "select distinct cadastro_id from deputy_current where cadastro_id in (select unnest(?))",
+            [list(cadastro_ids)],
+        ).fetchall()
+    }
+
+
+def seat_periods(con, cadastro_ids):
+    """Per person and legislature they held a seat in, oldest first: the first day and the last
+    day of their effective mandates (null while still seated in an open legislature) and the days
     seated, counted up to the legislature's reference day."""
     return _rows(
         con,
         """
         select
+            m.cadastro_id,
             m.legislature,
             min(m.start_date) as seat_start,
             case when l.is_open and bool_or(m.end_date is null) then null
@@ -628,11 +649,11 @@ def seat_periods(con, cadastro_id):
                 as days
         from mandates m
         join legislature_days l on l.legislature = m.legislature
-        where m.cadastro_id = ? and m.is_effective
-        group by m.legislature, l.is_open, l.start_date
-        order by l.start_date
+        where m.cadastro_id in (select unnest(?)) and m.is_effective
+        group by m.cadastro_id, m.legislature, l.is_open, l.start_date
+        order by m.cadastro_id, l.start_date
         """,
-        [cadastro_id],
+        [list(cadastro_ids)],
     )
 
 
@@ -646,31 +667,32 @@ def group_names(con, legislatures):
     return {(r["legislature"], r["group_acronym"]): r["name"] for r in rows}
 
 
-def deputy_activity_by_legislature(con, cadastro_id):
-    """Per legislature: initiatives the person signed and their plenary interventions."""
+def deputy_activity_by_legislature(con, cadastro_ids):
+    """Per person and legislature: initiatives the person signed and their plenary interventions."""
     return _rows(
         con,
         """
         with ini as (
-            select legislature, count(*) as initiatives
+            select cadastro_id, legislature, count(*) as initiatives
             from deputy_initiatives
-            where cadastro_id = $cad
-            group by legislature
+            where cadastro_id in (select unnest($cads))
+            group by cadastro_id, legislature
         ),
         itv as (
-            select legislature, count(*) as interventions
+            select cadastro_id, legislature, count(*) as interventions
             from interventions
-            where cadastro_id = $cad
-            group by legislature
+            where cadastro_id in (select unnest($cads))
+            group by cadastro_id, legislature
         )
         select
+            coalesce(ini.cadastro_id, itv.cadastro_id) as cadastro_id,
             coalesce(ini.legislature, itv.legislature) as legislature,
             coalesce(ini.initiatives, 0) as initiatives,
             coalesce(itv.interventions, 0) as interventions
         from ini
-        full join itv on itv.legislature = ini.legislature
+        full join itv on itv.cadastro_id = ini.cadastro_id and itv.legislature = ini.legislature
         """,
-        {"cad": cadastro_id},
+        {"cads": list(cadastro_ids)},
     )
 
 
@@ -679,13 +701,14 @@ def deputy_activity_by_legislature(con, cadastro_id):
 RATED_TYPES = ("J", "R", "D")
 
 
-def deputy_outcomes(con, cadastro_id, legislature=None):
-    """Per legislature (oldest first) and type of projeto the person signed: how many, how many
-    passed (and of those, partly), and how many failed, per initiative_outcome."""
+def deputy_outcomes(con, cadastro_ids):
+    """Per person, legislature (oldest first) and type of projeto they signed: how many, how
+    many passed (and of those, partly), and how many failed, per initiative_outcome."""
     return _rows(
         con,
         """
         select
+            di.cadastro_id,
             di.legislature,
             i.type_code,
             any_value(i.type) as type,
@@ -697,22 +720,22 @@ def deputy_outcomes(con, cadastro_id, legislature=None):
         join initiatives i on i.legislature = di.legislature and i.initiative_id = di.initiative_id
         join legislature_days l on l.legislature = di.legislature
         left join initiative_outcome o on o.legislature = di.legislature and o.initiative_id = di.initiative_id
-        where di.cadastro_id = $cad
+        where di.cadastro_id in (select unnest($cads))
           and list_contains($types, i.type_code)
-          and ($leg is null or di.legislature = $leg)
-        group by di.legislature, l.start_date, i.type_code
-        order by l.start_date, list_position($types, i.type_code)
+        group by di.cadastro_id, di.legislature, l.start_date, i.type_code
+        order by di.cadastro_id, l.start_date, list_position($types, i.type_code)
         """,
-        {"cad": cadastro_id, "leg": legislature, "types": list(RATED_TYPES)},
+        {"cads": list(cadastro_ids), "types": list(RATED_TYPES)},
     )
 
 
-def deputy_signing(con, cadastro_id, legislature=None):
-    """Per legislature (oldest first): the projetos the person signed, by initiative_signing kind."""
+def deputy_signing(con, cadastro_ids):
+    """Per person and legislature (oldest first): the projetos they signed, by initiative_signing kind."""
     return _rows(
         con,
         """
         select
+            di.cadastro_id,
             di.legislature,
             count(*) filter (s.kind = 'grupo_parlamentar') as grupo_parlamentar,
             count(*) filter (s.kind = 'subscricao_restrita') as subscricao_restrita,
@@ -720,27 +743,27 @@ def deputy_signing(con, cadastro_id, legislature=None):
         from deputy_initiatives di
         join initiative_signing s on s.legislature = di.legislature and s.initiative_id = di.initiative_id
         join legislature_days l on l.legislature = di.legislature
-        where di.cadastro_id = $cad and ($leg is null or di.legislature = $leg)
-        group by di.legislature, l.start_date
-        order by l.start_date
+        where di.cadastro_id in (select unnest(?))
+        group by di.cadastro_id, di.legislature, l.start_date
+        order by di.cadastro_id, l.start_date
         """,
-        {"cad": cadastro_id, "leg": legislature},
+        [list(cadastro_ids)],
     )
 
 
-def deputy_initiative_types(con, cadastro_id):
-    """Initiatives the person signed, per type, most first."""
+def deputy_initiative_types(con, cadastro_ids):
+    """Initiatives each person signed, per type, most first."""
     return _rows(
         con,
         """
-        select i.type_code, any_value(i.type) as type, count(*) as total
+        select di.cadastro_id, i.type_code, any_value(i.type) as type, count(*) as total
         from deputy_initiatives di
         join initiatives i on i.legislature = di.legislature and i.initiative_id = di.initiative_id
-        where di.cadastro_id = ?
-        group by i.type_code
-        order by total desc, i.type_code
+        where di.cadastro_id in (select unnest(?))
+        group by di.cadastro_id, i.type_code
+        order by di.cadastro_id, total desc, i.type_code
         """,
-        [cadastro_id],
+        [list(cadastro_ids)],
     )
 
 
@@ -759,40 +782,42 @@ _MEASURES = {
 }
 
 
-def group_comparison(con, cadastro_id, legislature, measure):
-    """The person against their group in one legislature, per seat-year of ``measure`` (a key of
-    _MEASURES). The comparison population is the group's people seated at least half of the
-    legislature's days. Returns the group, whether the person is in that population
-    (``eligible``), how many others are (``peers``), the person's figure and the population's
-    average, or None when the person held no seat in it."""
-    return _one(
+def group_comparisons(con, legislature, measure):
+    """Everyone seated in ``legislature`` against their group, per seat-year of ``measure`` (a
+    key of _MEASURES). A group's comparison population is its people seated at least half of the
+    legislature's days. Per person: their group, whether they are in that population
+    (``eligible``), how many others are (``peers``), their figure and the population's average.
+    Someone who held no seat in the legislature has no row."""
+    return _rows(
         con,
         f"""
         with counts as ({_MEASURES[measure]}),
-        me as (
-            select group_acronym, days from deputy_seat_days where legislature = $leg and cadastro_id = $cad
-        ),
-        per as (
-            select
-                d.cadastro_id,
-                coalesce(c.n, 0) * 365.25 / d.days as per_year
+        seats as (
+            select d.cadastro_id, d.group_acronym, d.days, d.legislature_days, coalesce(c.n, 0) as n
             from deputy_seat_days d
             left join counts c on c.cadastro_id = d.cadastro_id
             where d.legislature = $leg
-              and d.group_acronym is not distinct from (select group_acronym from me)
-              and d.days > 0 and d.days >= 0.5 * d.legislature_days
+        ),
+        per as (
+            select cadastro_id, group_acronym, n * 365.25 / days as per_year
+            from seats
+            where days > 0 and days >= 0.5 * legislature_days
+        ),
+        groups as (
+            select group_acronym, count(*) as members, avg(per_year) as group_per_year from per group by group_acronym
         )
         select
-            me.group_acronym,
-            me.days > 0 and me.days >= 0.5 * (
-                select legislature_days from deputy_seat_days where legislature = $leg and cadastro_id = $cad
-            ) as eligible,
-            (select count(*) from per where cadastro_id <> $cad) as peers,
-            coalesce((select n from counts where cadastro_id = $cad), 0) * 365.25 / nullif(me.days, 0) as per_year,
-            (select avg(per_year) from per) as group_per_year
-        from me
+            s.cadastro_id,
+            s.group_acronym,
+            s.days > 0 and s.days >= 0.5 * s.legislature_days as eligible,
+            coalesce(g.members, 0) - (p.cadastro_id is not null)::int as peers,
+            s.n * 365.25 / nullif(s.days, 0) as per_year,
+            g.group_per_year
+        from seats s
+        left join groups g on g.group_acronym is not distinct from s.group_acronym
+        left join per p on p.cadastro_id = s.cadastro_id
         """,  # noqa: S608 - the measure query comes from the fixed table above
-        {"leg": legislature, "cad": cadastro_id},
+        {"leg": legislature},
     )
 
 
@@ -821,6 +846,20 @@ def interventions_page(con, cadastro_id, legislature, kind=None, order="newest",
     )
 
 
+def interventions(con, cadastro_ids):
+    """Every plenary intervention of each person, per legislature, newest first (the order of
+    interventions_page with no filter)."""
+    return _rows(
+        con,
+        f"""
+        select * from interventions
+        where cadastro_id in (select unnest(?))
+        order by cadastro_id, legislature, {_INTERVENTION_ORDER["newest"]}
+        """,  # noqa: S608 - the order comes from the fixed table above
+        [list(cadastro_ids)],
+    )
+
+
 def interventions_count(con, cadastro_id, legislature, kind=None):
     return con.execute(
         """
@@ -837,36 +876,42 @@ def legislature_interventions(con, legislature):
     return con.execute("select count(*) from interventions where legislature = ?", [legislature]).fetchone()[0]
 
 
-def deputy_initiatives_in(con, cadastro_id, legislature, limit=100):
-    """Initiatives the person signed in a legislature, newest first, with their outcome, how
-    they were signed (initiative_signing) and the deputies who signed them."""
+def deputy_initiatives_in(con, cadastro_ids, limit=100):
+    """Per person and legislature, the initiatives they signed, newest first and at most
+    ``limit``, with their outcome, how they were signed (initiative_signing), the deputies who
+    signed them and ``total``, the number signed in that legislature."""
     return _rows(
         con,
         """
         with mine as (
-            select initiative_id from deputy_initiatives where cadastro_id = $cad and legislature = $leg
+            select cadastro_id, legislature, initiative_id
+            from deputy_initiatives
+            where cadastro_id in (select unnest($cads))
         ),
         signed as (
-            select a.initiative_id,
+            select a.legislature, a.initiative_id,
                    list(distinct a.name order by a.name) as authors,
                    count(distinct a.cadastro_id) as signatories
             from initiative_authors a
-            join mine using (initiative_id)
-            where a.legislature = $leg and a.author_type = 'deputy'
-            group by a.initiative_id
+            join (select distinct legislature, initiative_id from mine) using (legislature, initiative_id)
+            where a.author_type = 'deputy'
+            group by a.legislature, a.initiative_id
         )
-        select i.*, o.result, coalesce(o.partly_approved, false) as partly_approved,
-               s.authors, s.signatories, g.kind as signing, count(*) over () as total
+        select m.cadastro_id, i.*, o.result, coalesce(o.partly_approved, false) as partly_approved,
+               s.authors, s.signatories, g.kind as signing,
+               count(*) over (partition by m.cadastro_id, i.legislature) as total
         from initiatives i
-        join mine using (initiative_id)
+        join mine m on m.legislature = i.legislature and m.initiative_id = i.initiative_id
         left join initiative_outcome o on o.legislature = i.legislature and o.initiative_id = i.initiative_id
         left join initiative_signing g on g.legislature = i.legislature and g.initiative_id = i.initiative_id
-        left join signed s on s.initiative_id = i.initiative_id
-        where i.legislature = $leg
-        order by i.first_event_date desc nulls last, i.initiative_id desc
-        limit $limit
+        left join signed s on s.legislature = i.legislature and s.initiative_id = i.initiative_id
+        qualify row_number() over (
+            partition by m.cadastro_id, i.legislature
+            order by i.first_event_date desc nulls last, i.initiative_id desc
+        ) <= $limit
+        order by m.cadastro_id, i.legislature, i.first_event_date desc nulls last, i.initiative_id desc
         """,
-        {"cad": cadastro_id, "leg": legislature, "limit": limit},
+        {"cads": list(cadastro_ids), "limit": limit},
     )
 
 
@@ -1058,21 +1103,21 @@ _ATTENDANCE_COUNTS = """
 """
 
 
-def attendance_by_legislature(con, cadastro_id):
-    """Per legislature and kind of sitting (is_ceremonial), the person's sittings in the lists
+def attendance_by_legislature(con, cadastro_ids):
+    """Per person, legislature and kind of sitting (is_ceremonial), their sittings in the lists
     and how many fall in each category, with the groups they sat for and the first and last
     sitting."""
     return _rows(
         con,
         f"""
-        select legislature, is_ceremonial, {_ATTENDANCE_COUNTS},
+        select cadastro_id, legislature, is_ceremonial, {_ATTENDANCE_COUNTS},
             list(distinct group_code order by group_code) as groups,
             min(meeting_date) as first_meeting, max(meeting_date) as last_meeting
         from plenary_attendance
-        where cadastro_id = ?
-        group by legislature, is_ceremonial
+        where cadastro_id in (select unnest(?))
+        group by cadastro_id, legislature, is_ceremonial
         """,  # noqa: S608 (a constant, no input)
-        [cadastro_id],
+        [list(cadastro_ids)],
     )
 
 
