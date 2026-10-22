@@ -70,3 +70,9 @@ def test_docs_do_not_describe_a_self_hosted_runner(doc):
     assert "homeberry" not in text
     assert "self-hosted" not in text
     assert "my single runner" not in text
+
+
+@pytest.mark.parametrize("workflow", WORKFLOWS, ids=lambda p: p.name)
+def test_no_workflow_runs_terraform(workflow):
+    """The old AWS stack and terraform/ are gone, so no job may set up or run Terraform."""
+    assert "terraform" not in workflow.read_text().lower()
