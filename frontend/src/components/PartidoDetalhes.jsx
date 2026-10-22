@@ -6,7 +6,7 @@ import PartyDemographics from './PartyDemographics';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
-import { plural } from '../utils/format';
+import { plural, NOT_AVAILABLE } from '../utils/format';
 
 const PartidoDetalhes = () => {
   const { partidoId } = useParams();
@@ -507,7 +507,7 @@ const PartidoDetalhes = () => {
                         fontWeight: 500,
                         color: tokens.colors.textPrimary,
                         fontFamily: tokens.fonts.mono,
-                      }}>{dados.historico.periodo_atividade || 'N/A'}</span>
+                      }}>{dados.historico.periodo_atividade || NOT_AVAILABLE}</span>
                     </div>
                     <div style={{ width: '1px', backgroundColor: tokens.colors.borderWarm || '#E8E4DA' }} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

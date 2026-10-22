@@ -1,85 +1,91 @@
-# Static export
+# Exportação estática
 
-Fiscaliza runs as a static site. The data release is synced into a DuckDB file, every answer the
-frontend needs is rendered to a JSON file, and the built frontend plus those files go to any
-static host. No server runs at request time.
+O Fiscaliza corre como site estático. A release de dados é sincronizada para um ficheiro DuckDB,
+todas as respostas de que o frontend precisa são geradas como ficheiros JSON, e o frontend
+compilado e esses ficheiros vão para qualquer alojamento estático. Não corre nenhum servidor
+quando alguém faz um pedido.
 
-## Build it
+## Como construir
 
 ```bash
-python -m fiscaliza_data sync                                   # the release, into $FISCALIZA_DATA_DIR
-python -m fiscaliza_data.export --out frontend/public/api       # every answer, as JSON
-cd frontend && npm ci && npm run build                          # dist/ with the files under dist/api
+python -m fiscaliza_data sync                                   # a release, para $FISCALIZA_DATA_DIR
+python -m fiscaliza_data.export --out frontend/public/api       # todas as respostas, em JSON
+cd frontend && npm ci && npm run build                          # dist/ com os ficheiros em dist/api
 ```
 
-`dist/` is the whole site. The export can also be written straight to `dist/api` after the
-build. `--jobs N` sets the processes for the deputy files (default: all cores); the full release
-takes a few minutes. The export writes a new folder and swaps it in only when everything rendered,
-so a failed run leaves the previous one in place.
+`dist/` é o site inteiro. A exportação também pode ser escrita diretamente em `dist/api` depois
+do build. `--jobs N` define os processos para os ficheiros dos deputados (por omissão, todos os
+núcleos); a release completa demora alguns minutos. A exportação escreve uma pasta nova e só a
+põe no lugar quando tudo foi gerado, por isso uma execução que falha deixa a anterior intacta.
 
-For `npm run dev`, render into `frontend/public/api` (gitignored) and the dev server serves it at
-`/api`. The frontend reads the files from `VITE_API_BASE_URL`, set at build time, default `/api`
-on the site's own origin. If the files live on another origin, that host has to send CORS headers.
+Para o `npm run dev`, gere para `frontend/public/api` (ignorado pelo git) e o servidor de
+desenvolvimento serve-o em `/api`. O frontend lê os ficheiros de `VITE_API_BASE_URL`, definido no
+build, por omissão `/api` na origem do próprio site. Se os ficheiros estiverem noutra origem, esse
+alojamento tem de enviar cabeçalhos CORS.
 
-## Layout
+## Estrutura
 
-Legislatures, parties and coalitions appear in paths in one form: accents dropped, lowercase,
-and every run of other characters (slash, space) turned into one dash. XVII is `xvii`, PàF is
-`paf`, MDP/CDE is `mdp-cde`, CDS-PP is `cds-pp`. The export stops if two names give the same path.
-The browser applies the same rule (`frontend/src/config/staticApi.js`), and accepts a legislature
-as a numeral or a number (`17`), like the API.
+Legislaturas, partidos e coligações aparecem nos caminhos numa só forma: sem acentos, em
+minúsculas, e cada sequência de outros caracteres (barra, espaço) passa a um hífen. XVII é
+`xvii`, PàF é `paf`, MDP/CDE é `mdp-cde`, CDS-PP é `cds-pp`. A exportação para se dois nomes
+derem o mesmo caminho. O browser aplica a mesma regra (`frontend/src/config/staticApi.js`) e
+aceita uma legislatura em numeração romana ou como número (`17`), como a API.
 
-| Endpoint | File |
+| Endpoint | Ficheiro |
 |---|---|
 | `legislaturas`, `estatisticas`, `partidos`, `health`, `estatisticas/atividade` | `legislaturas.json`, `estatisticas.json`, `partidos.json`, `health.json`, `estatisticas/atividade.json` |
-| `votacoes/recentes?limite=5` (and the default, 10) | `votacoes/recentes/5.json`, `votacoes/recentes/10.json` |
+| `votacoes/recentes?limite=5` (e o valor por omissão, 10) | `votacoes/recentes/5.json`, `votacoes/recentes/10.json` |
 | `coligacoes?include_inactive=false` / `true` | `coligacoes.json` / `coligacoes-todas.json` |
 | `coligacoes/{sigla}`, `/deputados`, `/partidos` | `coligacoes/{slug}.json`, `coligacoes/{slug}/deputados.json`, `coligacoes/{slug}/partidos.json` |
-| `deputados?page&per_page&active_only&search` | `deputados.json`: everyone, in the list's order; search, filter and paging run in the browser |
-| `deputados/{id}/detalhes`, `/conflitos-interesse`, `/atividades`, `/voting-analytics`, `/attendance` | `deputados/{id}.json`: one file per person with all of it, for every legislature they served in; interventions are filtered, sorted and paged in the browser |
+| `deputados?page&per_page&active_only&search` | `deputados.json`: todos, pela ordem da lista; a pesquisa, o filtro e a paginação correm no browser |
+| `deputados/{id}/detalhes`, `/conflitos-interesse`, `/atividades`, `/voting-analytics`, `/attendance` | `deputados/{id}.json`: um ficheiro por pessoa com tudo isto, para todas as legislaturas em que esteve; as intervenções são filtradas, ordenadas e paginadas no browser |
 | `partidos/{sigla}/deputados` | `partidos/{slug}/deputados.json` |
-| `partidos/{sigla}/voting-analytics[?legislatura]` | `partidos/{slug}/voting-analytics.json`, `partidos/{slug}/voting-analytics/{legislature slug}.json` |
+| `partidos/{sigla}/voting-analytics[?legislatura]` | `partidos/{slug}/voting-analytics.json`, `partidos/{slug}/voting-analytics/{slug da legislatura}.json` |
 
-One file per deputy keeps the count growing with people rather than people times legislatures:
-about 3,400 files on the full release instead of about 20,000. `tests/test_static_export.py`
-fails if a render reaches 20,000 files or any file reaches 25 MiB, and the export itself refuses
-to swap in such a render. Those limits fit the common static hosts (Cloudflare Pages, for one,
-allows 20,000 files per deployment and 25 MiB per file); object storage behind a CDN has none.
+Um ficheiro por deputado faz o número de ficheiros crescer com as pessoas e não com pessoas vezes
+legislaturas: cerca de 3400 ficheiros na release completa em vez de cerca de 20 000. O
+`tests/test_static_export.py` falha se uma geração chegar aos 20 000 ficheiros ou se algum
+ficheiro chegar aos 25 MiB, e a própria exportação recusa pôr no lugar uma geração assim. Esses
+limites servem os alojamentos estáticos habituais (o Cloudflare Pages, por exemplo, permite
+20 000 ficheiros por deploy e 25 MiB por ficheiro); armazenamento de objetos atrás de uma CDN não
+tem limites destes.
 
-The deputy files are rendered 50 people at a time. Each question the deputy page asks runs once
-for the whole batch (`app/data/deputy_rows.py`), not once per person and legislature, and the
-Flask routes build the same answers from the same rows for one person.
+Os ficheiros dos deputados são gerados 50 pessoas de cada vez. Cada pergunta que a página do
+deputado faz corre uma vez para o lote inteiro (`app/data/deputy_rows.py`), e não uma vez por
+pessoa e legislatura, e as rotas Flask constroem as mesmas respostas a partir das mesmas linhas
+para uma pessoa.
 
-Requests the frontend does not make (for example `estatisticas?legislatura=XVI`, or a
-deputy's activities in a legislature they never served in) are not rendered and answer 404.
+Os pedidos que o frontend não faz (por exemplo `estatisticas?legislatura=XVI`, ou as atividades
+de um deputado numa legislatura em que nunca esteve) não são gerados e respondem 404.
 
-## Not rendered yet
+## Ainda não gerado
 
-The agenda for today and this week (`agenda/hoje`, `agenda/semana`, S13) waits on its
-parlamento-aberto mart. The browser answers it 503 "not available" with the step that brings
-it, and the page shows its notice. It will get a file per week, with "today" picked in the
-browser in Europe/Lisbon time.
+A agenda de hoje e da semana (`agenda/hoje`, `agenda/semana`, S13) espera pelo seu mart no
+parlamento-aberto. O browser responde-lhe 503 "não disponível" com o passo que a vai trazer, e a
+página mostra o aviso. Vai ter um ficheiro por semana, com o "hoje" escolhido no browser na hora
+de Europe/Lisbon.
 
-Attendance (`deputados/{id}/attendance`, S11) is the `attendance` field of each deputy's file:
-one `DeputySection` in `DEPUTY_SECTIONS` (`fiscaliza_data/export.py`) and one entry in
-`staticApi.js`. A new deputy endpoint is added the same way.
+A assiduidade (`deputados/{id}/attendance`, S11) é o campo `attendance` do ficheiro de cada
+deputado: uma `DeputySection` em `DEPUTY_SECTIONS` (`fiscaliza_data/export.py`) e uma entrada no
+`staticApi.js`. Um endpoint novo de deputado acrescenta-se da mesma forma.
 
-The party endpoints render once S6 (#79) and S7 (#81) are on master; the export picks their
-services up on its own.
+Os endpoints dos partidos são gerados quando o S6 (#79) e o S7 (#81) estiverem no master; a
+exportação apanha os seus serviços sozinha.
 
-## Deep links
+## Ligações diretas
 
-The app routes in the browser, so `/deputados/123` has no file of its own. The build writes
-`index.html` again as `404.html`. Hosts that serve `404.html` for a missing path load the app on
-any deep link: GitHub Pages, Cloudflare Pages, S3 or CloudFront with `404.html` as the error
-document, nginx with `error_page 404 /404.html`. Those answer deep links with status 404 and
-the app still renders. To answer them 200, use the host's own SPA rule instead: nginx
-`try_files $uri /index.html`, a rewrite to `/index.html` on a CDN, or on Cloudflare Pages delete
-`404.html` from `dist/` before deploying, which turns on its single-page mode (`deploy/pages.py`
-does this, see [DEPLOY.md](DEPLOY.md)).
+A aplicação trata das rotas no browser, por isso `/deputados/123` não tem ficheiro próprio. O
+build escreve o `index.html` outra vez como `404.html`. Os alojamentos que servem o `404.html`
+para um caminho que não existe carregam a aplicação em qualquer ligação direta: GitHub Pages,
+Cloudflare Pages, S3 ou CloudFront com `404.html` como documento de erro, nginx com
+`error_page 404 /404.html`. Estes respondem às ligações diretas com o estado 404 e a aplicação
+aparece na mesma. Para responder 200, use a regra de SPA do próprio alojamento: no nginx
+`try_files $uri /index.html`, uma reescrita para `/index.html` numa CDN, ou no Cloudflare Pages
+apague o `404.html` de `dist/` antes do deploy, o que liga o modo de página única (o
+`deploy/pages.py` faz isto, ver [DEPLOY.md](DEPLOY.md)).
 
-A missing data file then comes back as `404.html` (or `index.html`) instead of JSON. The
-frontend reads anything that is not JSON as not found, so this is safe.
+Um ficheiro de dados em falta passa então a vir como `404.html` (ou `index.html`) em vez de JSON.
+O frontend trata tudo o que não é JSON como não encontrado, por isso não há problema.
 
-To try a build locally without Flask: `npm run preview` in `frontend/`, or any static server
-with an index.html fallback.
+Para experimentar um build localmente sem Flask: `npm run preview` em `frontend/`, ou qualquer
+servidor estático com recurso a index.html.
