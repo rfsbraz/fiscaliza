@@ -6,25 +6,25 @@
       "path": "partidos",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:315"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:316"
     },
     {
       "path": "partidos[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:424"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:425"
     },
     {
       "path": "partidos[].papel_coligacao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:426"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:427"
     },
     {
       "path": "partidos[].sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:388"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:389"
     }
   ],
   "dropped": []
