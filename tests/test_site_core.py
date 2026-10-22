@@ -169,6 +169,20 @@ def test_deputies_list_defaults_to_the_current_legislature_seated_first(con):
     ]
 
 
+def test_a_resigned_deputy_is_in_the_current_legislature_but_not_in_office(con):
+    # 231 resigned on 2026-01-01: still listed with XVII, but no longer in office there. A
+    # suspended mandate (302) is still a mandate of the current legislature.
+    found = {d["id_cadastro"]: d for d in core.deputados(con, page=3, per_page=100)["deputados"]}
+    assert (found[231]["career_info"]["is_currently_active"], found[231]["career_info"]["in_current_legislature"]) == (
+        False,
+        True,
+    )
+    assert (found[302]["career_info"]["is_currently_active"], found[302]["career_info"]["in_current_legislature"]) == (
+        True,
+        True,
+    )
+
+
 def test_deputies_list_of_everyone_who_ever_sat(con):
     page = core.deputados(con, active_only=False)
     # 234 elected or seated in XVII plus 178 only in XVI; 500 is a substitute who never sat.

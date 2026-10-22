@@ -3,11 +3,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createStaticApi, legislatureName, slug } from './staticApi.js';
 
-const person = (id, nome, nomeCompleto, active = true) => ({
+const person = (id, nome, nomeCompleto, active = true, inCurrent = active) => ({
   id_cadastro: id,
   nome,
   nome_completo: nomeCompleto,
-  career_info: { is_currently_active: active, total_mandates: 1 },
+  career_info: { is_currently_active: active, in_current_legislature: inCurrent, total_mandates: 1 },
 });
 
 const intervention = (id, tipo, data) => ({ id, tipo, data });
@@ -18,8 +18,10 @@ const FILES = {
       person(1, 'José Sá', 'José Maria Sá'),
       person(2, 'Ana Lopes', 'Ana Conceição Lopes'),
       person(3, 'Rui Gonçalves', 'Rui Gonçalves Antunes', false),
+      // Resigned in the current legislature: no longer in office, still on its list.
+      person(4, 'Inês Faria', 'Inês Faria Costa', false, true),
     ],
-    registos: [1, 2, 3],
+    registos: [1, 2, 3, 4],
     filters: { active_deputies_count: 2, seated_deputies_count: 2 },
   },
   'deputados/7.json': {
@@ -82,9 +84,10 @@ test('deputy list pages and filters like the API', async () => {
   const a = api();
   const page = await a.get('deputados?page=2&per_page=1&active_only=false');
   assert.deepEqual(page.body.deputados.map((d) => d.id_cadastro), [2]);
-  assert.deepEqual(page.body.pagination, { page: 2, per_page: 1, total: 3, pages: 3, has_next: true, has_prev: true });
+  assert.deepEqual(page.body.pagination, { page: 2, per_page: 1, total: 4, pages: 4, has_next: true, has_prev: true });
+  // The default list is the current legislature, a resigned deputy included, as the API lists it.
   const active = await a.get('deputados');
-  assert.deepEqual(active.body.deputados.map((d) => d.id_cadastro), [1, 2]);
+  assert.deepEqual(active.body.deputados.map((d) => d.id_cadastro), [1, 2, 4]);
   assert.equal(active.body.filters.active_only, true);
 });
 

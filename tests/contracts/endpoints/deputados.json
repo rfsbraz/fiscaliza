@@ -27,6 +27,12 @@
       "read_at": "frontend/src/components/DeputadosPage.jsx:268"
     },
     {
+      "path": "deputados[].career_info.in_current_legislature",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadosPage.jsx:442"
+    },
+    {
       "path": "deputados[].career_info.is_multi_term",
       "type": "boolean",
       "nullable": true,
