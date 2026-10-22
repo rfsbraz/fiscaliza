@@ -18,7 +18,7 @@ const FILES = {
       person(1, 'José Sá', 'José Maria Sá'),
       person(2, 'Ana Lopes', 'Ana Conceição Lopes'),
       person(3, 'Rui Gonçalves', 'Rui Gonçalves Antunes', false),
-      // Resigned in the current legislature: no longer in office, still on its list.
+      // Resigned in the current legislature: no longer in office.
       person(4, 'Inês Faria', 'Inês Faria Costa', false, true),
     ],
     registos: [1, 2, 3, 4],
@@ -85,9 +85,9 @@ test('deputy list pages and filters like the API', async () => {
   const page = await a.get('deputados?page=2&per_page=1&active_only=false');
   assert.deepEqual(page.body.deputados.map((d) => d.id_cadastro), [2]);
   assert.deepEqual(page.body.pagination, { page: 2, per_page: 1, total: 4, pages: 4, has_next: true, has_prev: true });
-  // The default list is the current legislature, a resigned deputy included, as the API lists it.
+  // The default list is who is in office, as the API lists it: a resigned deputy is not (#171).
   const active = await a.get('deputados');
-  assert.deepEqual(active.body.deputados.map((d) => d.id_cadastro), [1, 2, 4]);
+  assert.deepEqual(active.body.deputados.map((d) => d.id_cadastro), [1, 2]);
   assert.equal(active.body.filters.active_only, true);
 });
 

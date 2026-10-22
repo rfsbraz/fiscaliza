@@ -134,8 +134,7 @@ def partidos(con, legislatura=None, active_only=True):
     }
 
 
-# AR situations that end a mandate for good.
-MANDATE_ENDED = ("Renunciou", "Falecido/a", "Perda de Mandato", "Desistência")
+MANDATE_ENDED = repository.MANDATE_ENDED
 
 
 def _periodo(row):

@@ -95,9 +95,14 @@ def groups(con, legislature):
     )
 
 
+# AR situations that end a mandate for good.
+MANDATE_ENDED = ("Renunciou", "Falecido/a", "Perda de Mandato", "Desistência")
+
+
 def deputies_page(con, current, legislature=None, current_only=True, search=None, limit=20, offset=0):
     """People who were elected or held a seat, one row each: in ``legislature`` if given, else in
-    the current legislature if ``current_only``, else in any. ``search`` matches the
+    the current legislature with a mandate that did not end (MANDATE_ENDED) if ``current_only``,
+    else in any. ``search`` matches the
     parliamentary or full name, ignoring case and accents. Seated people come first, then the
     rest of the current legislature, then by latest legislature and name. Each row carries
     ``total`` (people matched) and ``records`` (their person-legislature rows)."""
@@ -113,7 +118,8 @@ def deputies_page(con, current, legislature=None, current_only=True, search=None
             from deputy_elections
             where $legislature is null or legislature = $legislature
             group by cadastro_id
-            having not $current_only or $legislature is not null or bool_or(legislature = $current)
+            having not $current_only or $legislature is not null
+                or bool_or(legislature = $current and not list_contains($ended, coalesce(situation, '')))
         ),
         matched as (
             select p.*, d.parliamentary_name, d.full_name, d.profession,
@@ -133,6 +139,7 @@ def deputies_page(con, current, legislature=None, current_only=True, search=None
             "current": current,
             "legislature": legislature,
             "current_only": current_only,
+            "ended": list(MANDATE_ENDED),
             "search": search or None,
             "limit": limit,
             "offset": offset,
@@ -150,7 +157,8 @@ def deputies_count(con, current, legislature=None, current_only=True, search=Non
             from deputy_elections
             where $legislature is null or legislature = $legislature
             group by cadastro_id
-            having not $current_only or $legislature is not null or bool_or(legislature = $current)
+            having not $current_only or $legislature is not null
+                or bool_or(legislature = $current and not list_contains($ended, coalesce(situation, '')))
         )
         select count(*) as total, coalesce(sum(legislatures), 0) as records
         from people p
@@ -159,7 +167,13 @@ def deputies_count(con, current, legislature=None, current_only=True, search=Non
            or contains(strip_accents(lower(d.parliamentary_name)), strip_accents(lower($search)))
            or contains(strip_accents(lower(d.full_name)), strip_accents(lower($search)))
         """,
-        {"current": current, "legislature": legislature, "current_only": current_only, "search": search or None},
+        {
+            "current": current,
+            "legislature": legislature,
+            "current_only": current_only,
+            "ended": list(MANDATE_ENDED),
+            "search": search or None,
+        },
     )
     return row["total"], row["records"]
 
