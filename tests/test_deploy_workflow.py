@@ -150,3 +150,18 @@ def test_deploy_waits_for_the_changes_job_on_pull_requests_only():
     assert "needs: changes" in deploy
     assert "github.event_name == 'push'" in deploy
     assert "needs.changes.outputs.preview == 'true'" in deploy
+
+
+def deploy_step_env():
+    t = text()
+    step = t[t.index("- name: Deploy\n") :]
+    return step[: step.index("run:")]
+
+
+def test_the_build_gets_the_public_sentry_dsn_and_its_environment():
+    # deploy/pages.py runs npm run build with the step's env, so Vite inlines VITE_* there.
+    env = deploy_step_env()
+    assert re.search(r"^\s+VITE_SENTRY_DSN: ", env, re.M)
+    assert "VITE_SENTRY_ENVIRONMENT: ${{ github.event_name == 'push' && 'production' || 'preview' }}" in env
+    # The DSN is public; no Sentry auth token goes into the build.
+    assert "SENTRY_AUTH_TOKEN" not in text()
