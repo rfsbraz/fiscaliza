@@ -147,6 +147,36 @@
       "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1455"
     },
     {
+      "path": "estatisticas.assiduidade",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1589"
+    },
+    {
+      "path": "estatisticas.assiduidade.legislatura",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:68"
+    },
+    {
+      "path": "estatisticas.assiduidade.reunioes",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:78"
+    },
+    {
+      "path": "estatisticas.assiduidade.taxa_presenca",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:75"
+    },
+    {
+      "path": "estatisticas.assiduidade.taxa_presenca_estrita",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:82"
+    },
+    {
       "path": "estatisticas.comparacao",
       "type": "object",
       "nullable": true,
@@ -391,36 +421,6 @@
       "type": "scalar",
       "nullable": false,
       "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1619"
-    },
-    {
-      "path": "estatisticas.assiduidade",
-      "type": "object",
-      "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:1589"
-    },
-    {
-      "path": "estatisticas.assiduidade.legislatura",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:68"
-    },
-    {
-      "path": "estatisticas.assiduidade.reunioes",
-      "type": "number",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:78"
-    },
-    {
-      "path": "estatisticas.assiduidade.taxa_presenca",
-      "type": "number",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:75"
-    },
-    {
-      "path": "estatisticas.assiduidade.taxa_presenca_estrita",
-      "type": "number",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:82"
     },
     {
       "path": "estatisticas.tempo_servico_anos",

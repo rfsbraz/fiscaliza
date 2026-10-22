@@ -3,142 +3,10 @@
   "route": "/api/deputados/<int:cad_id>/attendance",
   "keys": [
     {
-      "path": "legislaturas",
-      "type": "array",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:231"
-    },
-    {
-      "path": "legislaturas[].legislatura",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:236"
-    },
-    {
-      "path": "legislaturas[].com_listas",
-      "type": "boolean",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:188"
-    },
-    {
-      "path": "legislaturas[].reunioes",
-      "type": "number",
-      "nullable": true,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:195"
-    },
-    {
-      "path": "legislaturas[].em_curso",
-      "type": "boolean",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:209"
-    },
-    {
-      "path": "legislaturas[].taxa_presenca",
-      "type": "number",
-      "nullable": true,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:205"
-    },
-    {
-      "path": "legislaturas[].taxa_presenca_estrita",
-      "type": "number",
-      "nullable": true,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:206"
-    },
-    {
-      "path": "legislaturas[].legislatura_taxa_presenca",
-      "type": "number",
-      "nullable": true,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:207"
-    },
-    {
-      "path": "legislaturas[].ultima_reuniao",
+      "path": "atualizado",
       "type": "string",
       "nullable": true,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:214"
-    },
-    {
-      "path": "legislaturas[].contagens",
-      "type": "mapping",
-      "nullable": true,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:219"
-    },
-    {
-      "path": "legislaturas[].solenes",
-      "type": "object",
-      "nullable": true,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:220"
-    },
-    {
-      "path": "legislaturas[].solenes.reunioes",
-      "type": "number",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:220"
-    },
-    {
-      "path": "legislaturas[].solenes.contagens",
-      "type": "mapping",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:222"
-    },
-    {
-      "path": "legislaturas[].grupos",
-      "type": "array",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:225"
-    },
-    {
-      "path": "legislaturas[].registos",
-      "type": "array",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:225"
-    },
-    {
-      "path": "legislaturas[].registos[].data",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:150"
-    },
-    {
-      "path": "legislaturas[].registos[].reuniao_id",
-      "type": "number",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:149"
-    },
-    {
-      "path": "legislaturas[].registos[].tipo_reuniao",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:152"
-    },
-    {
-      "path": "legislaturas[].registos[].solene",
-      "type": "boolean",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:152"
-    },
-    {
-      "path": "legislaturas[].registos[].codigo",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:156"
-    },
-    {
-      "path": "legislaturas[].registos[].categoria",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:156"
-    },
-    {
-      "path": "legislaturas[].registos[].descricao",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:157"
-    },
-    {
-      "path": "legislaturas[].registos[].grupo",
-      "type": "string",
-      "nullable": true,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:160"
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:267"
     },
     {
       "path": "codigos",
@@ -147,16 +15,16 @@
       "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:278"
     },
     {
-      "path": "codigos[].codigo",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:279"
-    },
-    {
       "path": "codigos[].categoria",
       "type": "string",
       "nullable": false,
       "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:280"
+    },
+    {
+      "path": "codigos[].codigo",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:279"
     },
     {
       "path": "codigos[].descricao",
@@ -171,30 +39,6 @@
       "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:271"
     },
     {
-      "path": "definicao.taxa_presenca",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:271"
-    },
-    {
-      "path": "definicao.taxa_presenca_estrita",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:272"
-    },
-    {
-      "path": "definicao.solenes",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:273"
-    },
-    {
-      "path": "definicao.por_justificar",
-      "type": "string",
-      "nullable": false,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:274"
-    },
-    {
       "path": "definicao.cobertura",
       "type": "string",
       "nullable": false,
@@ -207,10 +51,166 @@
       "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:275"
     },
     {
-      "path": "atualizado",
+      "path": "definicao.por_justificar",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:274"
+    },
+    {
+      "path": "definicao.solenes",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:273"
+    },
+    {
+      "path": "definicao.taxa_presenca",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:271"
+    },
+    {
+      "path": "definicao.taxa_presenca_estrita",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:272"
+    },
+    {
+      "path": "legislaturas",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:231"
+    },
+    {
+      "path": "legislaturas[].com_listas",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:188"
+    },
+    {
+      "path": "legislaturas[].contagens",
+      "type": "mapping",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:219"
+    },
+    {
+      "path": "legislaturas[].em_curso",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:209"
+    },
+    {
+      "path": "legislaturas[].grupos",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:225"
+    },
+    {
+      "path": "legislaturas[].legislatura",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:236"
+    },
+    {
+      "path": "legislaturas[].legislatura_taxa_presenca",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:207"
+    },
+    {
+      "path": "legislaturas[].registos",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:225"
+    },
+    {
+      "path": "legislaturas[].registos[].categoria",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:156"
+    },
+    {
+      "path": "legislaturas[].registos[].codigo",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:156"
+    },
+    {
+      "path": "legislaturas[].registos[].data",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:150"
+    },
+    {
+      "path": "legislaturas[].registos[].descricao",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:157"
+    },
+    {
+      "path": "legislaturas[].registos[].grupo",
       "type": "string",
       "nullable": true,
-      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:267"
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:160"
+    },
+    {
+      "path": "legislaturas[].registos[].reuniao_id",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:149"
+    },
+    {
+      "path": "legislaturas[].registos[].solene",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:152"
+    },
+    {
+      "path": "legislaturas[].registos[].tipo_reuniao",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:152"
+    },
+    {
+      "path": "legislaturas[].reunioes",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:195"
+    },
+    {
+      "path": "legislaturas[].solenes",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:220"
+    },
+    {
+      "path": "legislaturas[].solenes.contagens",
+      "type": "mapping",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:222"
+    },
+    {
+      "path": "legislaturas[].solenes.reunioes",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:220"
+    },
+    {
+      "path": "legislaturas[].taxa_presenca",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:205"
+    },
+    {
+      "path": "legislaturas[].taxa_presenca_estrita",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:206"
+    },
+    {
+      "path": "legislaturas[].ultima_reuniao",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/deputy/AttendancePanel.jsx:214"
     }
   ],
   "dropped": [

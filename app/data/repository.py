@@ -322,6 +322,25 @@ def deputy_close_votes(con, cadastro_ids, margin):
     )
 
 
+def vote_initiatives(con, vote_ids):
+    """The initiatives each of the given votes decided, with the phase, lowest number first
+    and one row per vote and initiative."""
+    if not vote_ids:
+        return []
+    return _rows(
+        con,
+        """
+        select iv.vote_id, i.initiative_id, i.legislature, i.number, i.type, i.title, min(iv.phase) as phase
+        from initiative_votes iv
+        join initiatives i on i.legislature = iv.initiative_legislature and i.initiative_id = iv.initiative_id
+        where list_contains(?, iv.vote_id)
+        group by all
+        order by iv.vote_id, i.number nulls last, i.initiative_id
+        """,
+        [list(vote_ids)],
+    )
+
+
 def votes_by_id(con, vote_ids):
     """Date, description and result of the given votes."""
     if not vote_ids:
