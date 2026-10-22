@@ -1,0 +1,25 @@
+{
+  "endpoint": "perguntas",
+  "route": "/api/perguntas",
+  "keys": [
+    {
+      "path": "legislaturas",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:183"
+    },
+    {
+      "path": "legislaturas[].legislatura",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:200"
+    },
+    {
+      "path": "legislaturas[].provisoria",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/PerguntasPage.jsx:201"
+    }
+  ],
+  "dropped": []
+}

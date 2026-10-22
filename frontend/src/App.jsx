@@ -12,6 +12,7 @@ const PartidosPage = lazy(() => import('./components/PartidosPage'))
 const PartidoDetalhes = lazy(() => import('./components/PartidoDetalhes'))
 const ColigacaoDetalhes = lazy(() => import('./components/ColigacaoDetalhes'))
 const AgendaPage = lazy(() => import('./components/AgendaPage'))
+const PerguntasPage = lazy(() => import('./components/PerguntasPage'))
 const NotFound = lazy(() => import('./components/NotFound'))
 const Metodologia = lazy(() => import('./components/Metodologia'))
 import { apiFetch } from './config/api'
@@ -101,6 +102,8 @@ const AppContent = () => {
             <Route path="/partidos/:partidoId" element={<PartidoDetalhes />} />
             <Route path="/coligacoes/:coligacaoId" element={<ColigacaoDetalhes />} />
             <Route path="/agenda" element={<AgendaPage />} />
+            <Route path="/perguntas" element={<PerguntasPage />} />
+            <Route path="/perguntas/:legislatura" element={<PerguntasPage />} />
             <Route path="/metodologia" element={<Metodologia />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
