@@ -17,6 +17,8 @@ MAX_INITIATIVES = 100
 EPT_FROM = "XVI"
 EPT_URL = "https://entidadetransparencia.pt/"
 INITIATIVE_URL = "https://www.parlamento.pt/ActividadeParlamentar/Paginas/DetalheIniciativa.aspx?BID={}"
+# The deputy's activity in a legislature on parlamento.pt, which lists their perguntas.
+ACTIVITY_URL = "https://www.parlamento.pt/DeputadoGP/Paginas/ActividadeDeputado.aspx?BID={}&lg={}"
 # An approval rate needs at least this many decided initiatives (passed or failed).
 MIN_DECIDED = 10
 # A group average needs at least this many other people in the comparison population.
@@ -119,6 +121,16 @@ def _interventions_comparison(con, cadastro_id, legislature, is_open):
     return _comparison(con, cadastro_id, legislature, "interventions")
 
 
+def _written_questions(con, cadastro_id, legislature):
+    """Perguntas to the Government in the deputy's latest legislature, as author or coauthor,
+    with their activity page on parlamento.pt (#114). None where the release has no perguntas
+    for that legislature (before the X)."""
+    total = repository.deputy_written_questions(con, cadastro_id, legislature)
+    if total is None:
+        return None
+    return {"legislatura": legislature, "total": total, "url": ACTIVITY_URL.format(cadastro_id, legislature)}
+
+
 def detalhes(con, cadastro_id):
     from app.services import attendance
 
@@ -161,6 +173,7 @@ def detalhes(con, cadastro_id):
             "circulo_eleitoral": latest["circle"],
         },
         "is_seated": seated,
+        "perguntas_escritas": _written_questions(con, cadastro_id, leg),
         "mandate_status": latest["situation"],
         "career_info": {
             "is_currently_active": seated,

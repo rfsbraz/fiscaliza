@@ -728,6 +728,30 @@ def deputy_signing(con, cadastro_id, legislature=None):
     )
 
 
+# Written questions to the Government (#114): perguntas to the central administration.
+GOVERNMENT_QUESTION = "q.question_type = 'Pergunta' and q.recipient_category = 'AC'"
+
+
+def deputy_written_questions(con, cadastro_id, legislature):
+    """Perguntas to the Government the person wrote or cowrote in a legislature, each counted
+    once; None when the release has no such perguntas in that legislature at all."""
+    row = _one(
+        con,
+        f"""
+        select count(*) as perguntas,
+               count(*) filter (where exists (
+                   select 1 from question_authors a
+                   where a.legislature = q.legislature and a.question_id = q.question_id
+                     and a.cadastro_id = ?
+               )) as total
+        from questions q
+        where q.legislature = ? and {GOVERNMENT_QUESTION}
+        """,  # noqa: S608
+        [cadastro_id, legislature],
+    )
+    return row["total"] if row["perguntas"] else None
+
+
 def deputy_initiative_types(con, cadastro_id):
     """Initiatives the person signed, per type, most first."""
     return _rows(

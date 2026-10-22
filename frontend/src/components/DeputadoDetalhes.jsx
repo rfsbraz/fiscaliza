@@ -1658,6 +1658,39 @@ const DeputadoDetalhes = () => {
             </article>
           </div>
 
+          {/* Written questions to the Government in the latest legislature (#114) */}
+          {deputado.perguntas_escritas && (() => {
+            const perguntas = deputado.perguntas_escritas;
+            return (
+              <p
+                data-testid="perguntas-escritas"
+                style={{
+                  margin: '0 0 24px 0',
+                  padding: '12px 16px',
+                  backgroundColor: tokens.colors.bgSecondary,
+                  border: `1px solid ${tokens.colors.border}`,
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  color: tokens.colors.textSecondary,
+                }}
+              >
+                Perguntas escritas ao Governo nesta legislatura:{' '}
+                <strong style={{ color: tokens.colors.textPrimary, fontFamily: tokens.fonts.mono }}>
+                  {perguntas.total.toLocaleString('pt-PT')}
+                </strong>{' '}
+                (como autor ou coautor).{' '}
+                <a
+                  href={perguntas.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: tokens.colors.primary, textDecoration: 'underline' }}
+                >
+                  Ver as perguntas da {perguntas.legislatura} Legislatura no site do Parlamento
+                </a>
+              </p>
+            );
+          })()}
+
           {/* INITIATIVE TYPES BREAKDOWN */}
           {deputado.estatisticas.iniciativas_por_tipo && deputado.estatisticas.iniciativas_por_tipo.length > 0 && (
             <section style={{
