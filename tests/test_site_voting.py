@@ -292,3 +292,60 @@ def test_voting_routes_serve_json(data_dir):
     assert client.get("/api/partidos/CDS-PP/voting-analytics?legislatura=17").status_code == 200
     assert client.get("/api/deputados/999999/voting-analytics").status_code == 404
     assert client.get("/api/partidos/XYZ/voting-analytics").status_code == 404
+
+
+# What a vote was about (#110): the AR leaves most vote descriptions empty, so the lists name
+# the initiative the vote decided, then the vote description, then say none was published.
+
+
+def test_a_vote_on_an_initiative_names_it_with_its_phase_and_link(con):
+    (close,) = voting.deputado_voting_analytics(con, 1)["close_votes"]
+    assert close["iniciativa"] == {
+        "tipo": "Projeto de Lei",
+        "numero": 64,
+        "legislatura": "XVII",
+        "titulo": "Iniciativa 64",
+        "fase": "Votação final global",
+        "url": "https://www.parlamento.pt/ActividadeParlamentar/Paginas/DetalheIniciativa.aspx?BID=64",
+    }
+    assert close["outras_iniciativas"] == 0
+    assert close["objeto"] == "Projeto de Lei n.º 64/XVII: Iniciativa 64"
+
+
+def test_a_vote_on_several_initiatives_names_the_first_and_counts_the_rest(con):
+    (dissent,) = voting.deputado_voting_analytics(con, 1)["dissent_votes"]
+    assert dissent["iniciativa"]["numero"] == 68
+    assert dissent["outras_iniciativas"] == 2
+    assert dissent["objeto"] == "Projeto de Lei n.º 68/XVII: Iniciativa 68 e mais 2 iniciativas"
+
+
+@pytest.mark.parametrize(
+    ("description", "initiatives", "subject"),
+    [
+        ("Voto de pesar", [], "Voto de pesar"),
+        ("  ", [], "Votação sem descrição publicada"),
+        (None, [], "Votação sem descrição publicada"),
+        (
+            "Requerimento",
+            [{"type": "Proposta de Lei", "number": 3, "legislature": "XVI", "title": None, "phase": None}],
+            "Proposta de Lei n.º 3/XVI",
+        ),
+        (
+            None,
+            [
+                {"type": "Projeto de Resolução", "number": None, "legislature": "XVI", "title": "T", "phase": None},
+                {"type": "Projeto de Lei", "number": 9, "legislature": "XVI", "title": "U", "phase": None},
+            ],
+            "Projeto de Resolução: T e mais 1 iniciativa",
+        ),
+    ],
+)
+def test_vote_subject_falls_back_to_the_description_then_says_none_was_published(description, initiatives, subject):
+    assert voting.vote_subject(description, initiatives) == subject
+
+
+def test_vote_list_shows_the_initiative_link_and_never_a_blank_subject():
+    source = (ROOT / "frontend" / "src" / "components" / "VotingAnalytics.jsx").read_text()
+    assert "vote.iniciativa.url" in source
+    assert "vote.iniciativa.fase" in source
+    assert "vote.outras_iniciativas" in source
