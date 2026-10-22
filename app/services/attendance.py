@@ -131,7 +131,8 @@ def _legislature(name, is_open, rows, pooled, records):
 
 def deputado_attendance(con, cadastro_id):
     """Attendance in every legislature the person held a seat in, newest first."""
-    _, career = _person(con, cadastro_id)
+    _, elected = _person(con, cadastro_id)
+    career = [c for c in elected if c["seated"]]
     names = [c["legislature"] for c in career]
     by_leg = {}
     for row in repository.attendance_by_legislature(con, [cadastro_id]):

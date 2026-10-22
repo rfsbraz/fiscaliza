@@ -16,6 +16,7 @@ const Navigation = () => {
     { path: '/', label: 'Panorama' },
     { path: '/deputados', label: 'Deputados' },
     { path: '/partidos', label: 'Partidos' },
+    { path: '/perguntas', label: 'Perguntas ao Governo' },
     { path: '/agenda', label: 'Agenda' },
   ];
 

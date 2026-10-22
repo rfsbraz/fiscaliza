@@ -76,10 +76,84 @@ def test_resigned_deputy_is_not_seated(con):
     assert d["is_seated"] is False and d["mandate_status"] == "Renunciou"
 
 
-def test_unknown_or_never_seated_person_is_not_found(con):
+def test_unknown_person_or_substitute_who_never_sat_is_not_found(con):
     for cad in (99999, 500):
         with pytest.raises(core.NotFound):
             deputies.detalhes(con, cad)
+
+
+def test_elected_with_the_mandate_suspended_keeps_the_legislature(con):
+    # #107: 302 sat in XVI and was elected for XVII with the mandate suspended from day one.
+    d = deputies.detalhes(con, 302)
+    assert d["legislatura"] == {"numero": "XVII", "designacao": "XVII Legislatura", "ativa": True}
+    assert d["circulo"] == "Círculo 17" and d["partido"] is None
+    assert d["is_seated"] is False and d["mandate_status"] == "Suspenso(Eleito)"
+    assert d["mandato"]["situacao"] == "Suspenso(Eleito)"
+    assert (d["mandato"]["situacao_inicio"], d["mandato"]["situacao_fim"]) == ("2025-06-03", None)
+    assert d["mandato"]["em_exercicio"] is False
+    assert [
+        (m["legislatura_numero"], m["em_exercicio"], m["situacao"], m["situacao_inicio"], m["mandato_inicio"])
+        for m in d["mandatos_historico"]
+    ] == [
+        ("XVII", False, "Suspenso(Eleito)", "2025-06-03", None),
+        ("XVI", True, "Efetivo", "2024-03-26", "2024-03-26"),
+    ]
+    # Seated-day figures only count the legislature they sat in.
+    s = d["estatisticas"]
+    assert (s["total_mandatos"], s["legislaturas_servidas"], s["nivel_experiencia"]) == (1, "XVI", "Novato")
+    assert s["tempo_servico_anos"] == round((date(2025, 6, 2) - date(2024, 3, 26)).days / 365.25, 1)
+    assert [e["legislatura"] for e in s["evolucao_legislaturas"]] == ["XVI"]
+
+
+def test_one_day_efetivo_period_stays_in_the_history(con):
+    # The AR's 2025-06-05 Efetivo period inside a suspension is a real record, not collapsed.
+    d = deputies.detalhes(con, 303)
+    assert d["mandate_status"] == "Suspenso(Eleito)" and d["is_seated"] is False
+    assert (d["mandato"]["situacao_inicio"], d["mandato"]["em_exercicio"]) == ("2025-06-05", True)
+    # The suspension from that day is still open, so "Mandato suspenso desde 05/06/2025".
+    assert d["mandato"]["situacao_fim"] is None
+    [xvii, _] = d["mandatos_historico"]
+    assert (xvii["mandato_inicio"], xvii["mandato_fim"]) == ("2025-06-05", "2025-06-05")
+    assert (xvii["situacao"], xvii["situacao_inicio"], xvii["em_exercicio"]) == ("Suspenso(Eleito)", "2025-06-05", True)
+    assert xvii["situacao_fim"] is None
+    assert d["estatisticas"]["legislaturas_servidas"] == "XVI, XVII"
+
+
+def test_elected_person_who_never_sat_has_a_page(con):
+    d = deputies.detalhes(con, 501)
+    assert (d["nome"], d["legislatura_numero"], d["partido"]) == ("Deputado 501", "XVII", None)
+    assert d["mandato"] == {
+        "inicio": None,
+        "fim": None,
+        "situacao": "Suspenso(Eleito)",
+        "situacao_inicio": "2025-06-03",
+        "situacao_fim": None,
+        "em_exercicio": False,
+        "partido_sigla": None,
+        "circulo_eleitoral": "Círculo 18",
+    }
+    s = d["estatisticas"]
+    assert (s["total_mandatos"], s["legislaturas_servidas"], s["nivel_experiencia"]) == (0, "", None)
+    assert s["tempo_servico_anos"] == 0 and s["evolucao_legislaturas"] == [] and s["assiduidade"] is None
+    assert [m["legislatura_numero"] for m in d["mandatos_historico"]] == ["XVII"]
+    a = deputies.atividades(con, 501)
+    assert a["legislatura"]["numero"] == "XVII" and a["deputado"]["served_in_legislature"] is False
+    assert a["intervencoes"] == [] and a["comparacao_intervencoes"] is None
+    assert deputies.conflitos_interesse(con, 501)["tem_declaracao"] is False
+
+
+def test_suspended_legislature_has_no_seated_day_figures(con):
+    from app.services import attendance, voting
+
+    assert [leg["legislatura"] for leg in attendance.deputado_attendance(con, 302)["legislaturas"]] == ["XVI"]
+    assert attendance.deputado_attendance(con, 501)["legislaturas"] == []
+    assert voting.deputado_voting_analytics(con, 302)["legislatura"] == "XVI"
+    with pytest.raises(core.NotFound):
+        voting.deputado_voting_analytics(con, 302, "XVII")
+    with pytest.raises(core.NotFound):
+        voting.deputado_voting_analytics(con, 501)
+    assert deputies.atividades(con, 302)["deputado"]["served_in_legislature"] is False
+    assert deputies.atividades(con, 302, legislatura="XVI")["deputado"]["served_in_legislature"] is True
 
 
 # Counts, approval rate and comparisons (F06, F07, F08)
@@ -580,6 +654,17 @@ def test_evolution_bars_are_scaled_to_their_values():
     assert "const EVOLUTION_TRACK_PX = " in source
     assert "Math.round((total / maxValue) * EVOLUTION_TRACK_PX)" in source
     assert "height: `${barHeight}px`" in source
+
+
+def test_component_labels_elected_legislatures_without_a_seat():
+    # #107: a legislature the person was elected in but never sat in is shown, labelled, and
+    # not counted as a mandate.
+    source = COMPONENT.read_text()
+    assert "'Mandato suspenso'" in source
+    assert "Sem período em exercício registado" in source
+    assert "em_exercicio !== false" in source
+    assert "mandatos em exercício" in source and "eleito em" in source
+    assert "deputado.estatisticas.nivel_experiencia && (" in source
 
 
 def test_coverage_counts_people_with_an_effective_mandate_once():
