@@ -285,6 +285,80 @@ def list_seat_circles(con, legislature):
     return out
 
 
+def _has_table(con, name):
+    return con.execute("select count(*) from information_schema.tables where table_name = ?", [name]).fetchone()[0]
+
+
+# A deputy's first group in a legislature: the group they were elected for, before any change.
+_FIRST_GROUP = """
+    select cadastro_id, arg_min(group_acronym, start_date) as group_acronym
+    from group_memberships
+    where legislature = ?
+    group by cadastro_id
+"""
+
+
+def has_list_elected(con, legislature):
+    """Whether the release lists the deputies elected on each list in a legislature
+    (ballot_list_elected, from schema 1.6.0: I-B to VI)."""
+    if not _has_table(con, "ballot_list_elected"):
+        return False
+    return bool(
+        con.execute("select count(*) from ballot_list_elected where legislature = ?", [legislature]).fetchone()[0]
+    )
+
+
+def list_elected(con, legislature, ballots):
+    """The deputies elected on the given lists in a legislature, from ballot_list_elected, by
+    name: one row per seat, with cadastro_id None (and the published name) for a row the release
+    could not match to a deputy, and the deputy's first group in the legislature."""
+    return _rows(
+        con,
+        f"""
+        with first_group as ({_FIRST_GROUP})
+        select e.cadastro_id, e.ballot_acronym,
+               regexp_replace(trim(e.circle_name), '\\s+[a-z]\\)$', '') as circle,
+               coalesce(d.parliamentary_name, e.published_name) as parliamentary_name,
+               coalesce(d.full_name, e.published_name) as full_name,
+               g.group_acronym
+        from ballot_list_elected e
+        left join deputies d on d.cadastro_id = e.cadastro_id
+        left join first_group g on g.cadastro_id = e.cadastro_id
+        where e.legislature = ? and list_contains(?, e.ballot_acronym)
+        order by 4, e.cadastro_id
+        """,  # noqa: S608 - fixed query text
+        [legislature, legislature, list(ballots)],
+    )
+
+
+def elected_by_mandate(con, legislature):
+    """The deputies elected in a legislature by their mandates, by name: a person whose first
+    mandate in it starts on or before its first day as Efetivo, Suspenso(Eleito) or Renunciou,
+    with that mandate's circle and their first group (None for one who never joined a group)."""
+    return _rows(
+        con,
+        f"""
+        with first_group as ({_FIRST_GROUP}),
+        firsts as (
+            select m.cadastro_id, arg_min(m.situation, m.start_date) as situation,
+                   arg_min(m.circle_id, m.start_date) as circle_id, min(m.start_date) as start_date
+            from mandates m
+            where m.legislature = ?
+            group by m.cadastro_id
+        )
+        select f.cadastro_id, c.name as circle, d.parliamentary_name, d.full_name, g.group_acronym
+        from firsts f
+        join legislature_days l on l.legislature = ?
+        join deputies d on d.cadastro_id = f.cadastro_id
+        left join electoral_circles c on c.legislature = l.legislature and c.circle_id = f.circle_id
+        left join first_group g on g.cadastro_id = f.cadastro_id
+        where f.start_date <= l.start_date and f.situation in ('Efetivo', 'Suspenso(Eleito)', 'Renunciou')
+        order by d.parliamentary_name, f.cadastro_id
+        """,  # noqa: S608 - fixed query text
+        [legislature, legislature, legislature],
+    )
+
+
 def seated_in_groups(con, legislature, day, group_acronyms):
     """Deputies seated on a day in any of the given groups, by name."""
     return _rows(
