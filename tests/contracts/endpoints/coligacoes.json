@@ -6,67 +6,61 @@
       "path": "coligacoes",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:92"
+      "read_at": "frontend/src/components/PartidosPage.jsx:93"
     },
     {
       "path": "coligacoes[].ativa",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:505"
+      "read_at": "frontend/src/components/PartidosPage.jsx:506"
     },
     {
       "path": "coligacoes[].component_parties",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:579"
+      "read_at": "frontend/src/components/PartidosPage.jsx:580"
     },
     {
       "path": "coligacoes[].component_parties[].sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:596"
+      "read_at": "frontend/src/components/PartidosPage.jsx:597"
     },
     {
       "path": "coligacoes[].data_dissolucao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:629"
-    },
-    {
-      "path": "coligacoes[].data_formacao",
-      "type": "scalar",
-      "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:629"
+      "read_at": "frontend/src/components/PartidosPage.jsx:630"
     },
     {
       "path": "coligacoes[].deputy_count",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:562"
+      "read_at": "frontend/src/components/PartidosPage.jsx:563"
     },
     {
       "path": "coligacoes[].espectro_politico",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:468"
+      "read_at": "frontend/src/components/PartidosPage.jsx:469"
     },
     {
       "path": "coligacoes[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:471"
+      "read_at": "frontend/src/components/PartidosPage.jsx:472"
     },
     {
       "path": "coligacoes[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:534"
+      "read_at": "frontend/src/components/PartidosPage.jsx:535"
     },
     {
       "path": "coligacoes[].sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:502"
+      "read_at": "frontend/src/components/PartidosPage.jsx:503"
     }
   ],
   "dropped": []

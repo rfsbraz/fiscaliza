@@ -6,217 +6,211 @@
       "path": "coalition_patterns",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:204"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:193"
     },
     {
       "path": "coalition_patterns[].aligned_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:228"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:217"
     },
     {
       "path": "coalition_patterns[].alignment_rate",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:236"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:225"
     },
     {
       "path": "coalition_patterns[].party",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:226"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:215"
     },
     {
       "path": "coalition_patterns[].total_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:228"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:217"
     },
     {
       "path": "cohesion_by_theme",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:67"
-    },
-    {
-      "path": "cohesion_by_theme[].cohesion_score",
-      "type": "number",
-      "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:91"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:70"
     },
     {
       "path": "cohesion_by_theme[].cohesive_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:102"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:88"
     },
     {
       "path": "cohesion_by_theme[].tema",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:84"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:86"
     },
     {
       "path": "cohesion_by_theme[].total_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:85"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:88"
     },
     {
       "path": "legislative_effectiveness",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:128"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:117"
     },
     {
       "path": "legislative_effectiveness.by_type",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:129"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:118"
     },
     {
       "path": "legislative_effectiveness.by_type[].approval_rate",
       "type": "number",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:166"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:155"
     },
     {
       "path": "legislative_effectiveness.by_type[].approved",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:158"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:147"
     },
     {
       "path": "legislative_effectiveness.by_type[].initiated",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:156"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:145"
     },
     {
       "path": "legislative_effectiveness.by_type[].partly_approved",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:159"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:148"
     },
     {
       "path": "legislative_effectiveness.by_type[].rejected",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:163"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:152"
     },
     {
       "path": "legislative_effectiveness.by_type[].tipo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:155"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:144"
     },
     {
       "path": "legislative_effectiveness.by_type[].type_code",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:154"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:143"
     },
     {
       "path": "legislative_effectiveness.by_type[].undecided",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:164"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:153"
     },
     {
       "path": "legislative_effectiveness.note",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:173"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:162"
     },
     {
       "path": "legislatura",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:422"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:411"
     },
     {
       "path": "participation_metrics",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:128"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:117"
     },
     {
       "path": "participation_metrics.interventions_note",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:194"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:183"
     },
     {
       "path": "participation_metrics.total_initiatives",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:186"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:175"
     },
     {
       "path": "participation_metrics.total_interventions",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:182"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:171"
     },
     {
       "path": "participation_metrics.total_votes_participated",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:190"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:179"
     },
     {
       "path": "party_info",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:421"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:410"
     },
     {
       "path": "party_info.sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:421"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:410"
     },
     {
       "path": "temporal_behavior",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:270"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:259"
     },
     {
       "path": "temporal_behavior[].abstention_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:301"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:290"
     },
     {
       "path": "temporal_behavior[].against_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:300"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:289"
     },
     {
       "path": "temporal_behavior[].date",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:295"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:284"
     },
     {
       "path": "temporal_behavior[].favor_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:300"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:289"
     },
     {
       "path": "temporal_behavior[].initiatives",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:303"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:292"
     },
     {
       "path": "temporal_behavior[].total_votes",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:300"
+      "read_at": "frontend/src/components/PartyVotingAnalytics.jsx:289"
     }
   ],
   "dropped": [
@@ -235,6 +229,10 @@
     {
       "path": "legislative_effectiveness.success_rate",
       "reason": "F26: one pooled rate over everything proposed counted lapsed and pending initiatives as failures. by_type gives a rate over decided initiatives, per type, only with at least 10 decided."
+    },
+    {
+      "path": "cohesion_by_theme[].cohesion_score",
+      "reason": "A rate invites comparing groups, and small groups have few deputies the record could name (#109). The page shows cohesive_votes of total_votes."
     }
   ]
 }

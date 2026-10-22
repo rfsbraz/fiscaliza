@@ -1,0 +1,57 @@
+name: Data Pin Merge
+
+# Squash-merges the pin PR from data/pin-bump once every workflow on its head has passed
+# (docs/DEPLOY.md, "Automatic pin moves"). This is the one exception to merging by hand, for
+# pin PRs only. The repo has no branch protection on the free plan, so GitHub's auto-merge
+# can't wait for CI; instead this runs each time CI, Deploy or gitleaks finishes on that branch and
+# checks every run on the PR head. It doesn't merge, and leaves a comment, when a check failed,
+# the checks took too long, the schema major version changed or the PR changes more than the pin.
+on:
+  workflow_run:
+    workflows: [CI, Deploy, gitleaks]
+    types: [completed]
+
+# GITHUB_TOKEN reads the runs and comments. The merge uses PIN_BOT_TOKEN, so the push to master
+# starts CI and the production Deploy.
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+# CI, Deploy and gitleaks can finish together; one decision at a time, none cancelled.
+concurrency:
+  group: data-pin-merge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    name: Pin Merge
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_branch == 'data/pin-bump' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    # A few API calls. It never waits for CI: the next run that finishes starts it again.
+    timeout-minutes: 5
+    steps:
+      - name: Check PIN_BOT_TOKEN
+        env:
+          PIN_BOT_TOKEN: ${{ secrets.PIN_BOT_TOKEN }}
+        run: |
+          if [ -z "$PIN_BOT_TOKEN" ]; then
+            echo "::error::PIN_BOT_TOKEN is not set. See docs/DEPLOY.md, Automatic pin moves."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+        with:
+          ref: master
+          persist-credentials: false
+          sparse-checkout: deploy
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Merge when green
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PIN_BOT_TOKEN: ${{ secrets.PIN_BOT_TOKEN }}
+        run: python deploy/pin_bump.py merge

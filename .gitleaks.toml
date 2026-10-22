@@ -1,0 +1,32 @@
+# The default rules, plus one for password assignments. The defaults have no rule for a
+# plain `PG_PASSWORD=...` line in an env file, which is how a production database password
+# once reached a branch of this repo.
+[extend]
+useDefault = true
+
+# NAME_PASSWORD=value or NAME_PASSWORD = "value", at the start of a line, optionally after
+# `export` or a YAML list dash: env files, shell scripts, compose environment lists and
+# docs. The value runs to the end of the line or to a comment, so a function call such as
+# os.environ.get("...") never matches. Shell-special characters still count as a literal.
+[[rules]]
+id = "password-assignment"
+description = "A literal value assigned to a *_PASSWORD variable"
+regex = '''(?m)^\s*(?:-\s*)?(?:export\s+)?[A-Za-z0-9_]*_PASSWORD\s*=\s*['"]?([^\s'"]{4,})['"]?\s*(?:#.*)?$'''
+secretGroup = 1
+keywords = ["_password"]
+
+# A bare variable reference ($NAME, ${NAME}) is not a secret.
+[[rules.allowlists]]
+description = "a variable reference instead of a value"
+regexTarget = "secret"
+regexes = ['''^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$''']
+
+# The old stack's CONTRIBUTING.md (master's first commit) showed the local docker-compose
+# database password in its .env example: a localhost development default, not a credential.
+# Scoped to that one commit and file, so the same value anywhere else is still reported.
+[[allowlists]]
+description = "the old local docker-compose default in CONTRIBUTING.md at master's first commit"
+condition = "AND"
+targetRules = ["password-assignment"]
+commits = ["112445cf869e3c2fabe7fa2dd524c421a8bda140"]
+paths = ['''^CONTRIBUTING\.md$''']

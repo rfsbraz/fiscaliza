@@ -76,10 +76,84 @@ def test_resigned_deputy_is_not_seated(con):
     assert d["is_seated"] is False and d["mandate_status"] == "Renunciou"
 
 
-def test_unknown_or_never_seated_person_is_not_found(con):
+def test_unknown_person_or_substitute_who_never_sat_is_not_found(con):
     for cad in (99999, 500):
         with pytest.raises(core.NotFound):
             deputies.detalhes(con, cad)
+
+
+def test_elected_with_the_mandate_suspended_keeps_the_legislature(con):
+    # #107: 302 sat in XVI and was elected for XVII with the mandate suspended from day one.
+    d = deputies.detalhes(con, 302)
+    assert d["legislatura"] == {"numero": "XVII", "designacao": "XVII Legislatura", "ativa": True}
+    assert d["circulo"] == "Círculo 17" and d["partido"] is None
+    assert d["is_seated"] is False and d["mandate_status"] == "Suspenso(Eleito)"
+    assert d["mandato"]["situacao"] == "Suspenso(Eleito)"
+    assert (d["mandato"]["situacao_inicio"], d["mandato"]["situacao_fim"]) == ("2025-06-03", None)
+    assert d["mandato"]["em_exercicio"] is False
+    assert [
+        (m["legislatura_numero"], m["em_exercicio"], m["situacao"], m["situacao_inicio"], m["mandato_inicio"])
+        for m in d["mandatos_historico"]
+    ] == [
+        ("XVII", False, "Suspenso(Eleito)", "2025-06-03", None),
+        ("XVI", True, "Efetivo", "2024-03-26", "2024-03-26"),
+    ]
+    # Seated-day figures only count the legislature they sat in.
+    s = d["estatisticas"]
+    assert (s["total_mandatos"], s["legislaturas_servidas"], s["nivel_experiencia"]) == (1, "XVI", "Novato")
+    assert s["tempo_servico_anos"] == round((date(2025, 6, 2) - date(2024, 3, 26)).days / 365.25, 1)
+    assert [e["legislatura"] for e in s["evolucao_legislaturas"]] == ["XVI"]
+
+
+def test_one_day_efetivo_period_stays_in_the_history(con):
+    # The AR's 2025-06-05 Efetivo period inside a suspension is a real record, not collapsed.
+    d = deputies.detalhes(con, 303)
+    assert d["mandate_status"] == "Suspenso(Eleito)" and d["is_seated"] is False
+    assert (d["mandato"]["situacao_inicio"], d["mandato"]["em_exercicio"]) == ("2025-06-05", True)
+    # The suspension from that day is still open, so "Mandato suspenso desde 05/06/2025".
+    assert d["mandato"]["situacao_fim"] is None
+    [xvii, _] = d["mandatos_historico"]
+    assert (xvii["mandato_inicio"], xvii["mandato_fim"]) == ("2025-06-05", "2025-06-05")
+    assert (xvii["situacao"], xvii["situacao_inicio"], xvii["em_exercicio"]) == ("Suspenso(Eleito)", "2025-06-05", True)
+    assert xvii["situacao_fim"] is None
+    assert d["estatisticas"]["legislaturas_servidas"] == "XVI, XVII"
+
+
+def test_elected_person_who_never_sat_has_a_page(con):
+    d = deputies.detalhes(con, 501)
+    assert (d["nome"], d["legislatura_numero"], d["partido"]) == ("Deputado 501", "XVII", None)
+    assert d["mandato"] == {
+        "inicio": None,
+        "fim": None,
+        "situacao": "Suspenso(Eleito)",
+        "situacao_inicio": "2025-06-03",
+        "situacao_fim": None,
+        "em_exercicio": False,
+        "partido_sigla": None,
+        "circulo_eleitoral": "Círculo 18",
+    }
+    s = d["estatisticas"]
+    assert (s["total_mandatos"], s["legislaturas_servidas"], s["nivel_experiencia"]) == (0, "", None)
+    assert s["tempo_servico_anos"] == 0 and s["evolucao_legislaturas"] == [] and s["assiduidade"] is None
+    assert [m["legislatura_numero"] for m in d["mandatos_historico"]] == ["XVII"]
+    a = deputies.atividades(con, 501)
+    assert a["legislatura"]["numero"] == "XVII" and a["deputado"]["served_in_legislature"] is False
+    assert a["intervencoes"] == [] and a["comparacao_intervencoes"] is None
+    assert deputies.conflitos_interesse(con, 501)["tem_declaracao"] is False
+
+
+def test_suspended_legislature_has_no_seated_day_figures(con):
+    from app.services import attendance, voting
+
+    assert [leg["legislatura"] for leg in attendance.deputado_attendance(con, 302)["legislaturas"]] == ["XVI"]
+    assert attendance.deputado_attendance(con, 501)["legislaturas"] == []
+    assert voting.deputado_voting_analytics(con, 302)["legislatura"] == "XVI"
+    with pytest.raises(core.NotFound):
+        voting.deputado_voting_analytics(con, 302, "XVII")
+    with pytest.raises(core.NotFound):
+        voting.deputado_voting_analytics(con, 501)
+    assert deputies.atividades(con, 302)["deputado"]["served_in_legislature"] is False
+    assert deputies.atividades(con, 302, legislatura="XVI")["deputado"]["served_in_legislature"] is True
 
 
 # Counts, approval rate and comparisons (F06, F07, F08)
@@ -411,6 +485,63 @@ def test_coverage_of_the_ar_declarations(con):
         }
 
 
+def test_no_recognition_badges_red_flags_or_activity_trend():
+    # #105: the badges and warnings were decided from the interventions on the page, and the
+    # trend compared raw counts across legislatures of different lengths. All gone.
+    source = COMPONENT.read_text()
+    for text in ("Reconhecimentos", "AchievementBadge", "RedFlagIndicator", "crescente", "decrescente"):
+        assert text not in source, text
+    assert not (ROOT / "frontend" / "src" / "components" / "deputy" / "AchievementBadge.jsx").exists()
+    frontend = "".join(p.read_text() for p in (ROOT / "frontend" / "src").rglob("*.js*"))
+    for text in ("Sem perguntas recentes", "Atividade reduzida", "Questionador Ativo", "Participante Ativo"):
+        assert text not in frontend, text
+
+
+def test_no_declaration_in_the_open_data_is_not_a_missing_declaration(con):
+    # #106: 300 sat only in XVI, has no AR declaration and the EpT note covers XVI. The page gets
+    # what it needs to say the open data lacks it, never that it was not submitted.
+    c = deputies.conflitos_interesse(con, 300)
+    assert c["tem_declaracao"] is False
+    assert c["sem_declaracao"] == {
+        "legislatura": "XVI",
+        "antes_da_cobertura": False,
+        "lei_52_2019": True,
+        "url_parlamento": "https://www.parlamento.pt/DeputadoGP/Paginas/RegistoInteressesInfo.aspx?bid=300",
+        "url_ept": "https://entidadetransparencia.pt/",
+    }
+    assert "sem_declaracao" not in deputies.conflitos_interesse(con, 1)
+
+
+@pytest.mark.parametrize(
+    ("start", "before", "law"),
+    [
+        (date(2005, 3, 10), True, False),  # X: before the open data's first declarations (XI)
+        (date(2009, 10, 15), False, False),  # XI: covered, older regime
+        (date(2015, 10, 23), False, False),  # XIII: ended before Lei 52/2019 came into force
+        (date(2019, 10, 25), False, True),  # XIV: first day of the law (art. 26.º)
+        (date(2022, 3, 29), False, True),  # XV
+    ],
+)
+def test_missing_declaration_note_by_legislature(start, before, law):
+    note = deputies.missing_declaration(7, "L", start, date(2009, 10, 15))
+    assert (note["antes_da_cobertura"], note["lei_52_2019"]) == (before, law)
+    assert note["url_parlamento"].endswith("?bid=7")
+
+
+def test_component_never_says_a_declaration_was_not_submitted():
+    source = COMPONENT.read_text()
+    card = (ROOT / "frontend" / "src" / "components" / "deputy" / "InterestStatusCard.jsx").read_text()
+    assert "hasDeclaration: false" not in source
+    for text in (source, card):
+        assert "30 dias" not in text
+    assert "Isso não significa que não tenha sido entregue" in source
+    assert "não cobrem declarações de interesses" in source
+    assert "60 dias" in source and "art. 13.º, n.º 1" in source
+    assert "conflitosInteresse.sem_declaracao.lei_52_2019" in source
+    # The tab covers mandates from before the law too, so its subtitle doesn't cite it.
+    assert "conforme Lei n.º 52/2019" not in source
+
+
 def test_component_uses_the_neutral_interest_labels():
     source = COMPONENT.read_text()
     assert "has_conflict_potential" not in source
@@ -523,3 +654,92 @@ def test_evolution_bars_are_scaled_to_their_values():
     assert "const EVOLUTION_TRACK_PX = " in source
     assert "Math.round((total / maxValue) * EVOLUTION_TRACK_PX)" in source
     assert "height: `${barHeight}px`" in source
+
+
+# Written questions to the Government (#114)
+
+ACTIVITY_URL = "https://www.parlamento.pt/DeputadoGP/Paginas/ActividadeDeputado.aspx?BID={}&lg={}"
+
+
+@pytest.fixture(scope="module")
+def questions_con(tmp_path_factory):
+    data_dir = build_site_data(tmp_path_factory.mktemp("questions"), sets=("questions",))
+    c = duckdb.connect(str(data_dir / "current.duckdb"), read_only=True)
+    yield c
+    c.close()
+
+
+@pytest.mark.parametrize(
+    ("cad", "legislature", "total"),
+    [
+        # 7001 alone and 7002 with person 90. Not 7006 (a requerimento) or 6001 (XVI).
+        (1, "XVII", 2),
+        # 7002 as coauthor, 7003, and 7007, which was returned.
+        (90, "XVII", 3),
+        # 7004, to two ministers, counts once; 7005 was withdrawn but was still written.
+        (2, "XVII", 2),
+        # The latest legislature of a former deputy.
+        (301, "XVI", 2),
+        (3, "XVII", 0),
+    ],
+)
+def test_written_questions_to_the_government_in_the_latest_legislature(questions_con, cad, legislature, total):
+    assert deputies.detalhes(questions_con, cad)["perguntas_escritas"] == {
+        "legislatura": legislature,
+        "total": total,
+        "url": ACTIVITY_URL.format(cad, legislature),
+    }
+
+
+def test_no_written_questions_line_for_a_legislature_without_question_data(con):
+    # The deputies set has no questions at all, as the release has none before the X.
+    assert deputies.detalhes(con, 1)["perguntas_escritas"] is None
+
+
+def test_component_shows_the_written_questions_line():
+    source = COMPONENT.read_text()
+    assert "deputado.perguntas_escritas" in source
+    assert "Perguntas escritas ao Governo nesta legislatura:" in source
+    assert "(como autor ou coautor)" in source
+    assert "perguntas.url" in source
+
+
+def test_component_labels_elected_legislatures_without_a_seat():
+    # #107: a legislature the person was elected in but never sat in is shown, labelled, and
+    # not counted as a mandate.
+    source = COMPONENT.read_text()
+    assert "'Mandato suspenso'" in source
+    assert "Sem período em exercício registado" in source
+    assert "em_exercicio !== false" in source
+    assert "mandatos em exercício" in source and "eleito em" in source
+    assert "deputado.estatisticas.nivel_experiencia && (" in source
+
+
+def test_coverage_counts_people_with_an_effective_mandate_once():
+    # #106 / #113: the base is people with an effective mandate in any legislature with AR
+    # declarations, each counted once (793 with 149 declared on the pin), not person-legislature
+    # pairs (1,425 and 297). Suplentes who never sat are not in the base.
+    import duckdb
+
+    from app.data import repository
+
+    c = duckdb.connect()
+    c.execute("create table legislatures (legislature varchar, start_date date)")
+    c.execute("insert into legislatures values ('XI', '2009-10-15'), ('XII', '2011-06-20'), ('XIII', '2015-10-23')")
+    c.execute("create table mandates (legislature varchar, cadastro_id integer, is_effective boolean)")
+    c.execute(
+        "insert into mandates values ('XI', 1, true), ('XII', 1, true), ('XI', 2, true), ('XII', 3, true),"
+        " ('XII', 4, false), ('XIII', 5, true)"
+    )
+    c.execute("create table interest_declarations (legislature varchar, cadastro_id integer, source varchar)")
+    c.execute(
+        "insert into interest_declarations values ('XI', 1, 'ar_open_data'), ('XII', 1, 'ar_open_data'),"
+        " ('XII', 3, 'ar_open_data'), ('XII', 4, 'ar_open_data')"
+    )
+    coverage = repository.declaration_coverage(c)
+    assert {k: coverage[k] for k in ("first_legislature", "last_legislature", "seated", "declared")} == {
+        "first_legislature": "XI",
+        "last_legislature": "XII",
+        "seated": 3,
+        "declared": 2,
+    }

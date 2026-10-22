@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Users, Building, Calendar, TrendingUp, Handshake, History, MapPin, Award, Target, Activity } from 'lucide-react';
+import { ArrowLeft, Users, Building, Calendar, TrendingUp, Handshake, History, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
+import { plural } from '../utils/format';
 
 // Coalition colors based on political spectrum
 const spectrumColors = {
@@ -28,8 +29,8 @@ const ColigacaoDetalhes = () => {
   // Get active tab from URL hash
   const getActiveTabFromUrl = () => {
     const hash = location.hash.replace('#', '');
-    const validTabs = ['overview', 'deputados', 'partidos', 'timeline', 'performance'];
-    return validTabs.includes(hash) ? hash : 'overview';
+    const validTabs = ['partidos', 'deputados', 'timeline'];
+    return validTabs.includes(hash) ? hash : 'partidos';
   };
 
   const [activeTab, setActiveTab] = useState(getActiveTabFromUrl());
@@ -54,7 +55,7 @@ const ColigacaoDetalhes = () => {
 
   useEffect(() => {
     if (!location.hash) {
-      navigate('#overview', { replace: true });
+      navigate('#partidos', { replace: true });
     }
   }, [navigate, location.hash]);
 
@@ -146,19 +147,14 @@ const ColigacaoDetalhes = () => {
   }
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
-  // Coalition timeline data
+  // Coalition timeline data. No formation event: the date the data gives is the start of the
+  // coalition's first legislature in its latest run, not when it was formed (#111).
   const timelineEvents = [
-    dados.data_formacao && {
-      date: dados.data_formacao,
-      title: 'Formação da Coligação',
-      description: `Criação da ${dados.nome}`,
-      type: 'formation'
-    },
     dados.data_dissolucao && {
       date: dados.data_dissolucao,
       title: 'Dissolução',
@@ -168,11 +164,9 @@ const ColigacaoDetalhes = () => {
   ].filter(Boolean);
 
   const tabs = [
-    { id: 'overview', label: 'Visão Geral', icon: Target },
     { id: 'partidos', label: 'Partidos Componentes', icon: Building },
     { id: 'deputados', label: `Deputados (${deputados.length})`, icon: Users },
-    { id: 'timeline', label: 'Linha do Tempo', icon: History },
-    { id: 'performance', label: 'Desempenho Eleitoral', icon: Activity },
+    ...(timelineEvents.length ? [{ id: 'timeline', label: 'Linha do Tempo', icon: History }] : []),
   ];
 
   return (
@@ -239,19 +233,21 @@ const ColigacaoDetalhes = () => {
                   >
                     {dados.sigla}
                   </h1>
-                  <span
-                    style={{
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '2px',
-                      fontSize: '0.75rem',
-                      fontFamily: tokens.fonts.body,
-                      fontWeight: 600,
-                      color: '#FFFFFF',
-                      backgroundColor: spectrumColors[dados.espectro_politico] || '#6B7280',
-                    }}
-                  >
-                    {dados.espectro_politico || 'N/A'}
-                  </span>
+                  {dados.espectro_politico && (
+                    <span
+                      style={{
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '2px',
+                        fontSize: '0.75rem',
+                        fontFamily: tokens.fonts.body,
+                        fontWeight: 600,
+                        color: '#FFFFFF',
+                        backgroundColor: spectrumColors[dados.espectro_politico] || '#6B7280',
+                      }}
+                    >
+                      {dados.espectro_politico}
+                    </span>
+                  )}
                   {dados.ativa && (
                     <span
                       style={{
@@ -281,14 +277,6 @@ const ColigacaoDetalhes = () => {
 
                 {/* Key Information */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginTop: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', color: tokens.colors.textSecondary }}>
-                    <Calendar style={{ width: '20px', height: '20px', marginRight: '0.5rem', color: tokens.colors.textMuted }} />
-                    <div>
-                      <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.textMuted }}>Formação</p>
-                      <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600 }}>{formatDate(dados.data_formacao)}</p>
-                    </div>
-                  </div>
-
                   {dados.data_dissolucao && (
                     <div style={{ display: 'flex', alignItems: 'center', color: tokens.colors.textSecondary }}>
                       <Calendar style={{ width: '20px', height: '20px', marginRight: '0.5rem', color: tokens.colors.textMuted }} />
@@ -325,7 +313,7 @@ const ColigacaoDetalhes = () => {
                   <span style={{ fontFamily: tokens.fonts.body, marginLeft: '0.25rem' }}>deputados</span>
                 </div>
                 <div style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textMuted }}>
-                  {partidos.length} partidos componentes
+                  {plural(partidos.length, 'partido componente', 'partidos componentes')}
                 </div>
               </div>
             </div>
@@ -393,117 +381,6 @@ const ColigacaoDetalhes = () => {
 
           <div style={{ padding: '1.5rem' }}>
             {/* Overview Tab */}
-            {activeTab === 'overview' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {/* Historical Context */}
-                <div
-                  style={{
-                    backgroundColor: tokens.colors.bgSecondary,
-                    border: `1px solid ${tokens.colors.border}`,
-                    borderRadius: '4px',
-                  }}
-                >
-                  <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${tokens.colors.border}` }}>
-                    <h3 style={{ fontFamily: tokens.fonts.body, fontSize: '1rem', fontWeight: 600, color: tokens.colors.textPrimary, margin: 0 }}>
-                      Contexto Histórico
-                    </h3>
-                  </div>
-                  <div style={{ padding: '1.25rem' }}>
-                    <div style={{ fontFamily: tokens.fonts.body, fontSize: '0.9375rem', color: tokens.colors.textSecondary, lineHeight: 1.7 }}>
-                      {dados.sigla === 'AD' && (
-                        <>
-                          <p>A Aliança Democrática foi uma coligação política de centro-direita formada em 1979,
-                          unindo o PSD (então PPD/PSD), o CDS e o PPM. Foi a primeira coligação governamental estável
-                          após o 25 de Abril, marcando a consolidação democrática portuguesa.</p>
-                          <p style={{ marginTop: '0.75rem' }}>Sob a liderança de Francisco Sá Carneiro, a AD venceu as eleições de 1979 e 1980,
-                          estabelecendo um modelo de governação de centro-direita que seria referência para futuras coligações.</p>
-                        </>
-                      )}
-                      {dados.sigla === 'CDU' && (
-                        <>
-                          <p>A Coligação Democrática Unitária representa a mais duradoura aliança política
-                          na democracia portuguesa, unindo desde 1987 o Partido Comunista Português e o
-                          Partido Ecologista "Os Verdes".</p>
-                          <p style={{ marginTop: '0.75rem' }}>Com forte implantação no Alentejo e cintura industrial de Lisboa,
-                          a CDU mantém uma linha política consistente de esquerda, defendendo os direitos
-                          dos trabalhadores e uma visão crítica da integração europeia.</p>
-                        </>
-                      )}
-                      {dados.sigla === 'PAF' && (
-                        <>
-                          <p>Portugal à Frente foi a designação adotada pela coligação PSD/CDS-PP para
-                          as eleições legislativas de 2015, representando uma renovação da tradicional
-                          aliança de centro-direita.</p>
-                          <p style={{ marginTop: '0.75rem' }}>Apesar de ter obtido a maioria relativa, a PàF não conseguiu
-                          formar governo, marcando uma mudança significativa no panorama político português
-                          com a formação da "geringonça" à esquerda.</p>
-                        </>
-                      )}
-                      {!['AD', 'CDU', 'PAF'].includes(dados.sigla) && (
-                        <p>Coligação política portuguesa formada para maximizar a representação eleitoral
-                        dos partidos componentes através de uma estratégia unificada.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Key Achievements */}
-                <div
-                  style={{
-                    backgroundColor: tokens.colors.bgSecondary,
-                    border: `1px solid ${tokens.colors.border}`,
-                    borderRadius: '4px',
-                  }}
-                >
-                  <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${tokens.colors.border}` }}>
-                    <h3 style={{ fontFamily: tokens.fonts.body, fontSize: '1rem', fontWeight: 600, color: tokens.colors.textPrimary, margin: 0 }}>
-                      Momentos Chave
-                    </h3>
-                  </div>
-                  <div style={{ padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {dados.sigla === 'AD' && (
-                        <>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <Award style={{ width: '20px', height: '20px', color: tokens.colors.primary, flexShrink: 0, marginTop: '0.125rem' }} />
-                            <div>
-                              <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600, color: tokens.colors.textPrimary }}>Vitória Eleitoral 1979</p>
-                              <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>42.5% dos votos, primeiro governo de coligação estável</p>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <Award style={{ width: '20px', height: '20px', color: tokens.colors.primary, flexShrink: 0, marginTop: '0.125rem' }} />
-                            <div>
-                              <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600, color: tokens.colors.textPrimary }}>Maioria Absoluta 1980</p>
-                              <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>44.9% dos votos, consolidação do projeto político</p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                      {dados.sigla === 'CDU' && (
-                        <>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <Award style={{ width: '20px', height: '20px', color: tokens.colors.primary, flexShrink: 0, marginTop: '0.125rem' }} />
-                            <div>
-                              <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600, color: tokens.colors.textPrimary }}>Consistência Eleitoral</p>
-                              <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>Presença parlamentar ininterrupta desde 1987</p>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <Award style={{ width: '20px', height: '20px', color: tokens.colors.primary, flexShrink: 0, marginTop: '0.125rem' }} />
-                            <div>
-                              <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600, color: tokens.colors.textPrimary }}>Força Regional</p>
-                              <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>Liderança consistente no Alentejo</p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Component Parties Tab */}
             {activeTab === 'partidos' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -562,13 +439,6 @@ const ColigacaoDetalhes = () => {
                           >
                             {partido.papel_coligacao}
                           </span>
-                        )}
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        {partido.data_adesao && (
-                          <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textMuted }}>
-                            Desde {new Date(partido.data_adesao).getFullYear()}
-                          </p>
                         )}
                       </div>
                     </Link>
@@ -704,30 +574,6 @@ const ColigacaoDetalhes = () => {
               </div>
             )}
 
-            {/* Performance Tab */}
-            {activeTab === 'performance' && (
-              <div
-                style={{
-                  backgroundColor: tokens.colors.bgSecondary,
-                  border: `1px solid ${tokens.colors.border}`,
-                  borderRadius: '4px',
-                }}
-              >
-                <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${tokens.colors.border}` }}>
-                  <h3 style={{ fontFamily: tokens.fonts.body, fontSize: '1rem', fontWeight: 600, color: tokens.colors.textPrimary, margin: 0 }}>
-                    Desempenho Eleitoral
-                  </h3>
-                  <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textMuted, marginTop: '0.25rem' }}>
-                    Evolução dos resultados eleitorais da coligação
-                  </p>
-                </div>
-                <div style={{ padding: '2rem 1.25rem' }}>
-                  <p style={{ fontFamily: tokens.fonts.body, color: tokens.colors.textMuted, textAlign: 'center' }}>
-                    Dados de desempenho eleitoral em desenvolvimento
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

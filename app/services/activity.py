@@ -63,6 +63,10 @@ def votacoes_recentes(con, limite=DEFAULT_LIMIT, legislatura=None):
     }
 
 
+# What the "Sessões plenárias" card counts (#98): see repository.activity_counts.
+PLENARY_SITTINGS_SOURCE = "Sessões do Plenário nas listas de presenças, sem sessões solenes ou comemorativas"
+
+
 def _attendance(average):
     return {"assiduidade": average} if average else {}
 
@@ -81,7 +85,7 @@ def estatisticas_atividade(con):
         "data_referencia": _iso(day),
         "ultima_atualizacao": meta["source_updated"],
         "estatisticas": {
-            "sessoes_plenarias": {"total_ano": counts["plenary_days"]},
+            "sessoes_plenarias": {"total_ano": counts["plenary_sittings"], "fonte": PLENARY_SITTINGS_SOURCE},
             "votacoes": {
                 "total_ano": counts["votes"],
                 "aprovadas": counts["approved"],

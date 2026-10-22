@@ -237,9 +237,22 @@ def _prune(data_dir, live_name):
         p.unlink()
 
 
+# GitHub answers releases/latest with 404 while a repo has no release at all.
+NO_RELEASE = (
+    "parlamento-aberto has no published release yet, so there is nothing to download. "
+    "Build the pinned commit instead: python deploy/pages.py build --parlamento-aberto PATH "
+    "(see CONTRIBUTING.md)"
+)
+
+
 def _from_github(tag, http, data_dir, live):
     url = f"{API}/tags/{tag}" if tag else f"{API}/latest"
-    release = http.get_json(url)
+    try:
+        release = http.get_json(url)
+    except SyncError as e:
+        if tag is None and str(e).endswith("HTTP 404"):
+            raise SyncError(NO_RELEASE) from None
+        raise
     found = _check_tag(release.get("tag_name"))
     if tag and found != tag:
         raise SyncError(f"asked for {tag}, GitHub returned {found}")

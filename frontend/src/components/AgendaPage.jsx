@@ -4,6 +4,7 @@ import { Calendar, Clock, MapPin, Users, FileText, Vote, Activity, AlertCircle }
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner, Section } from './common';
+import { formatNumber, formatPercent } from '../utils/format';
 
 const PainelIndisponivel = ({ titulo, mensagem }) => (
   <div
@@ -154,10 +155,10 @@ const AgendaPage = () => {
           }}
         >
           {[
-            { icon: Users, label: 'SESSÕES PLENÁRIAS', value: estatisticas.estatisticas.sessoes_plenarias?.total_ano || 0, sublabel: 'este ano', color: tokens.colors.primary },
-            { icon: Vote, label: 'VOTAÇÕES', value: estatisticas.estatisticas.votacoes?.total_ano || 0, sublabel: estatisticas.estatisticas.votacoes?.taxa_aprovacao != null ? `${estatisticas.estatisticas.votacoes.taxa_aprovacao}% aprovadas` : 'em plenário', color: tokens.colors.primary },
-            { icon: FileText, label: 'INICIATIVAS', value: estatisticas.estatisticas.iniciativas?.apresentadas || 0, sublabel: 'apresentadas', color: '#7C3AED' },
-            ...(estatisticas.estatisticas.assiduidade?.media_presencas != null ? [{ icon: Activity, label: 'ASSIDUIDADE', value: `${estatisticas.estatisticas.assiduidade.media_presencas}%`, sublabel: 'média', color: '#D97706' }] : []),
+            { icon: Users, label: 'SESSÕES PLENÁRIAS', value: formatNumber(estatisticas.estatisticas.sessoes_plenarias?.total_ano), sublabel: 'este ano', note: estatisticas.estatisticas.sessoes_plenarias?.fonte, color: tokens.colors.primary },
+            { icon: Vote, label: 'VOTAÇÕES', value: formatNumber(estatisticas.estatisticas.votacoes?.total_ano), sublabel: estatisticas.estatisticas.votacoes?.taxa_aprovacao != null ? `${formatPercent(estatisticas.estatisticas.votacoes.taxa_aprovacao)} aprovadas` : 'em plenário', color: tokens.colors.primary },
+            { icon: FileText, label: 'INICIATIVAS', value: formatNumber(estatisticas.estatisticas.iniciativas?.apresentadas), sublabel: 'apresentadas', color: '#7C3AED' },
+            ...(estatisticas.estatisticas.assiduidade?.media_presencas != null ? [{ icon: Activity, label: 'ASSIDUIDADE', value: formatPercent(estatisticas.estatisticas.assiduidade.media_presencas), sublabel: 'média', color: '#D97706' }] : []),
           ].map((stat) => (
             <div
               key={stat.label}
@@ -169,7 +170,7 @@ const AgendaPage = () => {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <stat.icon size={24} style={{ color: stat.color }} />
+                <stat.icon size={24} style={{ color: stat.color, flexShrink: 0 }} />
                 <div>
                   <p
                     style={{
@@ -203,6 +204,18 @@ const AgendaPage = () => {
                   >
                     {stat.sublabel}
                   </p>
+                  {stat.note && (
+                    <p
+                      style={{
+                        fontFamily: tokens.fonts.body,
+                        fontSize: '0.625rem',
+                        color: tokens.colors.textMuted,
+                        marginTop: '0.25rem',
+                      }}
+                    >
+                      {stat.note}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
