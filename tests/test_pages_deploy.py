@@ -285,7 +285,7 @@ def test_csp_is_strict_where_it_can_be(headers):
     assert policy["object-src"] == ["'none'"]
     assert "'unsafe-inline'" not in policy["script-src"]
     assert "'unsafe-eval'" not in policy["script-src"]
-    assert policy["connect-src"] == ["'self'"]
+    assert policy["connect-src"] == ["'self'", "https://cloudflareinsights.com"]
 
 
 def test_csp_allows_what_the_app_loads(headers):
@@ -311,6 +311,14 @@ def test_csp_allows_what_the_app_loads(headers):
     for pair in stylesheet_hosts:
         for host in filter(None, pair):
             assert f"https://{host}" in policy["style-src"], host
+
+
+def test_csp_allows_cloudflare_web_analytics(headers):
+    # Pages injects the Web Analytics beacon from static.cloudflareinsights.com,
+    # and the beacon reports to cloudflareinsights.com.
+    policy = csp(headers)
+    assert policy["script-src"] == ["'self'", "https://static.cloudflareinsights.com"]
+    assert policy["connect-src"] == ["'self'", "https://cloudflareinsights.com"]
 
 
 def test_csp_allows_the_deputy_photos_the_api_points_to(headers):

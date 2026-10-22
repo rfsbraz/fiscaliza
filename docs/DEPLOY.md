@@ -252,7 +252,9 @@ As ligações diretas ficam com a predefinição do Pages para HTML,
 `public, max-age=0, must-revalidate`. O Pages junta com uma vírgula o mesmo cabeçalho de todas as
 regras que coincidem, por isso o `Cache-Control` nunca é definido em `/*`.
 
-A CSP: scripts, dados e frames só do próprio site (`frame-ancestors 'none'`), estilos do site
+A CSP: scripts, dados e frames só do próprio site (`frame-ancestors 'none'`), com duas exceções
+para o Cloudflare Web Analytics (o script de `static.cloudflareinsights.com` e os envios para
+`cloudflareinsights.com`), estilos do site
 (`'unsafe-inline'` para os atributos de estilo que o Recharts e o framer-motion definem), tipos de
 letra só do site (estão alojados em `frontend/src/assets/fonts`, e o build nunca os embute como
 URIs `data:`), e imagens do site, `data:`, `app.parlamento.pt` (as fotografias dos deputados em
