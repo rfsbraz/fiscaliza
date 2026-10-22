@@ -38,7 +38,7 @@ def test_merge_runs_when_ci_or_deploy_finish_on_the_pin_branch_only():
 
 
 def test_merge_never_waits_on_the_runner():
-    # One runner: a job that sat waiting for CI would hold the runner CI needs.
+    # A job that sat waiting for CI would burn runner minutes; the next finished run restarts it.
     t = MERGE.read_text()
     assert "sleep" not in t
     assert int(re.search(r"timeout-minutes: (\d+)", t).group(1)) <= 10

@@ -1,8 +1,8 @@
-"""Which runner each workflow's jobs use.
+"""Every job runs on a GitHub-hosted runner, never on a self-hosted one.
 
-CI and Deploy stay on my self-hosted runner until they move to GitHub-hosted runners before
-the repo goes public. The data pin workflows are on ``ubuntu-latest`` from the start, so they
-need no change at the switch.
+The repo is public, so a pull request from a fork runs CI with its own code. On a self-hosted
+runner that code would run on a persistent machine that also runs the production deploy, so
+every job in every workflow has to say ``runs-on: ubuntu-latest``.
 """
 
 import re
@@ -10,10 +10,9 @@ from pathlib import Path
 
 import pytest
 
-WORKFLOWS = sorted((Path(__file__).resolve().parent.parent / ".github" / "workflows").glob("*.y*ml"))
-HOMEBERRY = "[self-hosted, homeberry]"
+ROOT = Path(__file__).resolve().parent.parent
+WORKFLOWS = sorted((ROOT / ".github" / "workflows").glob("*.y*ml"))
 HOSTED = "ubuntu-latest"
-ON_HOSTED = {"data-pin-bump.yml", "data-pin-merge.yml"}
 
 
 def _jobs(text):
@@ -40,16 +39,34 @@ def test_there_are_workflows():
 
 
 @pytest.mark.parametrize("workflow", WORKFLOWS, ids=lambda p: p.name)
-def test_every_job_runs_on_its_runner(workflow):
-    expected = HOSTED if workflow.name in ON_HOSTED else HOMEBERRY
+def test_every_job_runs_on_a_github_hosted_runner(workflow):
     jobs = _jobs(workflow.read_text())
     assert jobs, f"{workflow.name} has no jobs"
-    wrong = {job: runs_on for job, runs_on in jobs.items() if runs_on != expected}
-    assert not wrong, f"{workflow.name}: jobs not on {expected}: {wrong}"
+    wrong = {job: runs_on for job, runs_on in jobs.items() if runs_on != HOSTED}
+    assert not wrong, f"{workflow.name}: jobs not on {HOSTED}: {wrong}"
 
 
-@pytest.mark.parametrize("name", sorted(ON_HOSTED))
-def test_the_data_pin_workflows_never_mention_a_self_hosted_runner(name):
-    text = (WORKFLOWS[0].parent / name).read_text().lower()
+@pytest.mark.parametrize("workflow", WORKFLOWS, ids=lambda p: p.name)
+def test_no_workflow_mentions_a_self_hosted_runner(workflow):
+    text = workflow.read_text().lower()
     assert "self-hosted" not in text
     assert "homeberry" not in text
+
+
+def test_actionlint_declares_no_self_hosted_labels():
+    config = ROOT / ".github" / "actionlint.yaml"
+    assert not config.exists() or "self-hosted-runner" not in config.read_text()
+
+
+def test_deploy_logs_print_nothing_about_the_machine():
+    deploy = (ROOT / ".github" / "workflows" / "deploy.yml").read_text()
+    for probe in ("nproc", "free -h", "df -h"):
+        assert probe not in deploy
+
+
+@pytest.mark.parametrize("doc", ["docs/DEPLOY.md", "README.md", "CONTRIBUTING.md"])
+def test_docs_do_not_describe_a_self_hosted_runner(doc):
+    text = (ROOT / doc).read_text().lower()
+    assert "homeberry" not in text
+    assert "self-hosted" not in text
+    assert "my single runner" not in text

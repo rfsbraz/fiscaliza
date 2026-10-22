@@ -6,7 +6,7 @@ name: Data Pin Bump
 # - no-op when the pin already has that commit, or the commit is older than the pin;
 # - otherwise it resets data/pin-bump from master, writes the pin, force-pushes that branch
 #   (the only force-push anywhere) and opens the pin PR, or updates the open one.
-# The merge is a separate short job, data-pin-merge.yml, so nothing holds the runner while CI runs.
+# The merge is a separate short job, data-pin-merge.yml, so no job sits waiting while CI runs.
 on:
   repository_dispatch:
     types: [data-updated]
@@ -31,8 +31,6 @@ concurrency:
 jobs:
   bump:
     name: Pin Bump
-    # GitHub-hosted, so nothing changes here when the repo goes public. It doesn't run while
-    # the repo is private.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

@@ -5,8 +5,9 @@ Fiscaliza is a static site on Cloudflare Pages, project `fiscaliza`, uploaded wi
 `fiscaliza-ceg.pages.dev`; anything else is a preview at `<branch>.fiscaliza-ceg.pages.dev` (Pages
 turns `/` and other characters in the branch name into `-`).
 
-Deploys run in CI, in `.github/workflows/deploy.yml`, on my Homeberry runner. The workflow only
-calls `deploy/pages.py`; everything a deploy does is in that script.
+Deploys run in CI, in `.github/workflows/deploy.yml`, on a GitHub-hosted runner
+(`ubuntu-latest`). The workflow only calls `deploy/pages.py`; everything a deploy does is in that
+script.
 
 ## When it deploys
 
@@ -21,8 +22,8 @@ request, which deploys production when it merges.
 Pull requests from forks don't deploy, and neither do Dependabot's: neither gets the repository
 secrets.
 
-A deploy holds my single runner for about half an hour, so a pull request only gets a preview when
-it needs one. A short `Preview Needed` job diffs the PR against master and lets the deploy run when
+A deploy builds the whole site and uploads it, so a pull request only gets a preview when it needs
+one. A short `Preview Needed` job diffs the PR against master and lets the deploy run when
 something changed under `frontend/`, `fiscaliza_data/`, `app/` or `deploy/`, or in
 `.github/workflows/deploy.yml` (`PREVIEW_PATHS` in the workflow). Anything else, such as docs or
 tests, gets no deploy job.
@@ -61,10 +62,10 @@ When parlamento-aberto turns on data releases (`DATA_RELEASES`), the pin moves t
 ## Automatic pin moves
 
 When parlamento-aberto `main` changes, a pin PR opens here and merges itself once every check on
-it is green (#133). This is my one exception to merging by hand, for pin PRs only. The repo is
-private on the free plan, so it has no branch protection or required checks and GitHub's
-auto-merge can't wait for CI; two workflows do the job instead, and `deploy/pin_bump.py` holds the
-logic (tested in `tests/test_pin_bump.py`).
+it is green (#133). This is my one exception to merging by hand, for pin PRs only. `master`
+has no branch protection or required checks, so GitHub's auto-merge can't wait for CI; two
+workflows do the job instead, and `deploy/pin_bump.py` holds the logic (tested in
+`tests/test_pin_bump.py`).
 
 1. parlamento-aberto's `fiscaliza-dispatch.yml` runs on every push to its `main` and sends a
    `repository_dispatch` here: event type `data-updated`, payload `{"sha": "<commit>"}`.
@@ -79,12 +80,11 @@ logic (tested in `tests/test_pin_bump.py`).
 3. The PR's CI and preview Deploy run as on any PR.
 4. `data-pin-merge.yml` (`Pin Merge`) runs each time CI or Deploy finishes on `data/pin-bump`. It
    looks at every workflow run on the PR head: while one is still going it exits and waits for the
-   next one to finish, so it never holds the runner that CI needs. When all of them passed, and CI
+   next one to finish, so it never sits on a runner while CI runs. When all of them passed, and CI
    and Deploy are among them, it squash-merges the PR at that head. The push to `master` then
    deploys production.
 
-Both workflows run on GitHub-hosted runners (`ubuntu-latest`), so they don't run while the repo is
-private; they start working when it goes public.
+Both workflows run on GitHub-hosted runners (`ubuntu-latest`), like CI and Deploy.
 
 ### Guard stops
 
@@ -166,9 +166,8 @@ Options:
 - With no source and a `tag=` in the pin, the sync downloads that release from GitHub.
 - `EXPORT_WORKERS` sets the export's processes. Without it the export uses the cgroup CPU limit
   (`/sys/fs/cgroup/cpu.max`), and without that the CPU count. Each process uses one DuckDB thread.
-  The runner reports the host's 8 CPUs, so CI leaves `EXPORT_WORKERS` unset and the export follows
-  the runner's `cpu.max`. The deploy step stops after 80 minutes and the job after 90; a deploy
-  takes about 5 minutes on 8 cores.
+  CI leaves `EXPORT_WORKERS` unset, so the export uses the runner's CPUs. The deploy step stops
+  after 80 minutes and the job after 90; a deploy normally takes a few minutes.
 - `--work DIR` keeps the scratch files in that folder instead of a temporary one.
 - `--dry-run` prints every command and runs nothing.
 - `WRANGLER` overrides the wrangler command. The default is `npx --yes wrangler@4.151.3`, pinned
