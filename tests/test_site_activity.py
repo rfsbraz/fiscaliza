@@ -87,9 +87,13 @@ def test_activity_counts_the_year_of_the_reference_day(con):
     stats = body["estatisticas"]
     assert body["periodo"] == "2026"
     assert body["ultima_atualizacao"] == "2026-10-20"
-    # Plenary days with a vote or an intervention: 01-15, 02-05, 03-20, 05-05, 06-10, and the
-    # deputy activity's 09-16, 09-17 and 09-18 (tests/site_data.py).
-    assert stats["sessoes_plenarias"] == {"total_ano": 8}
+    # Plenary sittings in the attendance lists this year, without the solemn 04-25 one:
+    # 01-15, 02-12, 03-12 (extraordinary), 09-17 and 10-15 (XVII_MEETINGS in tests/site_data.py).
+    # Not days with a vote or an intervention, of which there are 8 (#98).
+    assert stats["sessoes_plenarias"] == {
+        "total_ano": 5,
+        "fonte": "Sessões do Plenário nas listas de presenças, sem sessões solenes ou comemorativas",
+    }
     assert stats["votacoes"] == {"total_ano": 4, "aprovadas": 3, "rejeitadas": 1, "taxa_aprovacao": 75.0}
     assert stats["iniciativas"] == {"apresentadas": 3}
     # 3 agenda interventions and 4 from the deputy activity.
@@ -153,3 +157,10 @@ def test_agenda_page_has_no_demo_data_banner():
     source = AGENDA_PAGE.read_text()
     assert "Dados Demonstrativos" not in source
     assert "simulados" not in source
+
+
+def test_plenary_sittings_card_names_its_source():
+    # #98: the card keeps the "Sessões plenárias" label and shows where the figure comes from.
+    page = AGENDA_PAGE.read_text()
+    assert "label: 'SESSÕES PLENÁRIAS'" in page
+    assert "sessoes_plenarias?.fonte" in page

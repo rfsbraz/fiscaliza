@@ -6,55 +6,49 @@
       "path": "ativa",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:256"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:251"
     },
     {
       "path": "data_dissolucao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:163"
-    },
-    {
-      "path": "data_formacao",
-      "type": "scalar",
-      "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:157"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:158"
     },
     {
       "path": "deputy_count",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:324"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:311"
     },
     {
       "path": "espectro_politico",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:251"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:245"
     },
     {
       "path": "nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:160"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:275"
     },
     {
       "path": "observacoes",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:335"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:322"
     },
     {
       "path": "sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:241"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:234"
     },
     {
       "path": "tipo_coligacao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:307"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:294"
     }
   ],
   "dropped": []

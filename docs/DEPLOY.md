@@ -105,10 +105,10 @@ isso o auto-merge do GitHub não consegue esperar pela CI; dois workflows fazem 
    antigo e novo e os commits do parlamento-aberto entre eles. Um dispatch mais recente cancela um
    que esteja a correr e substitui a cabeça do pull request.
 3. A CI e o Deploy de pré-visualização do pull request correm como em qualquer pull request.
-4. O `data-pin-merge.yml` (`Pin Merge`) corre cada vez que a CI ou o Deploy acabam em
-   `data/pin-bump`. Olha para todas as execuções de workflows na cabeça do pull request: enquanto
-   uma ainda corre, sai e espera que a próxima acabe, por isso nunca ocupa um runner enquanto a CI
-   corre. Quando todas passaram, e a CI e o Deploy estão entre elas, faz squash-merge do pull request
+4. O `data-pin-merge.yml` (`Pin Merge`) corre cada vez que a CI, o Deploy ou o gitleaks
+   acabam em `data/pin-bump`. Olha para todas as execuções de workflows na cabeça do pull
+   request: enquanto uma ainda corre, sai e espera que a próxima acabe, por isso nunca ocupa um
+   runner enquanto a CI corre. Quando todas passaram, e a CI e o Deploy estão entre elas, faz squash-merge do pull request
    nessa cabeça. O push para `master` faz depois o deploy de produção.
 
 Os dois workflows correm em runners alojados pelo GitHub (`ubuntu-latest`), como a CI e o Deploy.

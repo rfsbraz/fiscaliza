@@ -36,7 +36,7 @@ jobs:
       preview: ${{ steps.check.outputs.preview }}
     steps:
       # The PR's merge commit and its base, trees only: enough for git diff --name-only.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
           fetch-depth: 2
@@ -83,20 +83,20 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: cda49578092f3bc8595c954e1e771ac1
       # The export takes its workers from the cgroup CPU limit, not a fixed count (docs/DEPLOY.md).
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       # Wrangler 4 needs Node 22 or newer; the version itself is pinned in deploy/pages.py.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       # parlamento-aberto builds its release with uv.
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
       # Only the data layer's pins: sync and export need duckdb and requests.
       - run: |
           grep -E '^(duckdb|requests)==' requirements.txt > "$RUNNER_TEMP/data-requirements.txt"
