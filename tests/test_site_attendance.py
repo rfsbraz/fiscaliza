@@ -276,3 +276,20 @@ def test_no_made_up_average_or_threshold_left():
     assert "parliamentAverage" not in source
     assert "considera uma taxa acima" not in source
     assert "Motivo:" not in source
+
+
+def test_main_rate_is_called_present_or_on_parliamentary_duties():
+    # #126: the main figure counts PNO, CO, ME and MP too, so it isn't a plain "taxa de presença"
+    # and it isn't "presença no Plenário". The strict rate sits right after it.
+    panel = PANEL.read_text()
+    assert "Taxa de presença" not in panel
+    assert "Presença no Plenário\n" not in panel
+    headline = panel.index('<Rate label="Presente ou em funções parlamentares" value={leg.taxa_presenca}')
+    strict = panel.index('<Rate label="Só presenças no Plenário" value={leg.taxa_presenca_estrita}')
+    assert strict > headline
+    between = panel[headline:strict]
+    assert between.count("<Rate") == 1
+    assert "<strong>Presente ou em funções parlamentares:</strong> {data.definicao.taxa_presenca}" in panel
+    card = panel[panel.index("export const AttendanceCard") : panel.index("const Rate")]
+    assert "Presente ou em funções parlamentares" in card
+    assert "{pct(assiduidade.taxa_presenca_estrita)}" in card

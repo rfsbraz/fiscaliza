@@ -1,0 +1,11 @@
+# Cloudflare Pages rules. deploy/pages.py copies this into the build output with 404.html.
+# The app's routes are answered with the app and status 200. Any other path with no file gets
+# 404.html (also the app, which shows its "page not found" view) and status 404 (#113).
+# The target is / and not /index.html: Pages turns /index.html into /, and a rewrite to it loops.
+/deputados / 200
+/deputados/* / 200
+/partidos / 200
+/partidos/* / 200
+/coligacoes/* / 200
+/agenda / 200
+/metodologia / 200

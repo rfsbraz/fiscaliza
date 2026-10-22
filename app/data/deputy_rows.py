@@ -124,9 +124,9 @@ class DeputyRows:
         return by.get((cadastro_id, legislature), [])
 
     def vote_items(self, vote_ids):
-        """{vote_id: (vote row, [group position rows])} for the given votes. The first call loads
-        every vote anyone in the set may list: those where the detail names them, and the close
-        votes asked for so far."""
+        """{vote_id: (vote row, [group position rows], [initiative rows])} for the given votes. The
+        first call loads every vote anyone in the set may list: those where the detail names them,
+        and the close votes asked for so far."""
         items = self._cache.setdefault("vote_items", {})
         missing = set(vote_ids) - items.keys()
         if missing:
@@ -141,8 +141,11 @@ class DeputyRows:
             positions = defaultdict(list)
             for row in repository.whole_group_positions(self.con, ids):
                 positions[row["vote_id"]].append(row)
+            initiatives = defaultdict(list)
+            for row in repository.vote_initiatives(self.con, ids):
+                initiatives[row["vote_id"]].append(row)
             for vote in repository.votes_by_id(self.con, ids):
-                items[vote["vote_id"]] = (vote, positions[vote["vote_id"]])
+                items[vote["vote_id"]] = (vote, positions[vote["vote_id"]], initiatives[vote["vote_id"]])
         return {v: items[v] for v in vote_ids if v in items}
 
     def _by_votes(self):

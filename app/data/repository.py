@@ -322,6 +322,25 @@ def deputy_close_votes(con, cadastro_ids, margin):
     )
 
 
+def vote_initiatives(con, vote_ids):
+    """The initiatives each of the given votes decided, with the phase, lowest number first
+    and one row per vote and initiative."""
+    if not vote_ids:
+        return []
+    return _rows(
+        con,
+        """
+        select iv.vote_id, i.initiative_id, i.legislature, i.number, i.type, i.title, min(iv.phase) as phase
+        from initiative_votes iv
+        join initiatives i on i.legislature = iv.initiative_legislature and i.initiative_id = iv.initiative_id
+        where list_contains(?, iv.vote_id)
+        group by all
+        order by iv.vote_id, i.number nulls last, i.initiative_id
+        """,
+        [list(vote_ids)],
+    )
+
+
 def votes_by_id(con, vote_ids):
     """Date, description and result of the given votes."""
     if not vote_ids:
@@ -871,6 +890,11 @@ def interventions_count(con, cadastro_id, legislature, kind=None):
     ).fetchone()[0]
 
 
+def interventions_by_legislature(con):
+    """Interventions published per legislature, all speakers, as {legislature: count}."""
+    return dict(con.execute("select legislature, count(*) from interventions group by legislature").fetchall())
+
+
 def legislature_interventions(con, legislature):
     """Interventions published for a legislature, all speakers."""
     return con.execute("select count(*) from interventions where legislature = ?", [legislature]).fetchone()[0]
@@ -973,8 +997,9 @@ def declaration_flags(con, legislature, declaration_key):
 
 
 def declaration_coverage(con):
-    """Over the legislatures with AR open data declarations (first and last): the people seated
-    in each, counted once per legislature, and how many of those have a declaration in it."""
+    """Over the legislatures with AR open data declarations (first and last): the people with an
+    effective mandate in any of them, each counted once, and how many of those have a declaration
+    in the AR open data (#106, #113)."""
     return _one(
         con,
         """
@@ -985,21 +1010,25 @@ def declaration_coverage(con):
             where d.source = 'ar_open_data'
         ),
         seated as (
-            select distinct m.legislature, m.cadastro_id
+            select distinct m.cadastro_id
             from mandates m
             join legs using (legislature)
             where m.is_effective
         ),
         declared as (
-            select distinct legislature, cadastro_id from interest_declarations where source = 'ar_open_data'
+            select distinct d.cadastro_id
+            from interest_declarations d
+            join legs using (legislature)
+            where d.source = 'ar_open_data'
         )
         select
             (select arg_min(legislature, start_date) from legs) as first_legislature,
             (select arg_max(legislature, start_date) from legs) as last_legislature,
+            (select min(start_date) from legs) as first_start,
             count(*) as seated,
             count(d.cadastro_id) as declared
         from seated s
-        left join declared d on d.legislature = s.legislature and d.cadastro_id = s.cadastro_id
+        left join declared d on d.cadastro_id = s.cadastro_id
         """,
     )
 
