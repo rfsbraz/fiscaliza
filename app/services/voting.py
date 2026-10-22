@@ -10,6 +10,7 @@ names them); votes where it is unknown are left out and counted.
 from collections import defaultdict
 
 from app.data import repository
+from app.data.deputy_rows import DeputyRows
 from app.services.core import NotFound
 
 POSITIONS = {"favour": "favor", "against": "contra", "abstention": "abstencao", "absent": "ausente"}
@@ -44,17 +45,11 @@ def _iso(day):
     return day.isoformat() if day is not None else None
 
 
-def _vote_items(con, votes):
+def _vote_items(rows, votes):
     """{vote_id: (vote row, {group: position}, [initiatives])} for the given vote ids."""
-    ids = list(votes)
-    breakdown = defaultdict(dict)
-    for row in repository.whole_group_positions(con, ids):
-        breakdown[row["vote_id"]][row["group_code"]] = POSITIONS[row["position"]]
-    initiatives = defaultdict(list)
-    for row in repository.vote_initiatives(con, ids):
-        initiatives[row["vote_id"]].append(row)
     return {
-        v["vote_id"]: (v, breakdown[v["vote_id"]], initiatives[v["vote_id"]]) for v in repository.votes_by_id(con, ids)
+        vote_id: (vote, {p["group_code"]: POSITIONS[p["position"]] for p in positions}, initiatives)
+        for vote_id, (vote, positions, initiatives) in rows.vote_items(votes).items()
     }
 
 
@@ -100,8 +95,8 @@ def _vote_dict(vote, breakdown, initiatives):
     }
 
 
-def _deputy_legislature(con, cadastro_id, legislatura):
-    career = repository.careers(con, [cadastro_id])
+def _deputy_legislature(rows, cadastro_id, legislatura):
+    career = rows.career(cadastro_id)
     if not career:
         raise NotFound(f"deputy {cadastro_id} not found")
     if legislatura is None:
@@ -113,11 +108,13 @@ def _deputy_legislature(con, cadastro_id, legislatura):
     return found
 
 
-def deputado_voting_analytics(con, cadastro_id, legislatura=None):
-    seat = _deputy_legislature(con, cadastro_id, legislatura)
+def deputado_voting_analytics(con, cadastro_id, legislatura=None, rows=None):
+    """``rows``: the DeputyRows to answer from; a route passes none and gets the person's."""
+    source = rows if rows is not None else DeputyRows(con, [cadastro_id])
+    seat = _deputy_legislature(source, cadastro_id, legislatura)
     leg = seat["legislature"]
-    rows = repository.deputy_votes(con, cadastro_id, leg)
-    known = [r for r in rows if r["position"] is not None]
+    votes = source.votes(cadastro_id, leg)
+    known = [r for r in votes if r["position"] is not None]
 
     distribution = {p: 0 for p in POSITIONS.values()}
     days = {}
@@ -137,10 +134,10 @@ def deputado_voting_analytics(con, cadastro_id, legislatura=None):
         month["aligned_votes"] += r["position"] == r["group_position"]
 
     dissents = [r for r in reversed(both_cast) if r["named"] and r["position"] != r["group_position"]]
-    close = repository.deputy_close_votes(con, cadastro_id, leg, CLOSE_MARGIN)
-    items = _vote_items(con, {r["vote_id"] for r in dissents} | {c["vote_id"] for c in close})
+    close = source.close_votes(cadastro_id, leg, CLOSE_MARGIN)
+    items = _vote_items(source, {r["vote_id"] for r in dissents} | {c["vote_id"] for c in close})
 
-    left_out = len(rows) - len(known)
+    left_out = len(votes) - len(known)
     return {
         "legislatura": leg,
         "deputy_info": {"cadastro_id": cadastro_id, "party": {"sigla": seat["group_acronym"]}},
@@ -170,7 +167,7 @@ def deputado_voting_analytics(con, cadastro_id, legislatura=None):
                 "total_votes": g["total_votes"],
                 "alignment_rate": _rate(g["aligned_votes"], g["total_votes"]),
             }
-            for g in repository.deputy_group_agreement(con, cadastro_id, leg)
+            for g in source.group_agreement(cadastro_id, leg)
         ],
         "dissent_votes": [
             {
