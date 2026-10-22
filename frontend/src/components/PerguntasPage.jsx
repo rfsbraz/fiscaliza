@@ -52,6 +52,72 @@ const Figure = ({ label, value, detail }) => (
   </div>
 );
 
+/**
+ * The figures per recipient: a table on larger screens and one card per recipient on small ones,
+ * so the answer rate and the median stay in view without scrolling sideways.
+ */
+export const Destinatarios = ({ rows }) => (
+  <>
+    <div className="hidden md:block" style={{ overflowX: 'auto', marginBottom: '1rem' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: tokens.colors.bgSecondary }}>
+        <thead>
+          <tr>
+            <th style={{ ...headCell, textAlign: 'left' }}>Destinatário</th>
+            <th style={{ ...headCell, textAlign: 'right' }}>Perguntas</th>
+            <th style={{ ...headCell, textAlign: 'right' }}>Respondidas</th>
+            <th style={{ ...headCell, textAlign: 'right' }}>Taxa de resposta</th>
+            <th style={{ ...headCell, textAlign: 'right' }}>Mediana de dias até à resposta</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((d) => (
+            <tr key={d.destinatario}>
+              <td style={cell}>{d.destinatario}</td>
+              <td style={numberCell}>{integer(d.perguntas)}</td>
+              <td style={numberCell}>{integer(d.respondidas)}</td>
+              <td style={numberCell}>{percent(d.taxa_resposta)}</td>
+              <td style={numberCell}>{days(d.mediana_dias)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <ul className="md:hidden" style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem 0' }}>
+      {rows.map((d) => (
+        <li
+          key={d.destinatario}
+          style={{
+            backgroundColor: tokens.colors.bgSecondary,
+            border: `1px solid ${tokens.colors.border}`,
+            borderRadius: '6px',
+            padding: '12px 16px',
+            marginBottom: '8px',
+          }}
+        >
+          <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: tokens.colors.textPrimary, marginBottom: '8px' }}>
+            {d.destinatario}
+          </div>
+          <dl style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', margin: 0 }}>
+            {[
+              ['Perguntas', integer(d.perguntas)],
+              ['Respondidas', integer(d.respondidas)],
+              ['Taxa de resposta', percent(d.taxa_resposta)],
+              ['Mediana de dias até à resposta', days(d.mediana_dias)],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt style={{ fontSize: '0.75rem', color: tokens.colors.textSecondary, lineHeight: 1.3 }}>{label}</dt>
+                <dd style={{ margin: '2px 0 0 0', fontSize: '1rem', fontFamily: tokens.fonts.mono, color: tokens.colors.textPrimary }}>
+                  {value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </li>
+      ))}
+    </ul>
+  </>
+);
+
 const PerguntasPage = () => {
   const { legislatura } = useParams();
   const [index, setIndex] = useState(null);
@@ -181,30 +247,7 @@ const PerguntasPage = () => {
         <Figure label="Mediana de dias até à resposta" value={days(t.mediana_dias)} />
       </div>
 
-      <div style={{ overflowX: 'auto', marginBottom: '1rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: tokens.colors.bgSecondary }}>
-          <thead>
-            <tr>
-              <th style={{ ...headCell, textAlign: 'left' }}>Destinatário</th>
-              <th style={{ ...headCell, textAlign: 'right' }}>Perguntas</th>
-              <th style={{ ...headCell, textAlign: 'right' }}>Respondidas</th>
-              <th style={{ ...headCell, textAlign: 'right' }}>Taxa de resposta</th>
-              <th style={{ ...headCell, textAlign: 'right' }}>Mediana de dias até à resposta</th>
-            </tr>
-          </thead>
-          <tbody>
-            {page.destinatarios.map((d) => (
-              <tr key={d.destinatario}>
-                <td style={cell}>{d.destinatario}</td>
-                <td style={numberCell}>{integer(d.perguntas)}</td>
-                <td style={numberCell}>{integer(d.respondidas)}</td>
-                <td style={numberCell}>{percent(d.taxa_resposta)}</td>
-                <td style={numberCell}>{days(d.mediana_dias)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Destinatarios rows={page.destinatarios} />
 
       <p style={note}>
         Fora das contas: {integer(t.retiradas)} retiradas e {integer(t.devolvidas)} devolvidas.
