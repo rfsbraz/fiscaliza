@@ -10,6 +10,7 @@
 import React from 'react';
 import { User, Users, Handshake, FileText } from 'lucide-react';
 import { tokens } from '../../styles/tokens';
+import { formatDecimal } from '../../utils/format';
 
 /**
  * AuthorshipChart - Horizontal bar chart showing authorship breakdown
@@ -109,7 +110,7 @@ const AuthorshipChart = ({
               backgroundColor: cat.color,
               transition: 'width 0.3s ease',
             }}
-            title={`${cat.label}: ${cat.count} (${cat.percentage.toFixed(1)}%)`}
+            title={`${cat.label}: ${cat.count} (${formatDecimal(cat.percentage, 1)}%)`}
           />
         ))}
       </div>
@@ -162,7 +163,7 @@ const AuthorshipChart = ({
                     color: tokens.colors.textMuted,
                   }}
                 >
-                  ({cat.percentage.toFixed(0)}%)
+                  ({formatDecimal(cat.percentage, 0)}%)
                 </span>
               </div>
             );
@@ -287,7 +288,7 @@ export const AuthorshipBreakdown = ({
                       color: tokens.colors.textMuted,
                     }}
                   >
-                    ({cat.percentage.toFixed(0)}%)
+                    ({formatDecimal(cat.percentage, 0)}%)
                   </span>
                 )}
               </div>
@@ -452,7 +453,7 @@ export const CollaborationIndicator = ({
               color: tokens.colors.textSecondary,
             }}
           >
-            de {totalCount} ({ratio.toFixed(0)}%)
+            de {totalCount} ({formatDecimal(ratio, 0)}%)
           </span>
         </div>
         {showLabel && (
