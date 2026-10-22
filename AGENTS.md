@@ -35,5 +35,5 @@ cd frontend && npm ci && npm test && npm run build
 - Cada endpoint que o frontend chama tem um contrato em `tests/contracts/endpoints/`. Altere o contrato junto com o componente.
 - Os testes usam só dados sintéticos (`tests/site_data.py`), nunca dados pessoais reais.
 - Texto visível no site em português de Portugal, com números no formato de Portugal (`frontend/src/utils/format.js`). Comentários e identificadores em inglês.
-- Commits na forma `tipo(âmbito): assunto`, com o assunto em português de Portugal. Issues e pull requests em português de Portugal, com o modelo de pull request preenchido, incluindo a secção "Uso de IA".
+- Commits em inglês, em Conventional Commits na forma `type(scope): subject`. Issues e pull requests em português de Portugal, curtos, com o modelo de pull request preenchido.
 - Nunca escreva segredos, tokens ou dados pessoais em código, fixtures, logs, issues ou commits.

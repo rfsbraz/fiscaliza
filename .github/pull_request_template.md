@@ -1,17 +1,19 @@
-## O quê e porquê?
+## Resumo
 
-
+<!-- Uma ou duas linhas: o que muda e porquê. -->
 
 Closes #
 
-## Como foi testado?
+## Antes / Depois
 
-
+| Antes | Depois |
+| --- | --- |
+|  |  |
 
 ## Capturas de ecrã
 
-<!-- Antes e depois, para qualquer alteração visível no site. Apague esta secção se não houver. -->
+<!-- Só para alterações visíveis. Apague esta secção nos outros casos. -->
 
-## Uso de IA
+## Testado
 
-O que teve ajuda de IA, e o que verificou à mão?
+<!-- Uma linha: o que correu, por exemplo `pytest` e `npm test`. -->

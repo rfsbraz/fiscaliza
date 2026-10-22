@@ -82,9 +82,9 @@ O site só vale o que valem os seus números:
 ## Commits e pull requests
 
 - Abra cada pull request a partir de `master`, com uma alteração por pull request. Para atualizar um ramo, faça merge de `master` no ramo.
-- Use [Conventional Commits](https://www.conventionalcommits.org/) na forma `tipo(âmbito): assunto`, com o tipo e o âmbito em inglês e o assunto em português de Portugal, por exemplo `fix(voting): mostra a posição do grupo em vez de uma taxa de alinhamento` ou `docs: traduz o README`.
+- Use [Conventional Commits](https://www.conventionalcommits.org/) em inglês, na forma `type(scope): subject`, por exemplo `fix(voting): show the group's position instead of an alignment rate`.
 - Escreva o título, a descrição, as issues e os comentários em português de Portugal.
-- Preencha o modelo de pull request: o que muda, porquê, que issue fecha e como foi testado. Uma alteração visível no site leva capturas de ecrã de antes e depois.
+- Preencha o modelo de pull request: um resumo de uma ou duas linhas, uma tabela antes/depois, capturas de ecrã para alterações visíveis e uma linha sobre como foi testado.
 
 ## Licença
 
