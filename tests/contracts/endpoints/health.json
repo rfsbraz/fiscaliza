@@ -6,19 +6,19 @@
       "path": "data",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DataAttribution.jsx:26"
+      "read_at": "frontend/src/config/health.js:17"
     },
     {
       "path": "data.source_updated",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DataAttribution.jsx:30"
+      "read_at": "frontend/src/components/DataAttribution.jsx:21"
     },
     {
       "path": "data.tag",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DataAttribution.jsx:31"
+      "read_at": "frontend/src/components/DataAttribution.jsx:22"
     }
   ],
   "dropped": []

@@ -28,7 +28,7 @@ test('fresh data: the date, how long ago, and the methodology link on desktop on
   const html = render({ sourceUpdated: '2026-10-22', today: '2026-10-23' });
   assert.equal(part(html, 'freshness-long'), 'Dados da Assembleia da República atualizados a 22/10/2026 (ontem). Como atualizamos');
   assert.equal(part(html, 'freshness-short'), 'Dados da AR atualizados a 22/10/2026 (ontem).');
-  assert.match(html, /<a href="\/metodologia"[^>]*>Como atualizamos<\/a>/);
+  assert.match(html, /<a [^>]*href="\/metodologia"[^>]*>Como atualizamos<\/a>/);
   assert.ok(!html.includes('atrasada'));
   assert.match(html, /data-stale="false"/);
 });
