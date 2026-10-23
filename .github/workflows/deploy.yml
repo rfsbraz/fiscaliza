@@ -111,7 +111,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           HEAD_REF: ${{ github.head_ref }}
           # Sentry error reporting (frontend/src/sentry.js). The DSN is public; Vite inlines it.
-          VITE_SENTRY_DSN: 'https://a68ed6722701a3cb0341346eade62489@o62459.ingest.us.sentry.io/4512300510019584'
+          VITE_SENTRY_DSN: 'https://c8b235b077fb960e96834887bdd416a8@o4512304630005760.ingest.de.sentry.io/4512304631119952'
           VITE_SENTRY_ENVIRONMENT: ${{ github.event_name == 'push' && 'production' || 'preview' }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
