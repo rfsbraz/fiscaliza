@@ -26,7 +26,7 @@ def _not_found(e):
 @core_bp.errorhandler(DataUnavailable)
 def _unavailable(e):
     current_app.logger.error("data unavailable: %s", e)
-    return jsonify({"error": "Data not available"}), 503
+    return jsonify({"error": "Dados indisponíveis"}), 503
 
 
 @core_bp.route("/legislaturas", methods=["GET"])

@@ -6,7 +6,7 @@
       "path": "ambito",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/utils/format.js:39"
+      "read_at": "frontend/src/utils/format.js:42"
     },
     {
       "path": "ativa",
@@ -24,13 +24,13 @@
       "path": "data_em_funcoes",
       "type": "string",
       "nullable": true,
-      "read_at": "frontend/src/utils/format.js:28"
+      "read_at": "frontend/src/utils/format.js:31"
     },
     {
       "path": "deputados_em_funcoes",
       "type": "number",
       "nullable": true,
-      "read_at": "frontend/src/utils/format.js:28"
+      "read_at": "frontend/src/utils/format.js:31"
     },
     {
       "path": "deputy_count",
@@ -42,7 +42,7 @@
       "path": "eleicoes",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/utils/format.js:39"
+      "read_at": "frontend/src/utils/format.js:42"
     },
     {
       "path": "espectro_politico",
@@ -54,7 +54,7 @@
       "path": "legislatura_aberta",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/utils/format.js:28"
+      "read_at": "frontend/src/utils/format.js:31"
     },
     {
       "path": "legislaturas",

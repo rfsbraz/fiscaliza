@@ -6,6 +6,9 @@ export const formatNumber = (value) => Number(value ?? 0).toLocaleString(LOCALE)
 export const formatDecimal = (value, digits = 1) =>
   Number(value ?? 0).toLocaleString(LOCALE, { minimumFractionDigits: digits, maximumFractionDigits: digits });
 
+// A value the data doesn't have: "n.d." (não disponível), never the English N/A.
+export const NOT_AVAILABLE = 'n.d.';
+
 export const formatPercent = (value, digits = 1) => `${formatDecimal(value, digits)}%`;
 
 // "1 mandato", "2 mandatos".

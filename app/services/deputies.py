@@ -51,7 +51,7 @@ def _person(con, cadastro_id, rows=None):
     person = rows.deputy(cadastro_id)
     career = rows.elections(cadastro_id) if person else []
     if not career:
-        raise NotFound(f"deputy {cadastro_id} not found")
+        raise NotFound(f"deputado {cadastro_id} não encontrado")
     return person, career
 
 
@@ -156,7 +156,7 @@ def detalhes(con, cadastro_id, rows=None):
     person, elected = _person(con, cadastro_id, rows)
     current = rows.current_legislature()
     if current is None:
-        raise NotFound("no legislature in the data")
+        raise NotFound("não há nenhuma legislatura nos dados")
     # The header and the history show every legislature the person was elected in, with the
     # situation; the figures count the legislatures they held a seat in.
     career = [c for c in elected if c["seated"]]
@@ -335,7 +335,7 @@ def _atividades(con, cadastro_id, legislatura, rows, interventions):
     name = legislatura or career[-1]["legislature"]
     leg = rows.legislature(name)
     if leg is None:
-        raise NotFound(f"legislature {name!r} not found")
+        raise NotFound(f"legislatura {name!r} não encontrada")
     served = any(c["legislature"] == name and c["seated"] for c in career)
     items, metadata = interventions(name)
     initiatives = rows.initiatives(cadastro_id, name, MAX_INITIATIVES)

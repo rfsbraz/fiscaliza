@@ -51,7 +51,7 @@ def perguntas_legislatura(con, legislatura):
     """One legislature: its totals and the figures per recipient."""
     found = repository.question_totals(con, legislatura)
     if not found:
-        raise NotFound(f"no perguntas to the Government in legislature {legislatura!r}")
+        raise NotFound(f"não há perguntas ao Governo na legislatura {legislatura!r}")
     row = found[0]
     return {
         "legislatura": row["legislature"],

@@ -15,6 +15,9 @@ from flask import Blueprint, jsonify
 
 pending_bp = Blueprint("pending", __name__)
 
+# The page shows this; frontend/src/config/staticApi.js gives the same reason.
+AGENDA_REASON = "A agenda parlamentar ainda não está na release do parlamento-aberto."
+
 
 def _pending(reason, planned):
     return jsonify({"status": "not_available", "reason": reason, "planned": planned}), 503
@@ -22,9 +25,9 @@ def _pending(reason, planned):
 
 @pending_bp.route("/agenda/hoje", methods=["GET"])
 def get_agenda_hoje():
-    return _pending("The parliamentary agenda is not in the parlamento-aberto release yet.", "S13")
+    return _pending(AGENDA_REASON, "S13")
 
 
 @pending_bp.route("/agenda/semana", methods=["GET"])
 def get_agenda_semana():
-    return _pending("The parliamentary agenda is not in the parlamento-aberto release yet.", "S13")
+    return _pending(AGENDA_REASON, "S13")

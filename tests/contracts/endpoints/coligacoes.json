@@ -12,7 +12,7 @@
       "path": "coligacoes[].ambito",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/utils/format.js:39"
+      "read_at": "frontend/src/utils/format.js:42"
     },
     {
       "path": "coligacoes[].ativa",
@@ -60,7 +60,7 @@
       "path": "coligacoes[].eleicoes",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/utils/format.js:39"
+      "read_at": "frontend/src/utils/format.js:42"
     },
     {
       "path": "coligacoes[].espectro_politico",

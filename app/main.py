@@ -40,15 +40,24 @@ app.register_blueprint(pending_bp, url_prefix="/api")
 init_data(app)
 
 
+# Werkzeug's names and descriptions are English; the API answers in pt-PT.
+HTTP_ERRORS = {
+    400: ("Pedido inválido", "O pedido tem parâmetros inválidos."),
+    404: ("Não encontrado", "O endereço pedido não existe."),
+    405: ("Método não permitido", "Este endereço não aceita este método."),
+}
+
+
 @app.errorhandler(HTTPException)
 def handle_http_exception(e):
-    return jsonify({"error": e.name, "message": e.description, "code": e.code}), e.code
+    error, message = HTTP_ERRORS.get(e.code, ("Erro no pedido", "O pedido não pôde ser atendido."))
+    return jsonify({"error": error, "message": message, "code": e.code}), e.code
 
 
 @app.errorhandler(Exception)
 def handle_exception(e):
     log.exception("unhandled error")
-    return jsonify({"error": "Internal server error"}), 500
+    return jsonify({"error": "Erro interno do servidor"}), 500
 
 
 @app.route("/")

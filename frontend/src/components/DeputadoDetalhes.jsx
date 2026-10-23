@@ -228,7 +228,7 @@ const StatisticCard = ({
             borderTop: `1px solid ${scheme.border}`,
             paddingTop: '8px',
           }}>
-            <span style={{ fontSize: '0.75rem', color: scheme.textLight }}>Total carreira</span>
+            <span style={{ fontSize: '0.75rem', color: scheme.textLight }}>Total da carreira</span>
             <span style={{ fontSize: '1.125rem', fontWeight: 600, color: scheme.text, fontFamily: tokens.fonts.mono }}>
               {total.toLocaleString('pt-PT')}
             </span>
