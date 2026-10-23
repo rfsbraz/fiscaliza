@@ -89,7 +89,7 @@ def test_unknown_legislature_is_not_found(con):
 def test_legislatures_newest_first(con):
     legs = core.legislaturas(con)["legislaturas"]
     assert [(leg["numero"], leg["ativa"], leg["total_deputados"]) for leg in legs] == [
-        ("XVII", True, 232),
+        ("XVII", True, 231),
         ("XVI", False, 230),
     ]
     assert legs[0]["data_inicio"] == "2025-06-03" and legs[0]["data_fim"] is None
@@ -204,7 +204,8 @@ def test_deputies_list_of_everyone_who_ever_sat(con):
     # 234 elected or seated in XVII plus 178 only in XVI; 500 is a substitute who never sat.
     assert page["pagination"]["total"] == 412
     assert page["filters"]["seated_deputies_count"] == 230
-    assert page["filters"]["active_deputies_count"] == 232
+    # Everyone who held a seat in XVII; 303's one-day handover period never seated them.
+    assert page["filters"]["active_deputies_count"] == 231
     assert page["filters"]["total_deputy_records"] == 464  # 234 in XVII plus 230 in XVI
 
 
