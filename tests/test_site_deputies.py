@@ -105,18 +105,26 @@ def test_elected_with_the_mandate_suspended_keeps_the_legislature(con):
     assert [e["legislatura"] for e in s["evolucao_legislaturas"]] == ["XVI"]
 
 
-def test_one_day_efetivo_period_stays_in_the_history(con):
-    # The AR's 2025-06-05 Efetivo period inside a suspension is a real record, not collapsed.
+def test_one_day_handover_period_stays_in_the_history_but_is_not_a_mandate(con):
+    # The AR's 2025-06-05 Efetivo period is a real record, kept with its dates. A Suspenso(Eleito)
+    # period starts the same day and stays open, so the seating rule never seats 303 in XVII:
+    # the handover is not a mandate in exercise and does not count as one.
     d = deputies.detalhes(con, 303)
     assert d["mandate_status"] == "Suspenso(Eleito)" and d["is_seated"] is False
-    assert (d["mandato"]["situacao_inicio"], d["mandato"]["em_exercicio"]) == ("2025-06-05", True)
+    assert (d["mandato"]["situacao_inicio"], d["mandato"]["em_exercicio"]) == ("2025-06-05", False)
     # The suspension from that day is still open, so "Mandato suspenso desde 05/06/2025".
     assert d["mandato"]["situacao_fim"] is None
-    [xvii, _] = d["mandatos_historico"]
+    [xvii, xvi] = d["mandatos_historico"]
     assert (xvii["mandato_inicio"], xvii["mandato_fim"]) == ("2025-06-05", "2025-06-05")
-    assert (xvii["situacao"], xvii["situacao_inicio"], xvii["em_exercicio"]) == ("Suspenso(Eleito)", "2025-06-05", True)
+    assert (xvii["situacao"], xvii["situacao_inicio"], xvii["em_exercicio"]) == (
+        "Suspenso(Eleito)",
+        "2025-06-05",
+        False,
+    )
     assert xvii["situacao_fim"] is None
-    assert d["estatisticas"]["legislaturas_servidas"] == "XVI, XVII"
+    assert xvi["em_exercicio"] is True
+    s = d["estatisticas"]
+    assert (s["total_mandatos"], s["legislaturas_servidas"]) == (1, "XVI")
 
 
 def test_elected_person_who_never_sat_has_a_page(con):

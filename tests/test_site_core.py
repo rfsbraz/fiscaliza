@@ -58,9 +58,10 @@ def test_current_legislature_has_230_seats_with_the_known_split(con):
 
 
 def test_elected_counts_everyone_who_held_a_seat_in_the_legislature(con):
-    # 230 seated now, plus person 231 who resigned and person 303, seated for one day. Person
-    # 500 is a substitute who never sat, and 302 and 501 were elected but never took the seat.
-    assert core.estatisticas(con)["totais"]["deputados_eleitos"] == 232
+    # 230 seated now, plus person 231 who resigned. Person 500 is a substitute who never sat, 302
+    # and 501 were elected but never took the seat, and 303's one-day handover period never seats
+    # them, since a suspension starts the same day and outlasts it.
+    assert core.estatisticas(con)["totais"]["deputados_eleitos"] == 231
 
 
 def test_circle_distribution_is_the_top_ten_circles_by_seats(con):
@@ -236,15 +237,15 @@ def test_elected_people_who_never_sat_are_listed_and_found(con):
 
 def test_a_current_mandate_needs_a_seat_in_the_current_legislature(con):
     # #107: an election without a seat is not a mandate. 501 and 302 were elected to XVII and never
-    # sat in it (302 sat in XVI); 303 sat in XVII for a day and is suspended now; 1 is seated; 300
-    # sat only in XVI.
+    # sat in it (302 sat in XVI); 303 has a one-day handover period in XVII that never seats them;
+    # 1 is seated; 300 sat only in XVI.
     def career(cad):
         found = core.deputados(con, search=f"deputado {cad}", active_only=False, per_page=100)["deputados"]
         return next(d["career_info"] for d in found if d["id_cadastro"] == cad)
 
     assert career(501)["seated_in_current_legislature"] is False
     assert career(302)["seated_in_current_legislature"] is False
-    assert career(303)["seated_in_current_legislature"] is True
+    assert career(303)["seated_in_current_legislature"] is False
     assert career(1)["seated_in_current_legislature"] is True
     assert career(300)["seated_in_current_legislature"] is False
 
