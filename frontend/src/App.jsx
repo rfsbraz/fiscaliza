@@ -16,6 +16,7 @@ const AgendaPage = lazy(() => import('./components/AgendaPage'))
 const PerguntasPage = lazy(() => import('./components/PerguntasPage'))
 const NotFound = lazy(() => import('./components/NotFound'))
 const Metodologia = lazy(() => import('./components/Metodologia'))
+const Dados = lazy(() => import('./components/Dados'))
 const Privacidade = lazy(() => import('./components/Privacidade'))
 import { apiFetch } from './config/api'
 import { routeTitle } from './utils/routeTitle'
@@ -115,6 +116,7 @@ const AppContent = () => {
             <Route path="/agenda" element={<AgendaPage />} />
             <Route path="/perguntas" element={<PerguntasPage />} />
             <Route path="/perguntas/:legislatura" element={<PerguntasPage />} />
+            <Route path="/dados" element={<Dados />} />
             <Route path="/metodologia" element={<Metodologia />} />
             <Route path="/privacidade" element={<Privacidade />} />
             <Route path="*" element={<NotFound />} />

@@ -33,7 +33,7 @@ aceita uma legislatura em numeração romana ou como número (`17`), como a API.
 
 | Endpoint | Ficheiro |
 |---|---|
-| `legislaturas`, `estatisticas`, `partidos`, `health`, `estatisticas/atividade` | `legislaturas.json`, `estatisticas.json`, `partidos.json`, `health.json`, `estatisticas/atividade.json` |
+| `legislaturas`, `estatisticas`, `partidos`, `health`, `dados`, `estatisticas/atividade` | `legislaturas.json`, `estatisticas.json`, `partidos.json`, `health.json`, `dados.json`, `estatisticas/atividade.json` |
 | `votacoes/recentes?limite=5` (e o valor por omissão, 10) | `votacoes/recentes/5.json`, `votacoes/recentes/10.json` |
 | `coligacoes?include_inactive=false` / `true` | `coligacoes.json` / `coligacoes-todas.json` |
 | `coligacoes/{id}`, `/deputados`, `/partidos` (uma página por lista e sequência: `ad-2024`, `ad-acores-2025`, `CDU`) | `coligacoes/{slug}.json`, `coligacoes/{slug}/deputados.json`, `coligacoes/{slug}/partidos.json` |

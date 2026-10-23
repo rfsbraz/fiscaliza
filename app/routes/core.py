@@ -29,6 +29,11 @@ def _unavailable(e):
     return jsonify({"error": "Dados indisponíveis"}), 503
 
 
+@core_bp.route("/dados", methods=["GET"])
+def get_dados():
+    return _serve(core.dados)
+
+
 @core_bp.route("/legislaturas", methods=["GET"])
 def get_legislaturas():
     return _serve(core.legislaturas)

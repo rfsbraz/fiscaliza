@@ -37,6 +37,8 @@ GREEN = {"success", "skipped", "neutral"}
 CHECKS_TIMEOUT = timedelta(hours=6)
 AUTHOR = ("Rodrigo Braz", "770716+rfsbraz@users.noreply.github.com")
 SHA = re.compile(r"[0-9a-f]{40}")
+# The tags parlamento-aberto's data-release.yml publishes: data-<Lisbon date>, then -2, -3 on the same day.
+RELEASE_TAG = re.compile(r"data-\d{4}-\d{2}-\d{2}(-\d+)?")
 
 
 class PinBumpError(Exception):
@@ -100,10 +102,30 @@ def pin_commit(text):
     raise PinBumpError(f"{PIN_PATH} has no commit= line")
 
 
-def write_pin(text, sha):
-    """The pin file with commit= set to sha and tag= emptied (a release tag names another commit)."""
+def write_pin(text, sha, tag=None):
+    """The pin file with commit= set to sha and tag= set to the data release built from it, or
+    emptied when there is none yet (an older tag names another commit)."""
     out = re.sub(r"(?m)^commit=.*$", f"commit={sha}", text)
-    return re.sub(r"(?m)^tag=.*$", "tag=", out)
+    return re.sub(r"(?m)^tag=.*$", f"tag={tag or ''}", out)
+
+
+def release_tag(read, sha):
+    """The newest published data release of parlamento-aberto built from sha, or None.
+
+    data-release.yml publishes with --target $GITHUB_SHA, so the release's target_commitish is the
+    commit. The tag itself is checked too, so a tag that points elsewhere never lands in the pin."""
+    for release in read.request("GET", f"{PA}/releases?per_page=100"):
+        tag = release.get("tag_name") or ""
+        if release.get("draft") or release.get("prerelease") or not RELEASE_TAG.fullmatch(tag):
+            continue
+        if release.get("target_commitish") != sha:
+            continue
+        try:
+            if read.request("GET", f"{PA}/commits/{tag}")["sha"] == sha:
+                return tag
+        except NotFound:
+            continue
+    return None
 
 
 def schema_version(text):
@@ -134,6 +156,23 @@ def _hours(delta):
 
 def pr_title(new):
     return f"chore(data): move the data pin to parlamento-aberto {new[:7]}"
+
+
+def tag_title(tag):
+    return f"chore(data): pin the data release {tag}"
+
+
+def tag_body(sha, tag):
+    url = "https://github.com/rfsbraz/parlamento-aberto"
+    return (
+        f"Sets `tag={tag}` in `deploy/data-pin`. The pinned commit [`{sha}`]({url}/commit/{sha}) is unchanged; "
+        f"its data release is now published: {url}/releases/tag/{tag}\n\n"
+        "With the tag in the pin, the deploy syncs that release from GitHub instead of building the pin "
+        "locally, and the download page (/dados) links its files.\n\n"
+        "## Merge\n\n"
+        "This PR was opened by the pin workflow (`data-pin-bump.yml`). `data-pin-merge.yml` squash-merges "
+        "it once every check on this head is green.\n"
+    )
 
 
 def pr_body(old, new, cmp):
@@ -214,10 +253,18 @@ def _comment(read, number, body):
 def bump(sha, read, write, git=git, pin_path=pages.PIN_FILE):
     """Move the pin on data/pin-bump to sha and open or update the pin PR. Returns what it did."""
     new = validate_sha(sha)
-    old = pages.read_pin(pin_path).commit
+    pin = pages.read_pin(pin_path)
+    old = pin.commit
     if new == old:
-        print(f"The pin on {BASE} is already {new}. Nothing to do.")
-        return "noop"
+        # The dispatch can come before the release is published; a later one for the same
+        # commit fills in the tag.
+        tag = release_tag(read, new)
+        if not tag or tag == pin.tag:
+            print(f"The pin on {BASE} is already {new}{f' ({pin.tag})' if pin.tag else ''}. Nothing to do.")
+            return "noop"
+        result, number = _push_and_open(read, write, git, Path(pin_path), new, tag, tag_title(tag), tag_body(new, tag))
+        print(f"Pin PR #{number} {result}: {new[:7]} gets its release tag {tag}.")
+        return result
 
     try:
         on_main = read.request("GET", f"{PA}/compare/{new}...main")
@@ -233,30 +280,31 @@ def bump(sha, read, write, git=git, pin_path=pages.PIN_FILE):
     if cmp["status"] != "ahead":
         raise PinBumpError(f"{new} and the pin {old} have diverged (compare status {cmp['status']})")
 
-    title = pr_title(new)
-    path = Path(pin_path)
-    git("checkout", "-B", BRANCH)
-    path.write_text(write_pin(path.read_text(), new))
-    name, email = AUTHOR
-    git("-c", f"user.name={name}", "-c", f"user.email={email}", "commit", "--quiet", "-m", title, "--", str(path))
-    # The only force-push anywhere: data/pin-bump is rebuilt from master on every move.
-    git("push", "--force", "origin", f"HEAD:refs/heads/{BRANCH}")
-
-    body = pr_body(old, new, cmp)
-    pr = _open_pr(read)
-    if pr:
-        write.request("PATCH", f"{REPO}/pulls/{pr['number']}", {"title": title, "body": body})
-        number, result = pr["number"], "updated"
-    else:
-        pr = write.request("POST", f"{REPO}/pulls", {"title": title, "body": body, "head": BRANCH, "base": BASE})
-        number, result = pr["number"], "opened"
-    print(f"Pin PR #{number} {result}: {old[:7]} to {new[:7]}.")
+    tag = release_tag(read, new)
+    result, number = _push_and_open(read, write, git, Path(pin_path), new, tag, pr_title(new), pr_body(old, new, cmp))
+    print(f"Pin PR #{number} {result}: {old[:7]} to {new[:7]}{f' ({tag})' if tag else ''}.")
 
     reason = schema_stop(_schema_at(read, old), _schema_at(read, new))
     if reason:
         _comment(read, number, f"Not merging automatically: {reason}\n\nI'll check it and merge by hand.")
         raise PinBumpError(f"PR #{number}: {reason}")
     return result
+
+
+def _push_and_open(read, write, git, path, sha, tag, title, body):
+    """Commit the pin on data/pin-bump, push it and open or update the pin PR."""
+    git("checkout", "-B", BRANCH)
+    path.write_text(write_pin(path.read_text(), sha, tag))
+    name, email = AUTHOR
+    git("-c", f"user.name={name}", "-c", f"user.email={email}", "commit", "--quiet", "-m", title, "--", str(path))
+    # The only force-push anywhere: data/pin-bump is rebuilt from master on every move.
+    git("push", "--force", "origin", f"HEAD:refs/heads/{BRANCH}")
+    pr = _open_pr(read)
+    if pr:
+        write.request("PATCH", f"{REPO}/pulls/{pr['number']}", {"title": title, "body": body})
+        return "updated", pr["number"]
+    pr = write.request("POST", f"{REPO}/pulls", {"title": title, "body": body, "head": BRANCH, "base": BASE})
+    return "opened", pr["number"]
 
 
 # merge

@@ -23,7 +23,7 @@ cd frontend && npm ci && cd ..
 
 ### Dados
 
-O site lê um ficheiro DuckDB só de leitura, construído a partir do commit do parlamento-aberto fixado em `deploy/data-pin`. O parlamento-aberto ainda não publica releases de dados, por isso constroem-se localmente:
+O site lê um ficheiro DuckDB só de leitura, construído a partir do commit do parlamento-aberto fixado em `deploy/data-pin`. Quando o pin tem uma tag de release (`tag=`), `python deploy/pages.py build` descarrega essa release do GitHub, sem clone nem `uv`. Sem tag, a release constrói-se localmente:
 
 ```bash
 git clone --depth 1 --no-checkout https://github.com/rfsbraz/parlamento-aberto.git ../parlamento-aberto
@@ -32,7 +32,7 @@ python deploy/pages.py build --parlamento-aberto ../parlamento-aberto
 
 O comando vai buscar o commit fixado ao clone (mesmo que o `main` já tenha avançado), constrói a release com `uv`, sincroniza-a para `data/` e exporta os JSON para `frontend/public/api`. Demora cerca de dois minutos. `--data-dir` muda a pasta dos dados e `--dry-run` mostra os passos sem correr nada.
 
-Se já tiver um resultado de `release build` feito a partir do commit fixado, use `--release PASTA` em vez de `--parlamento-aberto`. Quando o parlamento-aberto publicar releases, `python -m fiscaliza_data.sync` passa a descarregá-las diretamente.
+Se já tiver um resultado de `release build` feito a partir do commit fixado, use `--release PASTA` em vez de `--parlamento-aberto`.
 
 ### Correr o site
 

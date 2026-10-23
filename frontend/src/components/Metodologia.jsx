@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../config/api';
+import { formatDate } from '../utils/format';
 import { tokens } from '../styles/tokens';
 import content from '../content/metodologia.md?raw';
 
 /**
  * /metodologia (#113). The copy is content/metodologia.md, the reviewed draft without the reviewer
- * notes. The page renders it as written and fills in values from the data: {source_updated} and
- * {tag} from health.json (as the footer does); {n}, the interventions published for the XVII, and
+ * notes. The page renders it as written and fills in values from the data: {source_updated}, as
+ * dd/mm/aaaa, and {tag} from health.json (as the footer does); {n}, the interventions of the XVII, and
  * {com_declaracao} of {total}, the interest-declaration coverage, from legislaturas.json. The page
  * is indexable.
  */
@@ -113,7 +114,7 @@ const Metodologia = () => {
     document.title = 'Metodologia e fontes · Fiscaliza';
     apiFetch('health')
       .then((response) => response.json())
-      .then((body) => setValues((v) => ({ ...v, source_updated: body.data?.source_updated, tag: body.data?.tag })))
+      .then((body) => setValues((v) => ({ ...v, source_updated: formatDate(body.data?.source_updated), tag: body.data?.tag })))
       .catch(() => {});
     apiFetch('legislaturas')
       .then((response) => response.json())

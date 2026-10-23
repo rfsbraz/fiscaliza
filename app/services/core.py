@@ -7,6 +7,7 @@ parlamento-aberto (seated_on) on the legislature's reference day: its last day o
 ended, the AR extract date while it is open.
 """
 
+import json
 import re
 import unicodedata
 
@@ -559,9 +560,73 @@ def coligacao_partidos(con, coligacao_id):
     }
 
 
+def _published(con):
+    release = repository.release(con)
+    return bool(release and release["published"])
+
+
 def health(con):
     """The live release: tag, schema version, source_updated, data commit and sync time, as
-    text. The footer shows the tag and source_updated on every page."""
+    text, and whether the tag is a published GitHub release (publicado) or a local build of the
+    pin. The footer shows the tag and source_updated on every page, and links the tag only
+    when it is published."""
     meta = repository.meta(con) or {}
     data = {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in meta.items()}
+    if meta:
+        data["publicado"] = _published(con)
     return {"status": "healthy", "service": SERVICE, "data": data}
+
+
+CC_BY = "CC BY 4.0"
+
+
+def dados(con):
+    """The download page (/dados, #186): the live release's manifest.json with the real size of
+    each file. publicado says whether the release is on GitHub; only then do the files have a
+    download URL (a local build of the pin has a tag that GitHub doesn't know)."""
+    meta = repository.meta(con) or {}
+    release = repository.release(con)
+    manifest = json.loads(release["manifest"]) if release else {}
+    published = bool(release and release["published"])
+    files = {f["name"]: f for f in repository.release_files(con)}
+    default_licence = (
+        (manifest.get("licence") or {}).get("marts") if isinstance(manifest.get("licence"), dict) else None
+    )
+
+    def file(name):
+        if not name or name not in files:
+            return None
+        f = files[name]
+        return {"nome": name, "bytes": f["bytes"], "url": f["url"] if published else None}
+
+    sets = []
+    for name, entry in (manifest.get("marts") or {}).items():
+        names = {kind: (spec or {}).get("name") for kind, spec in (entry.get("files") or {}).items()}
+        licence = entry.get("licence") or default_licence or CC_BY
+        sets.append(
+            {
+                "nome": name,
+                "linhas": entry.get("rows"),
+                "licenca": licence,
+                "cc_by": licence == CC_BY,
+                "parquet": file(names.get("parquet")),
+                "csv": file(names.get("csv")),
+            }
+        )
+
+    def total(kind):
+        return sum((s[kind] or {}).get("bytes") or 0 for s in sets)
+
+    return {
+        "tag": meta.get("tag") or manifest.get("tag"),
+        "source_updated": manifest.get("source_updated") or meta.get("source_updated"),
+        "data_commit": manifest.get("data_commit"),
+        "schema_version": manifest.get("schema_version"),
+        "publicado": published,
+        "release_url": release["url"] if published else None,
+        "manifest": file("manifest.json"),
+        "changelog": file("CHANGELOG.md"),
+        "conjuntos": sets,
+        "total_parquet": total("parquet"),
+        "total_csv": total("csv"),
+    }
