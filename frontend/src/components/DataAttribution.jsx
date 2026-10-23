@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { apiFetch } from '../config/api';
+import { useHealth } from '../config/health';
+import { formatDate } from '../utils/format';
 
 const AR_TERMS_URL = 'https://www.parlamento.pt/Cidadania/Paginas/DadosAbertos.aspx';
 const RELEASES_URL = 'https://github.com/rfsbraz/parlamento-aberto/releases/tag/';
@@ -16,18 +16,9 @@ const textStyle = {
 const linkStyle = { color: '#1B4332', textDecoration: 'underline' };
 
 // The attribution the AR terms and Lei n.º 26/2016, art. 19.º, n.º 5 ask for: the source and
-// the date of the last update (source_updated of the live parlamento-aberto release).
-const DataAttribution = () => {
-  const [release, setRelease] = useState(null);
-
-  useEffect(() => {
-    apiFetch('health')
-      .then((response) => response.json())
-      .then((body) => setRelease(body.data))
-      .catch(() => setRelease(null));
-  }, []);
-
-  const sourceUpdated = release?.source_updated;
+// the date of the last update (source_updated of the live parlamento-aberto release), as dd/mm/aaaa.
+export const AttributionView = ({ release }) => {
+  const sourceUpdated = formatDate(release?.source_updated);
   const tag = release?.tag;
 
   return (
@@ -57,5 +48,7 @@ const DataAttribution = () => {
     </div>
   );
 };
+
+const DataAttribution = () => <AttributionView release={useHealth()} />;
 
 export default DataAttribution;

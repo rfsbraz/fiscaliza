@@ -28,6 +28,29 @@ export const seatsNote = (comLugares) => (comLugares === false ? 'sem lugares' :
 // the page already counts the deputies in office (a legislature with no seats per list).
 const dayMonthYear = (iso) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '');
 
+const ISO_DAY = /^(\d{4})-(\d{2})-(\d{2})/;
+
+// "22/10/2026" from "2026-10-22" (or a timestamp that starts with it), "" for anything else.
+export const formatDate = (iso) => (ISO_DAY.test(String(iso ?? '')) ? dayMonthYear(String(iso)) : '');
+
+// Whole calendar days from one YYYY-MM-DD date to another, counted in UTC so a DST change does
+// not shift it. Null when either is not a date.
+export const daysBetween = (fromIso, toIso) => {
+  const day = (iso) => {
+    const m = ISO_DAY.exec(String(iso ?? ''));
+    return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null;
+  };
+  const [from, to] = [day(fromIso), day(toIso)];
+  return from === null || to === null ? null : Math.round((to - from) / 86400000);
+};
+
+// How old the data is (#185): "hoje", "ontem", "há 11 dias".
+export const relativeDay = (days) => (days <= 0 ? 'hoje' : days === 1 ? 'ontem' : `há ${formatNumber(days)} dias`);
+
+// Today's date in Lisbon as YYYY-MM-DD, whatever the visitor's clock zone.
+export const todayInLisbon = (now = new Date()) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(now);
+
 export const seatedNote = ({ contagem, deputados_em_funcoes, data_em_funcoes, legislatura_aberta } = {}) => {
   if (contagem !== 'eleitos' || deputados_em_funcoes === null || deputados_em_funcoes === undefined) return null;
   const when = legislatura_aberta && data_em_funcoes

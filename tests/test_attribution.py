@@ -16,6 +16,8 @@ from tests.site_data import TAG, build_site_data
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
 FOOTER = FRONTEND / "src" / "components" / "DataAttribution.jsx"
+BAR = FRONTEND / "src" / "components" / "FreshnessBar.jsx"
+HEALTH = FRONTEND / "src" / "config" / "health.js"
 AR_LINE = "Fonte: Assembleia da República, dados abertos, atualizados a "
 
 
@@ -27,7 +29,17 @@ def test_footer_has_the_ar_attribution_line_with_source_updated():
 
 
 def test_footer_reads_the_live_release_from_health():
-    assert re.search(r"apiFetch\(\s*['\"]health['\"]", FOOTER.read_text())
+    # One health.json fetch, shared by the footer and the freshness bar (#185).
+    assert re.search(r"apiFetch\(\s*['\"]health['\"]", HEALTH.read_text())
+    assert "useHealth()" in FOOTER.read_text()
+    assert "useHealth()" in BAR.read_text()
+    assert "apiFetch" not in FOOTER.read_text() and "apiFetch" not in BAR.read_text()
+
+
+def test_freshness_bar_is_under_the_navigation_on_every_page():
+    app = (FRONTEND / "src" / "App.jsx").read_text()
+    assert "import FreshnessBar from './components/FreshnessBar'" in app
+    assert app.index("<Navigation />") < app.index("<FreshnessBar />") < app.index("<main")
 
 
 def test_footer_is_on_every_page():

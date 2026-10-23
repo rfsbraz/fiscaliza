@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ExternalLink } from 'lucide-react'
 import Navigation from './components/Navigation'
 import DataAttribution from './components/DataAttribution'
+import FreshnessBar from './components/FreshnessBar'
 
 const Dashboard = lazy(() => import('./components/Dashboard'))
 const DeputadosPage = lazy(() => import('./components/DeputadosPage'))
@@ -84,6 +85,7 @@ const AppContent = () => {
       }}
     >
       <Navigation />
+      <FreshnessBar />
 
       <main
         style={{

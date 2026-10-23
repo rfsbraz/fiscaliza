@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatNumber, formatDecimal, formatPercent, legislatureName, plural, seatsNote, seatedNote, coalitionScope, NOT_AVAILABLE } from './format.js';
+import { formatNumber, formatDecimal, formatPercent, legislatureName, plural, seatsNote, seatedNote, coalitionScope, NOT_AVAILABLE, formatDate, daysBetween, relativeDay, todayInLisbon } from './format.js';
 
 test('integers use the pt-PT thousands separator', () => {
   assert.equal(formatNumber(16366).replace(/\s/g, ' '), '16 366');
@@ -55,4 +55,34 @@ test('a coalition page names who was in office as a second figure', () => {
   assert.equal(seatedNote(open), '87 em funções a 21/10/2026');
   assert.equal(seatedNote({ ...closed, contagem: 'em_funcoes' }), null);
   assert.equal(seatedNote({}), null);
+});
+
+test('dates read dd/mm/aaaa (#185)', () => {
+  assert.equal(formatDate('2026-10-22'), '22/10/2026');
+  assert.equal(formatDate('2026-10-23 08:37:48.794144+00'), '23/10/2026');
+  assert.equal(formatDate(null), '');
+  assert.equal(formatDate('22/10/2026'), '');
+});
+
+test('whole days between two dates, null when one is not a date', () => {
+  assert.equal(daysBetween('2026-10-22', '2026-10-23'), 1);
+  assert.equal(daysBetween('2026-10-23', '2026-10-23'), 0);
+  assert.equal(daysBetween('2026-03-28', '2026-03-30'), 2, 'the DST change does not shift the count');
+  assert.equal(daysBetween('2025-12-31', '2026-01-08'), 8);
+  assert.equal(daysBetween(null, '2026-10-23'), null);
+  assert.equal(daysBetween('ontem', '2026-10-23'), null);
+});
+
+test('the age of the data reads hoje, ontem or há N dias', () => {
+  assert.equal(relativeDay(0), 'hoje');
+  assert.equal(relativeDay(-1), 'hoje', 'a date ahead of the clock still reads hoje');
+  assert.equal(relativeDay(1), 'ontem');
+  assert.equal(relativeDay(2), 'há 2 dias');
+  assert.equal(relativeDay(11), 'há 11 dias');
+});
+
+test('today is the date in Lisbon, not in UTC', () => {
+  assert.equal(todayInLisbon(new Date('2026-10-23T08:00:00Z')), '2026-10-23');
+  assert.equal(todayInLisbon(new Date('2026-07-01T23:30:00Z')), '2026-07-02', 'WEST is UTC+1');
+  assert.equal(todayInLisbon(new Date('2026-12-31T23:30:00Z')), '2026-12-31', 'WET is UTC+0');
 });
