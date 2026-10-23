@@ -97,6 +97,8 @@ def test_page_reads_the_data_date_tag_and_interventions_and_is_indexable():
     page = PAGE.read_text()
     assert "apiFetch('health')" in page
     assert "source_updated" in page and "tag" in page
+    # The data date reads dd/mm/aaaa, as in the footer and the freshness bar (#186).
+    assert "source_updated: formatDate(body.data?.source_updated)" in page
     assert "apiFetch('legislaturas')" in page and "intervencoes_publicadas" in page
     assert "cobertura_declaracoes" in page and "com_declaracao" in page
     assert "metodologia.md?raw" in page

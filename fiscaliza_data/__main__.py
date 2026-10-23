@@ -1,4 +1,4 @@
-"""python -m fiscaliza_data sync [--tag TAG] [--from PATH] [--data-dir DIR]
+"""python -m fiscaliza_data sync [--tag TAG] [--from PATH] [--data-dir DIR] [--data-commit SHA]
 
 Also runnable as `python -m fiscaliza_data.sync [--tag TAG] [--from PATH] [--data-dir DIR]`.
 """
@@ -28,9 +28,10 @@ def main(argv=None):
         default=os.getenv("FISCALIZA_DATA_DIR") or DEFAULT_DATA_DIR,
         help=f"where the DuckDB files live (default $FISCALIZA_DATA_DIR, else {DEFAULT_DATA_DIR})",
     )
+    s.add_argument("--data-commit", metavar="SHA", help="stop unless the release was built from this commit")
     args = parser.parse_args(argv)
     try:
-        result = sync(args.data_dir, tag=args.tag, source=args.source)
+        result = sync(args.data_dir, tag=args.tag, source=args.source, data_commit=args.data_commit)
     except SyncError as e:
         print(f"sync failed: {e}", file=sys.stderr)
         return 1

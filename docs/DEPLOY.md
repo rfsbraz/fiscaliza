@@ -83,8 +83,11 @@ sobre ela, com `FISCALIZA_RELEASE_DIR` a apontar para essa pasta. O teste verifi
 construída a partir do pin e tem os números para os quais o pin muda; atualize-os no mesmo pull
 request.
 
-Quando o parlamento-aberto ligar as releases de dados (`DATA_RELEASES`), o pin passa para uma tag
-de release.
+Com as releases de dados do parlamento-aberto ligadas (`DATA_RELEASES`), o pin guarda também a tag
+da release construída a partir desse commit (`tag=data-AAAA-MM-DD`, com `-2`, `-3` quando há mais de
+uma no mesmo dia). Com a tag, o deploy descarrega essa release do GitHub em vez de a construir, e a
+página `/dados` liga para os seus ficheiros (#186). Sem tag, tudo continua como antes: o deploy
+constrói a release a partir do commit, e a página `/dados` lista os ficheiros sem ligações.
 
 ## Mudanças automáticas do pin
 
@@ -160,8 +163,12 @@ Actions, `Data Pin Bump`, Run workflow, com um SHA de commit do parlamento-abert
 caracteres). Com o pin atual não faz nada e não abre nenhum pull request, que é a forma mais rápida
 de verificar que o token funciona. `gh workflow run data-pin-bump.yml -f sha=<sha>` faz o mesmo.
 
-Quando o parlamento-aberto ligar as releases de dados, o dispatch passa para `release: published` e
-o pin para a tag da release (#57). Relacionados: #132 (a última mudança à mão) e #128 (a página de
+O pull request do pin leva também a tag da release publicada a partir desse commit, quando existe:
+o `pin_bump.py` procura nas releases do parlamento-aberto a mais recente que não é rascunho nem
+pré-release e cuja tag aponta para o commit. O dispatch corre no push para `main`, antes de o
+workflow de release publicar, por isso a primeira execução para um commit pode não encontrar a
+release. Uma execução seguinte com o mesmo SHA (à mão, ver acima) acrescenta então só a tag ao pin,
+num pull request próprio (#186). Passar o dispatch para `release: published` continua no #57. Relacionados: #132 (a última mudança à mão) e #128 (a página de
 metodologia diz que o site só muda de versão dos dados de propósito, o que agora quer dizer através
 de um pull request do pin que passou na CI, e não de um que eu abri à mão).
 
@@ -204,7 +211,10 @@ Opções:
 - `--production` faz o deploy de `master`. `--branch master` sem esta opção é recusado.
 - `--release PASTA` usa uma pasta de `release build` que já tenha. O seu `manifest.json` tem de
   indicar o commit fixado como `data_commit`, ou o script para.
-- Sem fonte e com um `tag=` no pin, a sincronização descarrega essa release do GitHub.
+- Com um `tag=` no pin, a sincronização descarrega essa release do GitHub, mesmo com
+  `--parlamento-aberto` (a CI passa-o sempre), e o `fiscaliza_data sync --data-commit` recusa uma
+  release que não tenha sido construída a partir do commit fixado. Só `--release` passa à frente da
+  tag. `build` sem fonte funciona quando o pin tem tag.
 - `EXPORT_WORKERS` define os processos da exportação. Sem ele, a exportação usa o limite de CPU do
   cgroup (`/sys/fs/cgroup/cpu.max`) e, sem esse, o número de CPUs. Cada processo usa uma thread do
   DuckDB. A CI deixa `EXPORT_WORKERS` por definir, por isso a exportação usa os CPUs do runner. O

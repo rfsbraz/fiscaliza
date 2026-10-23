@@ -13,6 +13,7 @@ from app.services import activity, attendance, core, deputies, parties, question
 
 PORTED = {
     "health": core.health,
+    "dados": core.dados,
     "legislaturas": core.legislaturas,
     "estatisticas": core.estatisticas,
     "deputados": lambda con: core.deputados(con, page=1, per_page=20, active_only=False),

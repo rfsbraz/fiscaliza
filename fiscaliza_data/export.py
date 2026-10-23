@@ -157,6 +157,7 @@ def _site_files(con, svc, w):
     w.write("estatisticas/atividade.json", activity.estatisticas_atividade(con))
     w.write("partidos.json", core.partidos(con))
     w.write("health.json", core.health(con))
+    w.write("dados.json", core.dados(con))
     for limit in RECENT_VOTES:
         w.write(f"votacoes/recentes/{limit}.json", activity.votacoes_recentes(con, limite=limit))
 

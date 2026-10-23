@@ -2,5 +2,6 @@
 # deploy/pages.py builds the release from it, and refuses a release folder built from anything else.
 # Move it on purpose, after checking the new data, in its own commit.
 commit=1f8822e370e246cce84eb90e112d052e12a588ed
-# The data release tag for that commit, empty while there is none.
-tag=
+# The published data release of that commit, empty while there is none. With it, deploy/pages.py
+# downloads that release from GitHub and checks it was built from the commit above.
+tag=data-2026-10-23

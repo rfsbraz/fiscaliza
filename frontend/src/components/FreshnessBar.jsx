@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Download } from 'lucide-react';
 import { useHealth } from '../config/health';
 import { daysBetween, formatDate, relativeDay, todayInLisbon } from '../utils/format';
 import { tokens } from '../styles/tokens';
@@ -78,6 +79,14 @@ export const FreshnessBarView = ({ sourceUpdated, today }) => {
             {stale && ' Atualização atrasada.'}
           </span>
         </p>
+        <Link
+          to="/dados"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', flex: 'none', color: '#1B4332', fontWeight: 600, textDecoration: 'none' }}
+        >
+          <Download size={14} aria-hidden="true" />
+          <span className="freshness-long">Descarregar dados</span>
+          <span className="freshness-short">Dados</span>
+        </Link>
       </div>
     </div>
   );

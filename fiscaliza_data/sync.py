@@ -7,7 +7,9 @@
 4. Refuse a schema_version whose major the site does not support, or a release without the
    marts the site needs (REQUIRED_MARTS).
 5. Load the Parquet files as tables into a new fiscaliza-<tag>.duckdb, with the seating
-   macros (seating.sql), the site views (views.sql) and a _meta table.
+   macros (seating.sql), the site views (views.sql), a _meta table, and the release itself for
+   the download page (/dados): _release (manifest.json, the release page when it came from
+   GitHub) and _release_files (every file of the release, its size and download URL).
 6. Smoke checks: the current legislature has 230 seated deputies at its extract date, and
    no table has more than 5% fewer rows than in the live file.
 7. Point current.duckdb at the new file atomically and keep only the last two files.
@@ -150,7 +152,21 @@ def _verify(folder, files):
             raise SyncError(f"{name}: SHA-256 does not match manifest.json")
 
 
-def _build(path, folder, manifest, files):
+@dataclass
+class Release:
+    """Where a release came from, for the download page: its GitHub page (None for a local build)
+    and {file name: (bytes, download URL or None)} for every file it has."""
+
+    url: str | None
+    files: dict
+
+
+def _local_files(folder):
+    """Every file of a local release folder, with its size and no download URL."""
+    return {p.name: (p.stat().st_size, None) for p in sorted(Path(folder).iterdir()) if p.is_file()}
+
+
+def _build(path, folder, manifest, files, release):
     con = duckdb.connect(str(path))
     try:
         for mart, (name, _) in files.items():
@@ -168,6 +184,14 @@ def _build(path, folder, manifest, files):
                 manifest.get("data_commit"),
             ],
         )
+        con.execute(
+            "create table _release as select ?::boolean as published, ?::varchar as url, ?::varchar as manifest",
+            [release.url is not None, release.url, json.dumps(manifest, ensure_ascii=False)],
+        )
+        con.execute("create table _release_files (name varchar, bytes bigint, url varchar)")
+        rows = [(name, size, url) for name, (size, url) in sorted(release.files.items())]
+        if rows:
+            con.executemany("insert into _release_files values (?, ?, ?)", rows)
         con.execute("checkpoint")
     finally:
         con.close()
@@ -257,8 +281,12 @@ def _from_github(tag, http, data_dir, live):
     if tag and found != tag:
         raise SyncError(f"asked for {tag}, GitHub returned {found}")
     if found == live:
-        return found, None
+        return found, None, None
     assets = {a["name"]: a["browser_download_url"] for a in release.get("assets", [])}
+    published = Release(
+        url=release.get("html_url") or f"https://github.com/{REPO}/releases/tag/{found}",
+        files={a["name"]: (a.get("size"), a["browser_download_url"]) for a in release.get("assets", [])},
+    )
     if "manifest.json" not in assets:
         raise SyncError(f"release {found} has no manifest.json")
     staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=data_dir))
@@ -270,7 +298,7 @@ def _from_github(tag, http, data_dir, live):
         if name not in assets:
             raise SyncError(f"{name}: missing from the release")
         http.download(assets[name], staging / name)
-    return found, staging
+    return found, staging, published
 
 
 def _read_manifest(folder):
@@ -344,9 +372,11 @@ def _local(source, data_dir):
     raise SyncError(f"{path.name} is not a release build folder, manifest.json or {', '.join(ARCHIVES)} archive")
 
 
-def sync(data_dir=DEFAULT_DATA_DIR, tag=None, source=None, from_dir=None, http=None):
+def sync(data_dir=DEFAULT_DATA_DIR, tag=None, source=None, from_dir=None, http=None, data_commit=None):
     """Build and swap in a release. `source` is a local build (folder, manifest.json or
-    archive); `from_dir` is its older name. Without one, the release comes from GitHub."""
+    archive); `from_dir` is its older name. Without one, the release comes from GitHub.
+    `data_commit`, when given, is the parlamento-aberto commit the release must be built from
+    (deploy/pages.py passes the pin)."""
     if source and from_dir:
         raise SyncError("give one local source, not both source and from_dir")
     source = source or from_dir
@@ -364,14 +394,20 @@ def sync(data_dir=DEFAULT_DATA_DIR, tag=None, source=None, from_dir=None, http=N
                 raise SyncError(f"asked for {tag}, {source} holds {found}")
             if found == live:
                 return Result(tag=found, changed=False)
+            release = Release(url=None, files=_local_files(folder))
         else:
-            found, staging = _from_github(tag, http or Http(), data_dir, live)
+            found, staging, release = _from_github(tag, http or Http(), data_dir, live)
             if staging is None:
                 return Result(tag=found, changed=False)
             folder = staging
             manifest = _read_manifest(folder)
         if manifest.get("tag") != found:
             raise SyncError(f"manifest.json says {manifest.get('tag')}, the release is {found}")
+        if data_commit and manifest.get("data_commit") != data_commit:
+            raise SyncError(
+                f"{found} was built from {str(manifest.get('data_commit') or 'an unknown commit')[:9]}, "
+                f"expected {data_commit[:9]}"
+            )
         _check_schema(manifest)
         files = _parquet_files(manifest)
         _verify(folder, files)
@@ -379,7 +415,7 @@ def sync(data_dir=DEFAULT_DATA_DIR, tag=None, source=None, from_dir=None, http=N
         building = data_dir / f".{name}.building"
         if building.exists():
             building.unlink()
-        _build(building, folder, manifest, files)
+        _build(building, folder, manifest, files, release)
         live_path = (data_dir / CURRENT) if live else None
         extract_date, seated = _smoke(building, live_path)
         os.replace(building, data_dir / name)

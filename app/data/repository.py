@@ -27,6 +27,23 @@ def meta(con):
     )
 
 
+def _has_table(con, name):
+    return _one(con, "select 1 as found from information_schema.tables where table_name = ?", [name]) is not None
+
+
+def release(con):
+    """The synced release (published, url, manifest as JSON text), or None in a file synced
+    before the sync kept it."""
+    return _one(con, "select published, url, manifest from _release") if _has_table(con, "_release") else None
+
+
+def release_files(con):
+    """Every file of the synced release: name, bytes and download URL (null for a local build)."""
+    if not _has_table(con, "_release_files"):
+        return []
+    return _rows(con, "select name, bytes, url from _release_files order by name")
+
+
 def current_legislature(con):
     return _one(con, "select * from current_legislature")
 

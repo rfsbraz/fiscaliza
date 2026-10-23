@@ -12,13 +12,19 @@
       "path": "data.source_updated",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DataAttribution.jsx:21"
+      "read_at": "frontend/src/components/DataAttribution.jsx:24"
     },
     {
       "path": "data.tag",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DataAttribution.jsx:22"
+      "read_at": "frontend/src/components/DataAttribution.jsx:25"
+    },
+    {
+      "path": "data.publicado",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/DataAttribution.jsx:26"
     }
   ],
   "dropped": []

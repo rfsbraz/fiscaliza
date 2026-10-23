@@ -7,6 +7,10 @@
     python deploy/pages.py deploy ... --dry-run              # print the steps, run nothing
     python deploy/pages.py prepare DIST                      # only the Pages step on a built dist/
     python deploy/pages.py build --parlamento-aberto PATH    # local data from the pin, no upload
+    python deploy/pages.py build                             # local data from the pin's release tag
+
+With tag= in the pin, the data comes from that published release on GitHub and
+--parlamento-aberto is not used (the deploy workflow always passes it).
 
 See docs/DEPLOY.md.
 """
@@ -79,6 +83,11 @@ STATIC_ROUTES = {
     "/privacidade": (
         "Privacidade",
         "O Fiscaliza não usa cookies nem pede dados pessoais: o que é contado e a quem é enviado.",
+    ),
+    "/dados": (
+        "Descarregar dados",
+        "Os dados abertos do Fiscaliza para descarregar: a release do parlamento-aberto em Parquet e CSV, "
+        "com o manifest.json e a licença.",
     ),
 }
 # One path segment of a route that becomes a file name: no separators, no . or .., no controls.
@@ -337,9 +346,18 @@ def branch_for(args):
     return branch
 
 
+def builds_the_pin(args, pin):
+    """Whether this run builds the release itself in a parlamento-aberto checkout: only when
+    there is no --release folder and the pin has no published release tag."""
+    return bool(args.parlamento_aberto) and not args.release and not pin.tag
+
+
 def plan(args, work):
-    """The commands for one deploy, in order. Nothing runs here."""
-    pin = read_pin()
+    """The commands for one deploy, in order. Nothing runs here.
+
+    The data source, first match: --release DIR, the pin's release tag (synced from GitHub and
+    checked against the pinned commit), a build of the pin in --parlamento-aberto PATH."""
+    pin = read_pin(PIN_FILE)
     local = args.cmd == "build"
     branch = None if local else branch_for(args)
     work = Path(work)
@@ -350,6 +368,8 @@ def plan(args, work):
 
     if args.release:
         sync_source = ["--from-dir", str(args.release)]
+    elif pin.tag:
+        sync_source = ["--tag", pin.tag, "--data-commit", pin.commit]
     elif args.parlamento_aberto:
         checkout = work / "parlamento-aberto"
         release = work / "release"
@@ -367,8 +387,6 @@ def plan(args, work):
             ),
         ]
         sync_source = ["--from-dir", str(release)]
-    elif pin.tag:
-        sync_source = ["--tag", pin.tag]
     else:
         raise DeployError("the pin has no release tag; pass --parlamento-aberto PATH or --release DIR")
 
@@ -404,7 +422,7 @@ def plan(args, work):
 
 
 def run(args):
-    pin = read_pin()
+    pin = read_pin(PIN_FILE)
     local = args.cmd == "build"
     if not local:
         branch_for(args)
@@ -414,15 +432,16 @@ def run(args):
         for step in plan(args, Path(args.work or "$WORK")):
             print(f"[{step.name}] (cd {step.cwd} && {shlex.join(step.argv)})")
         return 0
-    if args.parlamento_aberto:
+    if builds_the_pin(args, pin):
         fetch_pin(args.parlamento_aberto, pin.commit)
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="fiscaliza-deploy-"))
     try:
         steps = plan(args, work)
+        source = f"release {pin.tag}" if pin.tag and not args.release else f"parlamento-aberto {pin.commit[:9]}"
         if local:
-            print(f"building parlamento-aberto {pin.commit[:9]} into {args.data_dir} and frontend/public/api")
+            print(f"building {source} into {args.data_dir} and frontend/public/api")
         else:
-            print(f"deploying parlamento-aberto {pin.commit[:9]} to Pages project {PROJECT}, branch {branch_for(args)}")
+            print(f"deploying {source} to Pages project {PROJECT}, branch {branch_for(args)}")
         for step in steps:
             print(f"[{step.name}]", flush=True)
             if step.argv[0] == "prepare":
@@ -463,7 +482,8 @@ def parse_args(argv=None):
     d.add_argument("--keep", action="store_true", help="keep the temporary scratch folder")
     d.add_argument("--dry-run", action="store_true", help="print the steps and run nothing")
     b = sub.add_parser("build", help="build the pinned data locally: sync and export, no upload")
-    source = b.add_mutually_exclusive_group(required=True)
+    # No source: the pin's release tag, from GitHub.
+    source = b.add_mutually_exclusive_group()
     source.add_argument("--parlamento-aberto", metavar="PATH", help="a parlamento-aberto clone to build the pin in")
     source.add_argument("--release", metavar="DIR", help="a `release build` output folder built from the pin")
     b.add_argument("--data-dir", default="data", help="where the sync writes the DuckDB file (default: data)")
