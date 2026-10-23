@@ -211,7 +211,7 @@ const PartidoDetalhes = () => {
                     <span style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>
                       Parte da coligação{' '}
                       <Link
-                        to={`/coligacoes/${encodeURIComponent(dados.coligacao.sigla)}`}
+                        to={`/coligacoes/${encodeURIComponent(dados.coligacao.id)}`}
                         style={{
                           color: tokens.colors.purple,
                           fontWeight: 600,

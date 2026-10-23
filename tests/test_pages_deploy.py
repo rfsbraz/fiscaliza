@@ -102,13 +102,20 @@ def _dist(tmp_path):
     return dist
 
 
-def test_prepare_drops_404_html_so_pages_answers_deep_links_200(tmp_path):
+def test_prepare_keeps_404_html_so_unknown_paths_answer_404(tmp_path):
+    # #113: with a top-level 404.html Pages answers a path with no file and no rule with it and
+    # status 404. The build's 404.html is the app, which shows its "page not found" view.
     dist = _dist(tmp_path)
     pages.prepare(dist)
-    assert not (dist / "404.html").exists()
-    assert (dist / "index.html").exists()
+    assert (dist / "404.html").read_text() == (dist / "index.html").read_text()
     assert (dist / "api" / "partidos.json").read_text() == "[]"
     assert (dist / "assets" / "index-abc123.js").exists()
+
+
+def test_prepare_copies_the_redirects_file(tmp_path):
+    dist = _dist(tmp_path)
+    pages.prepare(dist)
+    assert (dist / "_redirects").read_text() == pages.REDIRECTS_FILE.read_text()
 
 
 def test_prepare_copies_the_headers_file(tmp_path):
@@ -117,11 +124,53 @@ def test_prepare_copies_the_headers_file(tmp_path):
     assert (dist / "_headers").read_text() == pages.HEADERS_FILE.read_text()
 
 
-def test_prepare_works_on_a_build_without_404_html(tmp_path):
+def test_prepare_writes_404_html_when_the_build_has_none(tmp_path):
     dist = _dist(tmp_path)
     (dist / "404.html").unlink()
     pages.prepare(dist)
     assert (dist / "_headers").exists()
+    assert (dist / "404.html").read_text() == (dist / "index.html").read_text()
+
+
+# The _redirects file: no rule hides a route's page (tests/test_route_heads.py), everything else
+# with no file answers 404 (#113).
+
+
+def redirect_rules():
+    rules = []
+    for line in pages.REDIRECTS_FILE.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            rules.append(tuple(line.split()))
+    return rules
+
+
+def test_no_catch_all_and_no_api_rewrite():
+    for source, _, _ in redirect_rules():
+        assert source not in ("/*", "/"), source
+        assert not source.startswith("/api"), source
+
+
+def test_robots_txt_allows_all_and_points_to_the_sitemap():
+    public = FRONTEND / "public"
+    robots = (public / "robots.txt").read_text()
+    assert robots.startswith("User-agent: *")
+    assert "<" not in robots
+    lines = robots.splitlines()
+    assert "Allow: /" in lines
+    assert not any(line.startswith("Disallow:") and line.strip() != "Disallow:" for line in lines)
+    assert "Sitemap: https://fiscaliza.pt/sitemap.xml" in lines
+    # deploy/pages.py writes sitemap.xml from the routes (tests/test_route_heads.py), not the build.
+    assert not (public / "sitemap.xml").exists()
+
+
+def test_app_has_a_not_found_route_that_is_not_indexed():
+    app = (FRONTEND / "src" / "App.jsx").read_text()
+    assert '<Route path="*" element={<NotFound />} />' in app
+    view = (FRONTEND / "src" / "components" / "NotFound.jsx").read_text()
+    assert "Página não encontrada" in view
+    assert "noindex" in view
+    assert 'to="/"' in view
 
 
 def test_prepare_refuses_a_folder_without_index_html(tmp_path):
@@ -225,15 +274,15 @@ def test_csp_is_strict_where_it_can_be(headers):
     assert policy["object-src"] == ["'none'"]
     assert "'unsafe-inline'" not in policy["script-src"]
     assert "'unsafe-eval'" not in policy["script-src"]
-    assert policy["connect-src"] == ["'self'"]
+    assert policy["connect-src"] == ["'self'", "https://cloudflareinsights.com", *sentry_ingest()]
 
 
 def test_csp_allows_what_the_app_loads(headers):
     policy = csp(headers)
-    assert "https://fonts.googleapis.com" in policy["style-src"]
-    assert "https://fonts.gstatic.com" in policy["font-src"]
-    # Recharts and framer-motion set style attributes.
-    assert "'unsafe-inline'" in policy["style-src"]
+    # The fonts are self-hosted (frontend/src/assets/fonts), so no font CDN is allowed.
+    # Recharts and framer-motion set style attributes, hence 'unsafe-inline'.
+    assert policy["style-src"] == ["'self'", "'unsafe-inline'"]
+    assert policy["font-src"] == ["'self'"]
 
     sources = [FRONTEND / "index.html", *FRONTEND.glob("src/**/*.js*")]
     img_hosts = set()
@@ -251,6 +300,14 @@ def test_csp_allows_what_the_app_loads(headers):
     for pair in stylesheet_hosts:
         for host in filter(None, pair):
             assert f"https://{host}" in policy["style-src"], host
+
+
+def test_csp_allows_cloudflare_web_analytics(headers):
+    # Pages injects the Web Analytics beacon from static.cloudflareinsights.com,
+    # and the beacon reports to cloudflareinsights.com.
+    policy = csp(headers)
+    assert policy["script-src"] == ["'self'", "https://static.cloudflareinsights.com"]
+    assert policy["connect-src"] == ["'self'", "https://cloudflareinsights.com", *sentry_ingest()]
 
 
 def test_csp_allows_the_deputy_photos_the_api_points_to(headers):
@@ -326,3 +383,78 @@ def test_a_release_folder_must_come_from_the_pin(tmp_path):
     (rel / "manifest.json").write_text('{"tag": "data-2026-10-20", "data_commit": "' + "b" * 40 + '"}')
     with pytest.raises(pages.DeployError, match="pin"):
         pages.check_release(rel, pages.read_pin())
+
+
+def test_build_makes_the_local_data_from_the_pin_without_uploading():
+    pin = pages.read_pin()
+    args = pages.parse_args(["build", "--parlamento-aberto", "/pa", "--data-dir", "/d"])
+    cmds = [" ".join(step.argv) for step in pages.plan(args, work=Path("/work"))]
+    assert any("worktree add --detach" in c and pin.commit in c for c in cmds)
+    assert any("parlamento_aberto.release build" in c and f"--sha {pin.commit}" in c for c in cmds)
+    sync = next(c for c in cmds if "fiscaliza_data sync" in c)
+    assert "--from-dir /work/release" in sync and "--data-dir /d" in sync
+    export = next(c for c in cmds if "fiscaliza_data.export" in c)
+    assert f"--out {FRONTEND / 'public' / 'api'}" in export and "--data-dir /d" in export
+    # Nothing past the export: no npm build, no Pages step, no upload.
+    assert cmds[-1] == export
+    assert not any("wrangler" in c or "pages deploy" in c or c.startswith("prepare") for c in cmds)
+
+
+def test_build_defaults_the_data_dir_to_data():
+    args = pages.parse_args(["build", "--parlamento-aberto", "/pa"])
+    sync = next(" ".join(s.argv) for s in pages.plan(args, work=Path("/work")) if "fiscaliza_data" in s.argv)
+    assert "--data-dir data" in sync
+
+
+def test_build_takes_no_pages_branch():
+    with pytest.raises(SystemExit):
+        pages.parse_args(["build", "--parlamento-aberto", "/pa", "--branch", "x"])
+
+
+# Sentry (errors only)
+
+SENTRY_JS = FRONTEND / "src" / "sentry.js"
+DEPLOY_WORKFLOW = ROOT / ".github" / "workflows" / "deploy.yml"
+
+
+def sentry_dsn():
+    m = re.search(r"^\s+VITE_SENTRY_DSN: '?([^'\s#]*)'?", DEPLOY_WORKFLOW.read_text(), re.M)
+    return m.group(1) if m else ""
+
+
+def test_sentry_reports_errors_only_without_personal_data():
+    src = SENTRY_JS.read_text()
+    assert "sendDefaultPii: false" in src
+    for banned in (
+        "browserTracingIntegration",
+        "replayIntegration",
+        "tracesSampleRate",
+        "tracesSampler",
+        "replaysSessionSampleRate",
+        "replaysOnErrorSampleRate",
+        "profilesSampleRate",
+        "browserProfilingIntegration",
+    ):
+        assert banned not in src, banned
+    # Only the app's entry point initialises it.
+    main = (FRONTEND / "src" / "main.jsx").read_text()
+    assert "initSentry()" in main
+    assert "AppErrorBoundary" in main
+
+
+def test_no_sentry_auth_files_are_committed():
+    for name in (".env.sentry-build-plugin", ".sentryclirc"):
+        assert not (FRONTEND / name).exists(), name
+        assert not (ROOT / name).exists(), name
+
+
+def sentry_ingest():
+    """The ingest origin of the DSN in deploy.yml, as a list: empty while no DSN is set."""
+    dsn = sentry_dsn()
+    return [f"https://{re.match(r'https://[^@]+@([^/]+)/', dsn).group(1)}"] if dsn else []
+
+
+def test_csp_allows_the_sentry_ingest_host(headers):
+    if not sentry_dsn():
+        pytest.skip("VITE_SENTRY_DSN is not set in deploy.yml yet")
+    assert sentry_ingest()[0] in csp(headers)["connect-src"]

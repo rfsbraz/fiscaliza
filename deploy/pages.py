@@ -6,13 +6,16 @@
     python deploy/pages.py deploy ... --production           # production (master)
     python deploy/pages.py deploy ... --dry-run              # print the steps, run nothing
     python deploy/pages.py prepare DIST                      # only the Pages step on a built dist/
+    python deploy/pages.py build --parlamento-aberto PATH    # local data from the pin, no upload
 
 See docs/DEPLOY.md.
 """
 
 import argparse
+import html
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -21,6 +24,7 @@ import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -28,6 +32,7 @@ DEPLOY = ROOT / "deploy"
 FRONTEND = ROOT / "frontend"
 PIN_FILE = DEPLOY / "data-pin"
 HEADERS_FILE = DEPLOY / "_headers"
+REDIRECTS_FILE = DEPLOY / "_redirects"
 
 PROJECT = "fiscaliza"
 PRODUCTION_BRANCH = "master"
@@ -35,6 +40,45 @@ PREVIEW_BRANCH = "preview"
 # Cloudflare Pages limits per deployment (free plan).
 MAX_FILES = 20_000
 MAX_FILE_BYTES = 25 * 1024 * 1024
+SITE = "https://fiscaliza.pt"
+# sitemaps.org limits per sitemap file; more URLs go into numbered files under a sitemap index.
+SITEMAP_MAX_URLS = 50_000
+SITEMAP_MAX_BYTES = 50 * 1024 * 1024
+SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
+SUFFIX = " · Fiscaliza"
+# The head tags each route page sets, as (before the value)(value)(after). Each must be in
+# frontend/index.html once; the rest of the page stays the app.
+HEAD_TAGS = {
+    "title": r"(<title>)([^<]*)(</title>)",
+    "description": r'(<meta name="description" content=")([^"]*)("\s*/?>)',
+    "canonical": r'(<link rel="canonical" href=")([^"]*)("\s*/?>)',
+    "og:title": r'(<meta property="og:title" content=")([^"]*)("\s*/?>)',
+    "og:description": r'(<meta property="og:description" content=")([^"]*)("\s*/?>)',
+    "og:url": r'(<meta property="og:url" content=")([^"]*)("\s*/?>)',
+}
+# The app's routes with no id (frontend/src/App.jsx): title and description.
+STATIC_ROUTES = {
+    "/deputados": (
+        "Deputados",
+        "Os deputados da Assembleia da República desde 1975: mandatos, votações, presenças, "
+        "intervenções e registo de interesses.",
+    ),
+    "/partidos": (
+        "Partidos e coligações",
+        "Os partidos e as coligações com deputados na Assembleia da República, com os seus deputados e votações.",
+    ),
+    "/agenda": ("Agenda", "As votações mais recentes e a atividade da Assembleia da República."),
+    "/perguntas": (
+        "Perguntas ao Governo",
+        "As perguntas escritas dos deputados ao Governo, com as respostas e o tempo de resposta por legislatura.",
+    ),
+    "/metodologia": (
+        "Metodologia e fontes",
+        "Como o Fiscaliza trata os dados abertos da Assembleia da República: fontes, regras e limitações.",
+    ),
+}
+# One path segment of a route that becomes a file name: no separators, no . or .., no controls.
+SAFE_SEGMENT = re.compile(r"^(?!\.{1,2}$)[^/\\\x00-\x1f\x7f]+$")
 # Wrangler 4 needs Node 22 or newer.
 DEFAULT_WRANGLER = "npx --yes wrangler@4.151.3"
 
@@ -94,14 +138,168 @@ def fetch_pin(checkout, commit):
         raise DeployError(f"{checkout}: cannot fetch the pinned commit {commit[:9]}: {e.stderr.strip()}") from e
 
 
+def _json(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def _items(data, key):
+    items = data.get(key) if isinstance(data, dict) else None
+    return [i for i in items if isinstance(i, dict)] if isinstance(items, list) else []
+
+
+def _route(prefix, value):
+    """prefix/value when every segment of value is safe as a file name, else None."""
+    value = str(value) if value is not None else ""
+    segments = value.split("/")
+    if not value or not all(SAFE_SEGMENT.match(s) for s in segments):
+        return None
+    return f"{prefix}/{value}"
+
+
+def coalition_scope(region, years):
+    """Which list and elections a coalition page is, as the page shows it (coalitionScope in
+    frontend/src/utils/format.js): "Açores, 2025", "2024 e 2025", "1987 a 2025"."""
+    years = [str(y) for y in years or [] if y is not None]
+    if len(years) > 2:
+        years = [f"{years[0]} a {years[-1]}"]
+    return ", ".join(x for x in (region, " e ".join(years)) if x)
+
+
+def route_heads(api):
+    """{route path: (title, description)} for every app route the export has data for, plus the
+    routes with no id. Reads the export's index files only; a missing one adds no routes."""
+    api = Path(api)
+    routes = dict(STATIC_ROUTES)
+
+    for d in _items(_json(api / "deputados.json"), "deputados"):
+        cad = d.get("id_cadastro")
+        path = _route("/deputados", cad) if isinstance(cad, int) or str(cad).isdigit() else None
+        name = (d.get("nome") or "").strip()
+        if not path or not name:
+            continue
+        party, circle = d.get("partido_sigla"), d.get("circulo")
+        context = ", ".join(x for x in (party, circle) if x)
+        title = f"{name} ({party})" if party else name
+        routes[path] = (
+            title,
+            f"Atividade parlamentar de {name}{f' ({context})' if context else ''}: votações, presenças, "
+            "intervenções e registo de interesses na Assembleia da República.",
+        )
+
+    parties = {p.get("sigla") or p.get("id"): p.get("nome") for p in _items(_json(api / "partidos.json"), "partidos")}
+    for f in sorted((api / "partidos").glob("*/deputados.json")) if (api / "partidos").is_dir() else []:
+        party = (_json(f) or {}).get("partido")
+        if isinstance(party, dict) and party.get("sigla"):
+            parties.setdefault(party["sigla"], party.get("nome"))
+    for sigla, name in parties.items():
+        path = _route("/partidos", sigla)
+        if path:
+            label = f"{name} ({sigla})" if name and name != sigla else sigla
+            routes[path] = (label, f"Deputados, votações e coligações: {label} na Assembleia da República.")
+
+    for c in _items(_json(api / "coligacoes-todas.json"), "coligacoes"):
+        path = _route("/coligacoes", c.get("id"))
+        if path:
+            name = c.get("nome") or c.get("sigla") or c["id"]
+            scope = coalition_scope(c.get("ambito"), c.get("eleicoes"))
+            label = f"{name} ({scope})" if scope else name
+            routes[path] = (label, f"Partidos, deputados e eleições da coligação {label} na Assembleia da República.")
+
+    for leg in _items(_json(api / "perguntas.json"), "legislaturas"):
+        path = _route("/perguntas", leg.get("legislatura"))
+        if path:
+            n = leg["legislatura"]
+            routes[path] = (
+                f"Perguntas ao Governo na {n} legislatura",
+                f"As perguntas escritas dos deputados ao Governo na {n} legislatura, com as respostas e o "
+                "tempo de resposta.",
+            )
+    return routes
+
+
+def route_url(path):
+    """The canonical URL of a route, percent-encoded."""
+    return SITE + quote(path, safe="/")
+
+
+def render_head(template, path, title, description):
+    """The app's index.html with this route's title, description, canonical and og:url."""
+    url = route_url(path)
+    values = {
+        "title": title + SUFFIX,
+        "description": description,
+        "canonical": url,
+        "og:title": title + SUFFIX,
+        "og:description": description,
+        "og:url": url,
+    }
+    out = template
+    for key, pattern in HEAD_TAGS.items():
+        value = html.escape(values[key], quote=True)
+        out, n = re.subn(pattern, lambda m, v=value: m.group(1) + v + m.group(3), out, count=1)
+        if n != 1:
+            raise DeployError(f"index.html has no {key} tag to set for {path}")
+    return out
+
+
+def write_route_pages(dist, routes=None):
+    """One HTML file per app route, where Pages serves it: /deputados/2105 is deputados/2105.html.
+    Link previews read these heads; the browser loads the same app. Returns the number written."""
+    dist = Path(dist)
+    template = (dist / "index.html").read_text(encoding="utf-8")
+    if "<head" not in template:
+        return 0
+    written = 0
+    for path, (title, description) in (route_heads(dist / "api") if routes is None else routes).items():
+        target = dist / f"{path.lstrip('/')}.html"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(render_head(template, path, title, description), encoding="utf-8")
+        written += 1
+    return written
+
+
+def _sitemap_file(dist, name, root, tag, urls):
+    body = "".join(f"<{tag}><loc>{html.escape(url)}</loc></{tag}>\n" for url in urls)
+    data = f'<?xml version="1.0" encoding="UTF-8"?>\n<{root} xmlns="{SITEMAP_NS}">\n{body}</{root}>\n'.encode()
+    if len(data) > SITEMAP_MAX_BYTES:
+        raise DeployError(f"{name} has {len(data)} bytes; a sitemap takes at most {SITEMAP_MAX_BYTES}")
+    (Path(dist) / name).write_bytes(data)
+
+
+def write_sitemap(dist, routes):
+    """sitemap.xml with / and every route that has a page. Over SITEMAP_MAX_URLS it is an index of
+    sitemap-1.xml, sitemap-2.xml, ... Returns the number of URLs."""
+    urls = [route_url("/")] + [route_url(path) for path in routes]
+    if len(urls) <= SITEMAP_MAX_URLS:
+        _sitemap_file(dist, "sitemap.xml", "urlset", "url", urls)
+        return len(urls)
+    parts = []
+    for i in range(0, len(urls), SITEMAP_MAX_URLS):
+        name = f"sitemap-{len(parts) + 1}.xml"
+        _sitemap_file(dist, name, "urlset", "url", urls[i : i + SITEMAP_MAX_URLS])
+        parts.append(route_url("/" + name))
+    _sitemap_file(dist, "sitemap.xml", "sitemapindex", "sitemap", parts)
+    return len(urls)
+
+
 def prepare(dist):
-    """Turn a generic build into a Pages one: no 404.html (Pages then serves index.html with
-    status 200 for deep links) and the _headers file. Checks the Pages limits."""
+    """Turn a generic build into a Pages one: the _headers and _redirects files, a 404.html that
+    is the app, one HTML file per app route with its own head (write_route_pages) and a
+    sitemap.xml of those routes (write_sitemap). A route's file answers it with status 200; any
+    other path with no file gets 404.html with status 404 (#113). Checks the Pages limits."""
     dist = Path(dist)
     if not (dist / "index.html").is_file():
         raise DeployError(f"{dist}/index.html is missing; run `npm run build` first")
-    (dist / "404.html").unlink(missing_ok=True)
+    if not (dist / "404.html").is_file():
+        shutil.copyfile(dist / "index.html", dist / "404.html")
     shutil.copyfile(HEADERS_FILE, dist / "_headers")
+    shutil.copyfile(REDIRECTS_FILE, dist / "_redirects")
+    routes = route_heads(dist / "api")
+    if write_route_pages(dist, routes):
+        write_sitemap(dist, routes)
     files = [p for p in dist.rglob("*") if p.is_file()]
     if len(files) >= MAX_FILES:
         raise DeployError(f"{dist} has {len(files)} files; Pages takes fewer than {MAX_FILES}")
@@ -138,9 +336,11 @@ def branch_for(args):
 def plan(args, work):
     """The commands for one deploy, in order. Nothing runs here."""
     pin = read_pin()
-    branch = branch_for(args)
+    local = args.cmd == "build"
+    branch = None if local else branch_for(args)
     work = Path(work)
-    data_dir = work / "data"
+    # A local build keeps its DuckDB file where the API and the dev tools look for it.
+    data_dir = Path(args.data_dir) if local else work / "data"
     python = sys.executable
     steps = []
 
@@ -168,7 +368,6 @@ def plan(args, work):
     else:
         raise DeployError("the pin has no release tag; pass --parlamento-aberto PATH or --release DIR")
 
-    wrangler = shlex.split(os.environ.get("WRANGLER", DEFAULT_WRANGLER))
     steps += [
         Step("sync", [python, "-m", "fiscaliza_data", "sync", *sync_source, "--data-dir", str(data_dir)]),
         Step(
@@ -183,6 +382,11 @@ def plan(args, work):
                 str(data_dir),
             ],
         ),
+    ]
+    if local:
+        return steps
+    wrangler = shlex.split(os.environ.get("WRANGLER", DEFAULT_WRANGLER))
+    steps += [
         Step("install", ["npm", "ci"], cwd=FRONTEND),
         Step("build", ["npm", "run", "build"], cwd=FRONTEND),
         Step("prepare for Pages", ["prepare", str(FRONTEND / "dist")]),
@@ -197,7 +401,9 @@ def plan(args, work):
 
 def run(args):
     pin = read_pin()
-    branch_for(args)
+    local = args.cmd == "build"
+    if not local:
+        branch_for(args)
     if args.release:
         check_release(args.release, pin)
     if args.dry_run:
@@ -209,7 +415,10 @@ def run(args):
     work = Path(args.work) if args.work else Path(tempfile.mkdtemp(prefix="fiscaliza-deploy-"))
     try:
         steps = plan(args, work)
-        print(f"deploying parlamento-aberto {pin.commit[:9]} to Pages project {PROJECT}, branch {branch_for(args)}")
+        if local:
+            print(f"building parlamento-aberto {pin.commit[:9]} into {args.data_dir} and frontend/public/api")
+        else:
+            print(f"deploying parlamento-aberto {pin.commit[:9]} to Pages project {PROJECT}, branch {branch_for(args)}")
         for step in steps:
             print(f"[{step.name}]", flush=True)
             if step.argv[0] == "prepare":
@@ -249,6 +458,14 @@ def parse_args(argv=None):
     d.add_argument("--work", help="scratch folder (default: a temporary one, removed afterwards)")
     d.add_argument("--keep", action="store_true", help="keep the temporary scratch folder")
     d.add_argument("--dry-run", action="store_true", help="print the steps and run nothing")
+    b = sub.add_parser("build", help="build the pinned data locally: sync and export, no upload")
+    source = b.add_mutually_exclusive_group(required=True)
+    source.add_argument("--parlamento-aberto", metavar="PATH", help="a parlamento-aberto clone to build the pin in")
+    source.add_argument("--release", metavar="DIR", help="a `release build` output folder built from the pin")
+    b.add_argument("--data-dir", default="data", help="where the sync writes the DuckDB file (default: data)")
+    b.add_argument("--work", help="scratch folder (default: a temporary one, removed afterwards)")
+    b.add_argument("--keep", action="store_true", help="keep the temporary scratch folder")
+    b.add_argument("--dry-run", action="store_true", help="print the steps and run nothing")
     p = sub.add_parser("prepare", help="the Pages step alone, on a built dist/")
     p.add_argument("dist")
     return parser.parse_args(argv)
@@ -262,7 +479,7 @@ def main(argv=None):
             return 0
         return run(args)
     except DeployError as e:
-        print(f"deploy failed: {e}", file=sys.stderr)
+        print(f"{args.cmd} failed: {e}", file=sys.stderr)
         return 1
 
 

@@ -1,0 +1,13 @@
+# Cloudflare Pages rules. deploy/pages.py copies this into the build output with 404.html.
+# No rules for the app's routes: Pages applies a 200 rule before it looks for a file, so a rule
+# would hide the page deploy/pages.py writes for each route (deputados/2105.html, with that
+# route's head for link previews). Each route is its own file and answers 200. Any other path
+# with no file gets 404.html (also the app, which shows its "page not found" view) and status 404
+# (#113).
+#
+# The only rules move pages that no longer exist. The coalition pages were one per short name
+# until #111 made them one per list and run: AD and Madeira Primeiro go to their latest list.
+/coligacoes/AD /coligacoes/ad-2024 301
+/coligacoes/ad /coligacoes/ad-2024 301
+/coligacoes/Madeira%20Primeiro /coligacoes/madeira-primeiro-2024 301
+/coligacoes/madeira-primeiro /coligacoes/madeira-primeiro-2024 301

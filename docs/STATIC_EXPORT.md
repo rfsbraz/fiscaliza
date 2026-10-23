@@ -36,7 +36,7 @@ aceita uma legislatura em numeração romana ou como número (`17`), como a API.
 | `legislaturas`, `estatisticas`, `partidos`, `health`, `estatisticas/atividade` | `legislaturas.json`, `estatisticas.json`, `partidos.json`, `health.json`, `estatisticas/atividade.json` |
 | `votacoes/recentes?limite=5` (e o valor por omissão, 10) | `votacoes/recentes/5.json`, `votacoes/recentes/10.json` |
 | `coligacoes?include_inactive=false` / `true` | `coligacoes.json` / `coligacoes-todas.json` |
-| `coligacoes/{sigla}`, `/deputados`, `/partidos` | `coligacoes/{slug}.json`, `coligacoes/{slug}/deputados.json`, `coligacoes/{slug}/partidos.json` |
+| `coligacoes/{id}`, `/deputados`, `/partidos` (uma página por lista e sequência: `ad-2024`, `ad-acores-2025`, `CDU`) | `coligacoes/{slug}.json`, `coligacoes/{slug}/deputados.json`, `coligacoes/{slug}/partidos.json` |
 | `deputados?page&per_page&active_only&search` | `deputados.json`: todos, pela ordem da lista; a pesquisa, o filtro e a paginação correm no browser |
 | `deputados/{id}/detalhes`, `/conflitos-interesse`, `/atividades`, `/voting-analytics`, `/attendance` | `deputados/{id}.json`: um ficheiro por pessoa com tudo isto, para todas as legislaturas em que esteve; as intervenções são filtradas, ordenadas e paginadas no browser |
 | `partidos/{sigla}/deputados` | `partidos/{slug}/deputados.json` |
@@ -80,9 +80,10 @@ para um caminho que não existe carregam a aplicação em qualquer ligação dir
 Cloudflare Pages, S3 ou CloudFront com `404.html` como documento de erro, nginx com
 `error_page 404 /404.html`. Estes respondem às ligações diretas com o estado 404 e a aplicação
 aparece na mesma. Para responder 200, use a regra de SPA do próprio alojamento: no nginx
-`try_files $uri /index.html`, uma reescrita para `/index.html` numa CDN, ou no Cloudflare Pages
-apague o `404.html` de `dist/` antes do deploy, o que liga o modo de página única (o
-`deploy/pages.py` faz isto, ver [DEPLOY.md](DEPLOY.md)).
+`try_files $uri /index.html` ou uma reescrita para `/index.html` numa CDN. Para o Cloudflare
+Pages, o `deploy/pages.py` escreve um ficheiro HTML por rota da aplicação com o head dessa rota,
+que responde 200 e mantém um 404 a sério para todos os outros caminhos, e um `sitemap.xml` com as
+mesmas rotas (ver [DEPLOY.md](DEPLOY.md)).
 
 Um ficheiro de dados em falta passa então a vir como `404.html` (ou `index.html`) em vez de JSON.
 O frontend trata tudo o que não é JSON como não encontrado, por isso não há problema.

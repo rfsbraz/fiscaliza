@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Users, Building, Calendar, TrendingUp, Handshake, History, MapPin, Award, Target, Activity } from 'lucide-react';
+import { ArrowLeft, Users, Building, Calendar, Handshake, History } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
-import { plural, NOT_AVAILABLE } from '../utils/format';
+import { coalitionScope, formatNumber, plural, seatedNote, seatsNote } from '../utils/format';
 
 // Coalition colors based on political spectrum
 const spectrumColors = {
@@ -29,8 +29,8 @@ const ColigacaoDetalhes = () => {
   // Get active tab from URL hash
   const getActiveTabFromUrl = () => {
     const hash = location.hash.replace('#', '');
-    const validTabs = ['overview', 'deputados', 'partidos', 'timeline', 'performance'];
-    return validTabs.includes(hash) ? hash : 'overview';
+    const validTabs = ['partidos', 'deputados', 'legislaturas'];
+    return validTabs.includes(hash) ? hash : 'partidos';
   };
 
   const [activeTab, setActiveTab] = useState(getActiveTabFromUrl());
@@ -55,7 +55,7 @@ const ColigacaoDetalhes = () => {
 
   useEffect(() => {
     if (!location.hash) {
-      navigate('#overview', { replace: true });
+      navigate('#partidos', { replace: true });
     }
   }, [navigate, location.hash]);
 
@@ -146,34 +146,15 @@ const ColigacaoDetalhes = () => {
     );
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return NOT_AVAILABLE;
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' });
-  };
-
-  // Coalition timeline data
-  const timelineEvents = [
-    dados.data_formacao && {
-      date: dados.data_formacao,
-      title: 'Formação da Coligação',
-      description: `Criação da ${dados.nome}`,
-      type: 'formation'
-    },
-    dados.data_dissolucao && {
-      date: dados.data_dissolucao,
-      title: 'Dissolução',
-      description: 'Fim da coligação',
-      type: 'dissolution'
-    }
-  ].filter(Boolean);
+  // One page per list and run (#111). The data has no formation or dissolution dates, only the
+  // legislatures the list elected deputies in.
+  const legislaturas = dados.legislaturas || [];
+  const first = legislaturas[0];
 
   const tabs = [
-    { id: 'overview', label: 'Visão Geral', icon: Target },
     { id: 'partidos', label: 'Partidos Componentes', icon: Building },
     { id: 'deputados', label: `Deputados (${deputados.length})`, icon: Users },
-    { id: 'timeline', label: 'Linha do Tempo', icon: History },
-    { id: 'performance', label: 'Desempenho Eleitoral', icon: Activity },
+    ...(legislaturas.length ? [{ id: 'legislaturas', label: 'Legislaturas', icon: History }] : []),
   ];
 
   return (
@@ -240,19 +221,26 @@ const ColigacaoDetalhes = () => {
                   >
                     {dados.sigla}
                   </h1>
-                  <span
-                    style={{
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '2px',
-                      fontSize: '0.75rem',
-                      fontFamily: tokens.fonts.body,
-                      fontWeight: 600,
-                      color: '#FFFFFF',
-                      backgroundColor: spectrumColors[dados.espectro_politico] || '#6B7280',
-                    }}
-                  >
-                    {dados.espectro_politico || NOT_AVAILABLE}
-                  </span>
+                  {coalitionScope(dados) && (
+                    <span style={{ fontFamily: tokens.fonts.body, fontSize: '1rem', fontWeight: 600, color: tokens.colors.textMuted }}>
+                      {coalitionScope(dados)}
+                    </span>
+                  )}
+                  {dados.espectro_politico && (
+                    <span
+                      style={{
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '2px',
+                        fontSize: '0.75rem',
+                        fontFamily: tokens.fonts.body,
+                        fontWeight: 600,
+                        color: '#FFFFFF',
+                        backgroundColor: spectrumColors[dados.espectro_politico] || '#6B7280',
+                      }}
+                    >
+                      {dados.espectro_politico}
+                    </span>
+                  )}
                   {dados.ativa && (
                     <span
                       style={{
@@ -282,20 +270,14 @@ const ColigacaoDetalhes = () => {
 
                 {/* Key Information */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginTop: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', color: tokens.colors.textSecondary }}>
-                    <Calendar style={{ width: '20px', height: '20px', marginRight: '0.5rem', color: tokens.colors.textMuted }} />
-                    <div>
-                      <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.textMuted }}>Formação</p>
-                      <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600 }}>{formatDate(dados.data_formacao)}</p>
-                    </div>
-                  </div>
-
-                  {dados.data_dissolucao && (
+                  {first && (
                     <div style={{ display: 'flex', alignItems: 'center', color: tokens.colors.textSecondary }}>
                       <Calendar style={{ width: '20px', height: '20px', marginRight: '0.5rem', color: tokens.colors.textMuted }} />
                       <div>
-                        <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.textMuted }}>Dissolução</p>
-                        <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600 }}>{formatDate(dados.data_dissolucao)}</p>
+                        <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.textMuted }}>Primeira legislatura com deputados eleitos</p>
+                        <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600 }}>
+                          {first.legislatura}{first.ano_eleicao ? ` (${first.ano_eleicao})` : ''}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -321,10 +303,17 @@ const ColigacaoDetalhes = () => {
                       color: tokens.colors.primary,
                     }}
                   >
-                    {dados.deputy_count || deputados.length}
+                    {dados.deputy_count ?? deputados.length}
                   </span>
-                  <span style={{ fontFamily: tokens.fonts.body, marginLeft: '0.25rem' }}>deputados</span>
+                  <span style={{ fontFamily: tokens.fonts.body, marginLeft: '0.25rem' }}>
+                    {dados.contagem === 'em_funcoes' ? 'deputados em funções' : 'deputados eleitos'}
+                  </span>
                 </div>
+                {seatedNote(dados) && (
+                  <div style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary, marginBottom: '0.25rem' }}>
+                    {seatedNote(dados)}
+                  </div>
+                )}
                 <div style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textMuted }}>
                   {plural(partidos.length, 'partido componente', 'partidos componentes')}
                 </div>
@@ -394,117 +383,6 @@ const ColigacaoDetalhes = () => {
 
           <div style={{ padding: '1.5rem' }}>
             {/* Overview Tab */}
-            {activeTab === 'overview' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {/* Historical Context */}
-                <div
-                  style={{
-                    backgroundColor: tokens.colors.bgSecondary,
-                    border: `1px solid ${tokens.colors.border}`,
-                    borderRadius: '4px',
-                  }}
-                >
-                  <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${tokens.colors.border}` }}>
-                    <h3 style={{ fontFamily: tokens.fonts.body, fontSize: '1rem', fontWeight: 600, color: tokens.colors.textPrimary, margin: 0 }}>
-                      Contexto Histórico
-                    </h3>
-                  </div>
-                  <div style={{ padding: '1.25rem' }}>
-                    <div style={{ fontFamily: tokens.fonts.body, fontSize: '0.9375rem', color: tokens.colors.textSecondary, lineHeight: 1.7 }}>
-                      {dados.sigla === 'AD' && (
-                        <>
-                          <p>A Aliança Democrática foi uma coligação política de centro-direita formada em 1979,
-                          unindo o PSD (então PPD/PSD), o CDS e o PPM. Foi a primeira coligação governamental estável
-                          após o 25 de Abril, marcando a consolidação democrática portuguesa.</p>
-                          <p style={{ marginTop: '0.75rem' }}>Sob a liderança de Francisco Sá Carneiro, a AD venceu as eleições de 1979 e 1980,
-                          estabelecendo um modelo de governação de centro-direita que seria referência para futuras coligações.</p>
-                        </>
-                      )}
-                      {dados.sigla === 'CDU' && (
-                        <>
-                          <p>A Coligação Democrática Unitária representa a mais duradoura aliança política
-                          na democracia portuguesa, unindo desde 1987 o Partido Comunista Português e o
-                          Partido Ecologista "Os Verdes".</p>
-                          <p style={{ marginTop: '0.75rem' }}>Com forte implantação no Alentejo e cintura industrial de Lisboa,
-                          a CDU mantém uma linha política consistente de esquerda, defendendo os direitos
-                          dos trabalhadores e uma visão crítica da integração europeia.</p>
-                        </>
-                      )}
-                      {dados.sigla === 'PAF' && (
-                        <>
-                          <p>Portugal à Frente foi a designação adotada pela coligação PSD/CDS-PP para
-                          as eleições legislativas de 2015, representando uma renovação da tradicional
-                          aliança de centro-direita.</p>
-                          <p style={{ marginTop: '0.75rem' }}>Apesar de ter obtido a maioria relativa, a PàF não conseguiu
-                          formar governo, marcando uma mudança significativa no panorama político português
-                          com a formação da "geringonça" à esquerda.</p>
-                        </>
-                      )}
-                      {!['AD', 'CDU', 'PAF'].includes(dados.sigla) && (
-                        <p>Coligação política portuguesa formada para maximizar a representação eleitoral
-                        dos partidos componentes através de uma estratégia unificada.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Key Achievements */}
-                <div
-                  style={{
-                    backgroundColor: tokens.colors.bgSecondary,
-                    border: `1px solid ${tokens.colors.border}`,
-                    borderRadius: '4px',
-                  }}
-                >
-                  <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${tokens.colors.border}` }}>
-                    <h3 style={{ fontFamily: tokens.fonts.body, fontSize: '1rem', fontWeight: 600, color: tokens.colors.textPrimary, margin: 0 }}>
-                      Momentos Chave
-                    </h3>
-                  </div>
-                  <div style={{ padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {dados.sigla === 'AD' && (
-                        <>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <Award style={{ width: '20px', height: '20px', color: tokens.colors.primary, flexShrink: 0, marginTop: '0.125rem' }} />
-                            <div>
-                              <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600, color: tokens.colors.textPrimary }}>Vitória Eleitoral 1979</p>
-                              <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>42.5% dos votos, primeiro governo de coligação estável</p>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <Award style={{ width: '20px', height: '20px', color: tokens.colors.primary, flexShrink: 0, marginTop: '0.125rem' }} />
-                            <div>
-                              <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600, color: tokens.colors.textPrimary }}>Maioria Absoluta 1980</p>
-                              <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>44.9% dos votos, consolidação do projeto político</p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                      {dados.sigla === 'CDU' && (
-                        <>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <Award style={{ width: '20px', height: '20px', color: tokens.colors.primary, flexShrink: 0, marginTop: '0.125rem' }} />
-                            <div>
-                              <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600, color: tokens.colors.textPrimary }}>Consistência Eleitoral</p>
-                              <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>Presença parlamentar ininterrupta desde 1987</p>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <Award style={{ width: '20px', height: '20px', color: tokens.colors.primary, flexShrink: 0, marginTop: '0.125rem' }} />
-                            <div>
-                              <p style={{ fontFamily: tokens.fonts.body, fontWeight: 600, color: tokens.colors.textPrimary }}>Força Regional</p>
-                              <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>Liderança consistente no Alentejo</p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Component Parties Tab */}
             {activeTab === 'partidos' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -547,6 +425,9 @@ const ColigacaoDetalhes = () => {
                         </h3>
                         <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>
                           {partido.nome}
+                          {seatsNote(partido.com_lugares) && (
+                            <span style={{ color: tokens.colors.textMuted }}> · {seatsNote(partido.com_lugares)}</span>
+                          )}
                         </p>
                         {partido.papel_coligacao && (
                           <span
@@ -563,13 +444,6 @@ const ColigacaoDetalhes = () => {
                           >
                             {partido.papel_coligacao}
                           </span>
-                        )}
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        {partido.data_adesao && (
-                          <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textMuted }}>
-                            Desde {new Date(partido.data_adesao).getFullYear()}
-                          </p>
                         )}
                       </div>
                     </Link>
@@ -589,7 +463,7 @@ const ColigacaoDetalhes = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                     {deputados.map((deputado, index) => (
                       <motion.div
-                        key={deputado.id}
+                        key={deputado.id ?? `${deputado.circulo}-${deputado.nome}`}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
@@ -603,30 +477,16 @@ const ColigacaoDetalhes = () => {
                         onMouseEnter={(e) => e.currentTarget.style.borderColor = tokens.colors.primary}
                         onMouseLeave={(e) => e.currentTarget.style.borderColor = tokens.colors.border}
                       >
-                        <Link
-                          to={`/deputados/${deputado.id_cadastro || deputado.id}`}
-                          style={{ textDecoration: 'none' }}
-                        >
-                          <h4
-                            style={{
-                              fontFamily: tokens.fonts.body,
-                              fontWeight: 600,
-                              color: tokens.colors.textPrimary,
-                              margin: 0,
-                              transition: 'color 150ms ease',
-                            }}
-                            onMouseEnter={(e) => e.target.style.color = tokens.colors.primary}
-                            onMouseLeave={(e) => e.target.style.color = tokens.colors.textPrimary}
+                        {deputado.id_cadastro ? (
+                          <Link
+                            to={`/deputados/${deputado.id_cadastro}`}
+                            style={{ textDecoration: 'none' }}
                           >
-                            {deputado.nome}
-                          </h4>
-                          <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary, marginTop: '0.25rem' }}>
-                            {deputado.partido_sigla}
-                          </p>
-                          <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.textMuted, marginTop: '0.5rem' }}>
-                            {deputado.circulo}
-                          </p>
-                        </Link>
+                            <DeputyCard deputado={deputado} linked />
+                          </Link>
+                        ) : (
+                          <DeputyCard deputado={deputado} />
+                        )}
                       </motion.div>
                     ))}
                   </div>
@@ -634,106 +494,75 @@ const ColigacaoDetalhes = () => {
               </div>
             )}
 
-            {/* Timeline Tab */}
-            {activeTab === 'timeline' && (
-              <div style={{ position: 'relative' }}>
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '32px',
-                    top: 0,
-                    bottom: 0,
-                    width: '2px',
-                    backgroundColor: tokens.colors.border,
-                  }}
-                />
-                {timelineEvents.map((event, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.2 }}
-                    style={{
-                      position: 'relative',
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      marginBottom: '2rem',
-                    }}
-                  >
-                    <div
-                      style={{
-                        zIndex: 10,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '50%',
-                        backgroundColor: event.type === 'formation' ? '#E8F5E9' : '#FFEBEE',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Calendar
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          color: event.type === 'formation' ? tokens.colors.primary : tokens.colors.accent,
-                        }}
-                      />
-                    </div>
-                    <div style={{ marginLeft: '1.5rem' }}>
-                      <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textMuted }}>
-                        {formatDate(event.date)}
-                      </p>
-                      <h3
-                        style={{
-                          fontFamily: tokens.fonts.body,
-                          fontSize: '1.125rem',
-                          fontWeight: 600,
-                          color: tokens.colors.textPrimary,
-                          marginTop: '0.25rem',
-                        }}
-                      >
-                        {event.title}
-                      </h3>
-                      <p style={{ fontFamily: tokens.fonts.body, color: tokens.colors.textSecondary, marginTop: '0.25rem' }}>
-                        {event.description}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+            {/* Legislatures Tab */}
+            {activeTab === 'legislaturas' && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: tokens.fonts.body, fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', color: tokens.colors.textMuted, borderBottom: `1px solid ${tokens.colors.border}` }}>
+                      <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Legislatura</th>
+                      <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Eleições</th>
+                      <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Lista no boletim</th>
+                      <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Partidos</th>
+                      <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Deputados eleitos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dados.legislaturas.map((leg) => (
+                      <tr key={leg.legislatura} style={{ borderBottom: `1px solid ${tokens.colors.border}`, color: tokens.colors.textPrimary }}>
+                        <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>{leg.legislatura}</td>
+                        <td style={{ padding: '0.5rem 0.75rem' }}>{leg.ano_eleicao}</td>
+                        <td style={{ padding: '0.5rem 0.75rem', fontFamily: tokens.fonts.mono }}>{(leg.listas || []).join(', ')}</td>
+                        <td style={{ padding: '0.5rem 0.75rem' }}>
+                          {(leg.partidos || []).map((p, i) => (
+                            <span key={p.sigla}>
+                              {i > 0 && ', '}
+                              {p.sigla}
+                              {seatsNote(p.com_lugares) && (
+                                <span style={{ color: tokens.colors.textMuted }}> ({seatsNote(p.com_lugares)})</span>
+                              )}
+                            </span>
+                          ))}
+                        </td>
+                        <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: tokens.fonts.mono }}>{formatNumber(leg.deputados)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
 
-            {/* Performance Tab */}
-            {activeTab === 'performance' && (
-              <div
-                style={{
-                  backgroundColor: tokens.colors.bgSecondary,
-                  border: `1px solid ${tokens.colors.border}`,
-                  borderRadius: '4px',
-                }}
-              >
-                <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${tokens.colors.border}` }}>
-                  <h3 style={{ fontFamily: tokens.fonts.body, fontSize: '1rem', fontWeight: 600, color: tokens.colors.textPrimary, margin: 0 }}>
-                    Desempenho Eleitoral
-                  </h3>
-                  <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textMuted, marginTop: '0.25rem' }}>
-                    Evolução dos resultados eleitorais da coligação
-                  </p>
-                </div>
-                <div style={{ padding: '2rem 1.25rem' }}>
-                  <p style={{ fontFamily: tokens.fonts.body, color: tokens.colors.textMuted, textAlign: 'center' }}>
-                    Dados de desempenho eleitoral em desenvolvimento
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
     </div>
   );
 };
+
+// One deputy elected on the coalition's lists. A published name the data could not match to a
+// deputy (#197) still counts, without a page to link to or a group.
+const DeputyCard = ({ deputado, linked = false }) => (
+  <>
+    <h4
+      style={{
+        fontFamily: tokens.fonts.body,
+        fontWeight: 600,
+        color: tokens.colors.textPrimary,
+        margin: 0,
+        transition: 'color 150ms ease',
+      }}
+      onMouseEnter={linked ? (e) => { e.target.style.color = tokens.colors.primary; } : undefined}
+      onMouseLeave={linked ? (e) => { e.target.style.color = tokens.colors.textPrimary; } : undefined}
+    >
+      {deputado.nome}
+    </h4>
+    <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.875rem', color: tokens.colors.textSecondary, marginTop: '0.25rem' }}>
+      {deputado.partido_sigla || (linked ? null : 'sem página de deputado')}
+    </p>
+    <p style={{ fontFamily: tokens.fonts.body, fontSize: '0.75rem', color: tokens.colors.textMuted, marginTop: '0.5rem' }}>
+      {deputado.circulo}
+    </p>
+  </>
+);
 
 export default ColigacaoDetalhes;

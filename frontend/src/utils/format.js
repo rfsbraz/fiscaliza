@@ -17,3 +17,30 @@ export const plural = (count, one, many) => `${formatNumber(count)} ${count === 
 // "XVII Legislatura", but the first assembly is the Assembleia Constituinte (#108). Mirrors
 // legislature_designation in app/services/core.py.
 export const legislatureName = (numero) => (numero === 'Constituinte' ? 'Assembleia Constituinte' : `${numero} Legislatura`);
+
+// "sem lugares" for a coalition party that won no seat on any of its lists (com_lugares false,
+// #181), else null.
+export const seatsNote = (comLugares) => (comLugares === false ? 'sem lugares' : null);
+
+// A coalition page counts the deputies elected on its lists (#197, contagem "eleitos"). The
+// second figure is who held the seat on the legislature's last day, or on the data date while it
+// is open: "75 em funções no último dia da legislatura", "87 em funções a 21/10/2026". Null when
+// the page already counts the deputies in office (a legislature with no seats per list).
+const dayMonthYear = (iso) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '');
+
+export const seatedNote = ({ contagem, deputados_em_funcoes, data_em_funcoes, legislatura_aberta } = {}) => {
+  if (contagem !== 'eleitos' || deputados_em_funcoes === null || deputados_em_funcoes === undefined) return null;
+  const when = legislatura_aberta && data_em_funcoes
+    ? `a ${dayMonthYear(data_em_funcoes)}`
+    : 'no último dia da legislatura';
+  return `${formatNumber(deputados_em_funcoes)} em funções ${when}`;
+};
+
+// Which list and elections a coalition page is (#111): its region, if it ran only in the Açores
+// or Madeira, and its election years. "Açores, 2025", "2024 e 2025", "1987 a 2025". Same text as
+// coalition_scope in deploy/pages.py.
+export const coalitionScope = ({ ambito, eleicoes } = {}) => {
+  let years = (eleicoes || []).filter((y) => y !== null && y !== undefined).map(String);
+  if (years.length > 2) years = [`${years[0]} a ${years[years.length - 1]}`];
+  return [ambito, years.join(' e ')].filter(Boolean).join(', ');
+};

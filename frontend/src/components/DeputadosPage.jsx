@@ -7,6 +7,24 @@ import { tokens } from '../styles/tokens';
 import { LoadingSpinner, Card, PageHeader, Pagination } from './common';
 import { formatNumber, plural } from '../utils/format';
 
+// The status badge of a card, from the data: a seat now, then the latest AR situation. Every
+// suspension reads "Mandato suspenso", as on the deputy page (#201).
+export const statusBadge = (deputado) => {
+  const status = deputado.mandate_status || deputado.career_info?.mandate_status;
+  if (deputado.is_seated || deputado.career_info?.is_seated) return 'Em Exercício';
+  if (status && status.startsWith('Suspenso')) return 'Mandato suspenso';
+  if (status === 'Renunciou') return 'Renunciou';
+  return deputado.career_info?.is_currently_active ? 'Ativo' : 'Inativo';
+};
+
+const BADGE_TONES = {
+  'Em Exercício': { color: tokens.colors.primary, background: '#F0F7F4' },
+  'Mandato suspenso': { color: '#92400E', background: '#FEF3C7' },
+  Renunciou: { color: '#991B1B', background: '#FEE2E2' },
+  Ativo: { color: tokens.colors.primary, background: '#F0F7F4' },
+  Inativo: { color: tokens.colors.textMuted, background: '#F5F5F5' },
+};
+
 const DeputadosPage = () => {
   const [deputados, setDeputados] = useState([])
   const [loading, setLoading] = useState(true)
@@ -259,136 +277,31 @@ const DeputadosPage = () => {
                           color: tokens.colors.textSecondary,
                         }}
                       >
-                        {deputado.partido_sigla} · {deputado.circulo}
+                        {[deputado.partido_sigla, deputado.circulo].filter(Boolean).join(' · ')}
                       </span>
                       {/* Mandate Status Badge */}
                       {(() => {
-                        const status = deputado.mandate_status || deputado.career_info?.mandate_status;
-                        const isSeated = deputado.is_seated || deputado.career_info?.is_seated;
-                        const isActive = deputado.career_info?.is_currently_active;
-
-                        // Determine badge style based on status
-                        if (isSeated) {
-                          return (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: '0.125rem 0.5rem',
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.6875rem',
-                                fontWeight: 600,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.03em',
-                                color: tokens.colors.primary,
-                                backgroundColor: '#F0F7F4',
-                                borderRadius: '2px',
-                              }}
-                            >
-                              Em Exercício
-                            </span>
-                          );
-                        } else if (status === 'Suspenso(Eleito)') {
-                          return (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: '0.125rem 0.5rem',
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.6875rem',
-                                fontWeight: 600,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.03em',
-                                color: '#92400E',
-                                backgroundColor: '#FEF3C7',
-                                borderRadius: '2px',
-                              }}
-                            >
-                              Suspenso
-                            </span>
-                          );
-                        } else if (status === 'Renunciou') {
-                          return (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: '0.125rem 0.5rem',
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.6875rem',
-                                fontWeight: 600,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.03em',
-                                color: '#991B1B',
-                                backgroundColor: '#FEE2E2',
-                                borderRadius: '2px',
-                              }}
-                            >
-                              Renunciou
-                            </span>
-                          );
-                        } else if (status && status.startsWith('Suspenso')) {
-                          return (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: '0.125rem 0.5rem',
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.6875rem',
-                                fontWeight: 600,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.03em',
-                                color: '#92400E',
-                                backgroundColor: '#FEF3C7',
-                                borderRadius: '2px',
-                              }}
-                            >
-                              Suspenso
-                            </span>
-                          );
-                        } else if (isActive) {
-                          return (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: '0.125rem 0.5rem',
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.6875rem',
-                                fontWeight: 600,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.03em',
-                                color: tokens.colors.primary,
-                                backgroundColor: '#F0F7F4',
-                                borderRadius: '2px',
-                              }}
-                            >
-                              Ativo
-                            </span>
-                          );
-                        } else {
-                          return (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: '0.125rem 0.5rem',
-                                fontFamily: tokens.fonts.body,
-                                fontSize: '0.6875rem',
-                                fontWeight: 600,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.03em',
-                                color: tokens.colors.textMuted,
-                                backgroundColor: '#F5F5F5',
-                                borderRadius: '2px',
-                              }}
-                            >
-                              Inativo
-                            </span>
-                          );
-                        }
+                        const label = statusBadge(deputado);
+                        const tone = BADGE_TONES[label];
+                        return (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '0.125rem 0.5rem',
+                              fontFamily: tokens.fonts.body,
+                              fontSize: '0.6875rem',
+                              fontWeight: 600,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.03em',
+                              color: tone.color,
+                              backgroundColor: tone.background,
+                              borderRadius: '2px',
+                            }}
+                          >
+                            {label}
+                          </span>
+                        );
                       })()}
                       {deputado.career_info?.is_multi_term && (
                         <span
@@ -434,22 +347,14 @@ const DeputadosPage = () => {
                     </div>
                   )}
                   <div>
-                    {deputado.career_info?.is_currently_active ? (
-                      <>
-                        <span style={{ color: tokens.colors.textMuted }}>Mandato Atual:</span>{' '}
-                        {deputado.legislatura_nome}
-                      </>
-                    ) : deputado.career_info?.latest_completed_mandate ? (
-                      <>
-                        <span style={{ color: tokens.colors.textMuted }}>Último mandato:</span>{' '}
-                        {deputado.career_info.latest_completed_mandate.legislatura} ({deputado.career_info.latest_completed_mandate.periodo})
-                      </>
-                    ) : (
-                      <>
-                        <span style={{ color: tokens.colors.textMuted }}>Mandato:</span>{' '}
-                        {deputado.legislatura_nome}
-                      </>
-                    )}
+                    {(() => {
+                      const [label, value] = mandateSummary(deputado);
+                      return (
+                        <>
+                          <span style={{ color: tokens.colors.textMuted }}>{label}</span> {value}
+                        </>
+                      );
+                    })()}
                   </div>
                   {deputado.career_info?.is_multi_term && (
                     <div style={{ fontSize: '0.75rem', color: tokens.colors.primary }}>
@@ -491,5 +396,21 @@ const DeputadosPage = () => {
     </motion.div>
   )
 }
+
+// The mandate line of a card. "Mandato Atual" needs a seat held in the current legislature, even
+// if suspended now: an election without a seat is not a mandate (#107), so it reads "Eleito na",
+// as on the deputy page.
+export const mandateSummary = (deputado) => {
+  const career = deputado.career_info;
+  if (career?.is_currently_active && career?.seated_in_current_legislature) {
+    return ['Mandato Atual:', deputado.legislatura_nome];
+  }
+  if (career?.is_currently_active) return ['Eleito na', `${deputado.legislatura_nome} Legislatura`];
+  const completed = career?.latest_completed_mandate;
+  if (!career?.in_current_legislature && completed) {
+    return ['Último mandato:', `${completed.legislatura} (${completed.periodo})`];
+  }
+  return ['Mandato:', deputado.legislatura_nome];
+};
 
 export default DeputadosPage

@@ -6,10 +6,23 @@ Ids and made-up names only, no real people. Two legislatures:
 - XVII, open, extract date 2026-10-19: people 1 to 229 and 232 hold its 230 seats with the
   known split (KNOWN_SPLIT). Person 231 sat for PS until 2025-12-31 and resigned; person 232 took
   the seat on 2026-01-01. Person 500 is a substitute who never sat.
+- Elected for XVII but not seated (#107): persons 302 and 303 sat in XVI and were elected for
+  XVII with the mandate suspended (Suspenso(Eleito)) from its first day. 303 also has the AR's
+  one-day Efetivo period on 2025-06-05, next to a Suspenso(Eleito) period from that same day.
+  Person 501 was elected for XVII and never sat. None of them has a group in XVII.
 
 Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) and every
-tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP) in both legislatures, and
-FRS (PS) in XVI only.
+tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP, PEV) in both legislatures, and
+FRS (PS) in XVI only. In XVI the AD list also has PPM without seats and the CDU list has ID, and
+PEV wins seats there; in XVII PEV has none (#214, as the seed has CDU, AD 1979 and AD 2024). In
+XVII AD has a second list, AD_ACORES, that won seats only in circle 19 (the Açores, the one
+circle with a name), with PPM as a component without seats. Seats per circle and list (ballot_list_seats) exist for both legislatures: PSD
+and CDS-PP deputies of circles 21 and 22 were not elected on an AD list. The coalition rows carry
+an election link ending in the election year (2024 for XVI, 2025 for XVII), as the seed does.
+The deputies elected on each list (ballot_list_elected) exist for XVI only, as the release has
+them up to VI: one per seat, the AD-LISTA row with the lowest list position in circle 2 without
+a cadastro_id (a published name the release could not match). XVII has none, so its elected
+deputies come from the mandates.
 
 Activity comes in sets (ACTIVITY_SETS below) that go into the same tables with their own ids,
 so a page test can load only the set its hand-checked figures come from; the contracts and the
@@ -26,6 +39,8 @@ static export load all of them.
   deputy set's 4 XVII interventions on 3 days of 2026.
 - votes (tests/site_votes.py): votes 1 to 9 and 20 to 34, initiatives 61 to 68 and 100 to 121,
   interventions 5001 to 5003. The voting tests load it alone.
+- questions (tests/site_questions.py): written questions 6001 to 6003 (XVI) and 7001 to 7007
+  (XVII), with their authors and recipients.
 
 Plenary attendance (_attendance below, the plenary_attendance mart) goes in with the deputies
 set. Each list holds whoever had a seat that day, everyone PR (present) unless listed here.
@@ -48,6 +63,7 @@ import duckdb
 
 from fiscaliza_data import sync
 from tests.site_agenda import agenda_tables
+from tests.site_questions import question_tables
 from tests.site_votes import voting_tables
 
 TAG = "data-2026-10-20"
@@ -68,6 +84,14 @@ XVI_GROUPS = ["PSD", "PS", "CH", "IL", "BE", "PCP", "L", "CDS-PP", "PAN"]
 CIRCLES = 22
 XVI = ("XVI", 107, "2024-03-26", "2025-06-02")
 XVII = ("XVII", 108, "2025-06-03", None)
+AD_ACORES = "AD-ACORES"
+ELECTION_YEAR = {"XVI": 2024, "XVII": 2025}
+ELECTION_DATE = {"XVI": "2024-03-10", "XVII": "2025-05-18"}
+
+
+def circle_name(i):
+    """Circle 19 is the Açores, where the second AD list ran; the others are numbered."""
+    return "Açores" if i == 19 else f"Círculo {i}"
 
 
 def _born(cad):
@@ -106,6 +130,11 @@ def _rows():
     mandate(XVII, 232, "Efetivo Definitivo", True, "2026-01-01", None)
     member(XVII, 232, "PS", "2026-01-01", None)
     mandate(XVII, 500, "Suplente", False, XVII[2], None)
+    mandate(XVII, 302, "Suspenso(Eleito)", False, XVII[2], None)
+    mandate(XVII, 303, "Suspenso(Eleito)", False, XVII[2], "2025-06-04")
+    mandate(XVII, 303, "Efetivo", True, "2025-06-05", "2025-06-05")
+    mandate(XVII, 303, "Suspenso(Eleito)", False, "2025-06-05", None)
+    mandate(XVII, 501, "Suspenso(Eleito)", False, XVII[2], None)
 
     xvi_people = list(range(1, 51)) + list(range(300, 480))
     for i, cad in enumerate(xvi_people):
@@ -127,18 +156,108 @@ def _rows():
         for cad in people
     ]
     coalitions = []
-    for leg, name, members in [
-        (XVI, "AD", ["PSD", "CDS-PP"]),
-        (XVI, "CDU", ["PCP"]),
-        (XVI, "FRS", ["PS"]),
-        (XVII, "AD", ["PSD", "CDS-PP"]),
-        (XVII, "CDU", ["PCP"]),
+    for leg, name, ballot, members in [
+        (XVI, "AD", "AD-LISTA", ["PSD", "CDS-PP", "PPM"]),
+        (XVI, "CDU", "CDU-LISTA", ["PCP", "PEV", "ID"]),
+        (XVI, "FRS", "FRS-LISTA", ["PS"]),
+        (XVII, "AD", "AD-LISTA", ["PSD", "CDS-PP"]),
+        (XVII, "AD", AD_ACORES, ["PSD", "CDS-PP", "PPM"]),
+        (XVII, "CDU", "CDU-LISTA", ["PCP", "PEV"]),
     ]:
         for group in members:
+            has_seats = group != "PPM" and (group, leg) != ("PEV", XVII)
             coalitions.append(
-                (leg[0], name, f"{name}-LISTA", f"Coligação {name}", group, f"Grupo {group}", None, None, None)
+                (
+                    leg[0],
+                    name,
+                    ballot,
+                    f"Coligação {name}",
+                    group,
+                    f"Grupo {group}" if has_seats else None,
+                    None,
+                    f"https://example.org/eleicoes-{ELECTION_YEAR[leg[0]]}",
+                    None,
+                    has_seats,
+                )
             )
     return mandates, memberships, deputies, coalitions
+
+
+def _ballot_list_seats(mandates, memberships):
+    """Seats per circle and list for XVI and XVII, as the release has them from I-B on. Each
+    group's seats in a circle go to one list: PSD and CDS-PP to AD-LISTA in circles 1 to 18 and 20,
+    to AD-LISTA in XVI and AD_ACORES in XVII in circle 19 (the Açores), and to no coalition in 21
+    and 22; PCP to CDU-LISTA, PS to FRS-LISTA in XVI, the rest to a list named after the group.
+    The seats are those of the deputies seated on the legislature's last day (the extract date for
+    XVII). Circle 5 carries the footnote mark the AR gives some circles (as in "Viseu a)")."""
+    out = []
+    for leg, end_date in ((XVI, XVI[3]), (XVII, None)):
+        groups = {cad: group for lg, cad, _, group, *_ in memberships if lg == leg[0]}
+        seats = {}
+        for lg, cad, _, circle, _, effective, _, end in mandates:
+            if lg != leg[0] or not effective or end != end_date or cad not in groups:
+                continue
+            group = groups[cad]
+            ballot = {"PCP": "CDU-LISTA", **({"PS": "FRS-LISTA"} if leg is XVI else {})}.get(group, group)
+            if group in ("PSD", "CDS-PP"):
+                ballot = AD_ACORES if circle == 19 and leg is XVII else "AD-LISTA" if circle <= 20 else group
+            seats[(circle, ballot)] = seats.get((circle, ballot), 0) + 1
+        out += [
+            (
+                leg[0],
+                ELECTION_DATE[leg[0]],
+                f"{circle:02d}0000",
+                circle_name(circle) + (" a)" if circle == 5 else ""),
+                ballot,
+                n,
+                None,
+            )
+            for (circle, ballot), n in sorted(seats.items())
+        ]
+    return out
+
+
+ELECTED_UNMATCHED = "Nome Publicado Sem Ligação"
+
+
+def _ballot_list_elected(mandates, memberships):
+    """The deputies elected on each list in XVI, one row per seat of _ballot_list_seats: the
+    deputies seated on its last day, in list order by cadastro_id. The first AD-LISTA row of
+    circle 2 has no cadastro_id."""
+    seats = [s for s in _ballot_list_seats(mandates, memberships) if s[0] == "XVI"]
+    groups = {cad: group for lg, cad, _, group, *_ in memberships if lg == "XVI"}
+    people = {}
+    for lg, cad, _, circle, _, effective, _, end in mandates:
+        if lg == "XVI" and effective and end == XVI[3] and cad in groups:
+            people.setdefault(circle, []).append(cad)
+    out = []
+    for _, election, code, _, ballot, n, _ in seats:
+        circle = int(code[:2])
+        on_list = [cad for cad in sorted(people[circle]) if _xvi_ballot(groups[cad], circle) == ballot]
+        assert len(on_list) == n, (circle, ballot)
+        for position, cad in enumerate(on_list, start=1):
+            unmatched = ballot == "AD-LISTA" and circle == 2 and position == 1
+            out.append(
+                (
+                    "XVI",
+                    election,
+                    code,
+                    circle_name(circle),
+                    ballot,
+                    position,
+                    ELECTED_UNMATCHED if unmatched else f"Nome Completo {cad}",
+                    None if unmatched else cad,
+                    "unmatched" if unmatched else "exact",
+                    None,
+                )
+            )
+    return out
+
+
+def _xvi_ballot(group, circle):
+    if group in ("PSD", "CDS-PP"):
+        return "AD-LISTA" if circle <= 20 else group
+    return {"PCP": "CDU-LISTA", "PS": "FRS-LISTA"}.get(group, group)
 
 
 def _activity():
@@ -258,6 +377,10 @@ def _activity():
         ("XV", "XV-11", 1, 11, None, False, "Deputado", "ar_open_data"),
         ("XV", "XV-12", 2, 12, None, None, "Deputado", "ar_open_data"),
         ("XVI", "XVI-13", 301, 13, None, True, "Deputado", "ar_open_data"),
+        # Two V3 declarations in one legislature, as the AR publishes them: no id and no version date,
+        # newest first in the file, so the key's last number counts them from the newest (#168).
+        ("XV", "XV-90-2", 90, None, None, False, "Deputado", "ar_open_data"),
+        ("XV", "XV-90-1", 90, None, None, False, "Deputado", "ar_open_data"),
     ]
     interests = [
         # legislature, declaration_key, item_number, cadastro_id, category, description, entity, share,
@@ -273,6 +396,12 @@ def _activity():
         # An older declaration: the whole sentence is in the description, with no entity.
         ("XV", "XV-12", 1, 2, "activity", "Deputada à Assembleia da República", None, None, None, "2011", None),
         ("XVI", "XVI-13", 1, 301, "activity", "Deputado", "Assembleia da República", None, None, None, None),
+        # The first declaration of the legislature lists only a social position; the update adds
+        # the activities.
+        ("XV", "XV-90-2", 1, 90, "social_position", "Presidente", "Assembleia Municipal", None, None, None, None),
+        ("XV", "XV-90-1", 1, 90, "activity", "Administrador", "Fundação Exemplo", None, None, "2020-03-29", None),
+        ("XV", "XV-90-1", 2, 90, "activity", "Secretário de Estado", "Governo", None, None, "2015-11", "2019-10"),
+        ("XV", "XV-90-1", 3, 90, "social_position", "Presidente", "Assembleia Municipal", None, None, None, None),
     ]
     return {
         "initiatives": (
@@ -421,7 +550,12 @@ def _deputies():
     return {**_activity(), **_attendance()}
 
 
-ACTIVITY_SETS = {"deputies": _deputies, "agenda": agenda_tables, "votes": voting_tables}
+ACTIVITY_SETS = {
+    "deputies": _deputies,
+    "agenda": agenda_tables,
+    "votes": voting_tables,
+    "questions": question_tables,
+}
 
 
 def _tables(sets):
@@ -470,7 +604,7 @@ def build_release(root, sets=tuple(ACTIVITY_SETS)):
     con.execute("create table electoral_circles (legislature varchar, circle_id integer, name varchar)")
     con.executemany(
         "insert into electoral_circles values (?, ?, ?)",
-        [(leg[0], i, f"Círculo {i}") for leg in (XVI, XVII) for i in range(1, CIRCLES + 1)],
+        [(leg[0], i, circle_name(i)) for leg in (XVI, XVII) for i in range(1, CIRCLES + 1)],
     )
     con.execute("create table parliamentary_groups (legislature varchar, group_acronym varchar, name varchar)")
     con.executemany(
@@ -480,9 +614,25 @@ def build_release(root, sets=tuple(ACTIVITY_SETS)):
     con.execute(
         "create table coalitions (legislature varchar, coalition varchar, ballot_acronym varchar, "
         "coalition_name varchar, group_code varchar, group_name varchar, source_url varchar, "
-        "election_url varchar, note varchar)"
+        "election_url varchar, note varchar, has_seats boolean)"
     )
-    con.executemany("insert into coalitions values (?, ?, ?, ?, ?, ?, ?, ?, ?)", coalitions)
+    con.executemany("insert into coalitions values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", coalitions)
+    con.execute(
+        "create table ballot_list_seats (legislature varchar, election_date date, circle_code varchar, "
+        "circle_name varchar, ballot_acronym varchar, seats integer, source_url varchar)"
+    )
+    con.executemany(
+        "insert into ballot_list_seats values (?, ?, ?, ?, ?, ?, ?)", _ballot_list_seats(mandates, memberships)
+    )
+    con.execute(
+        "create table ballot_list_elected (legislature varchar, election_date date, circle_code varchar, "
+        "circle_name varchar, ballot_acronym varchar, list_position integer, published_name varchar, "
+        "cadastro_id bigint, match varchar, source_url varchar)"
+    )
+    con.executemany(
+        "insert into ballot_list_elected values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        _ballot_list_elected(mandates, memberships),
+    )
     tables = _tables(sets)
     for table, (columns, rows) in tables.items():
         con.execute(f"create table {table} ({columns})")
@@ -497,6 +647,8 @@ def build_release(root, sets=tuple(ACTIVITY_SETS)):
         "electoral_circles",
         "parliamentary_groups",
         "coalitions",
+        "ballot_list_seats",
+        "ballot_list_elected",
         *tables,
     ):
         path = out / f"{mart}.parquet"

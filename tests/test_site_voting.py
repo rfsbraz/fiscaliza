@@ -105,18 +105,12 @@ def test_deputy_distribution_counts_known_positions_only(con):
     assert "1" in data["data_sources"]["note"]
 
 
-def test_deputy_alignment_with_group_counts_votes_both_cast(con):
-    discipline = voting.deputado_voting_analytics(con, 1)["party_discipline"]
-    assert discipline["aligned_votes"] == 4
-    assert discipline["total_votes"] == 5
-    assert discipline["overall_alignment"] == 0.8
-    assert discipline["monthly"] == [
-        {"month": "2025-07", "aligned_votes": 1, "total_votes": 1},
-        {"month": "2025-09", "aligned_votes": 1, "total_votes": 1},
-        {"month": "2025-11", "aligned_votes": 1, "total_votes": 1},
-        {"month": "2026-02", "aligned_votes": 1, "total_votes": 1},
-        {"month": "2026-05", "aligned_votes": 0, "total_votes": 1},
-    ]
+def test_no_alignment_rate_with_the_own_group(con):
+    # #109: with no per-deputy roll call, an alignment rate with the own group is the group's
+    # position by construction. The page counts the named different votes instead.
+    data = voting.deputado_voting_analytics(con, 1)
+    assert "party_discipline" not in data
+    assert len(data["dissent_votes"]) == 1
 
 
 def test_deputy_participation_by_day(con):
@@ -224,12 +218,10 @@ def test_joint_initiatives_count_for_each_group(con):
 
 def test_party_cohesion_by_initiative_type(con):
     cohesion = {c["type_code"]: c for c in voting.partido_voting_analytics(con, "PSD")["cohesion_by_theme"]}
-    assert (cohesion["J"]["total_votes"], cohesion["J"]["cohesive_votes"], cohesion["J"]["cohesion_score"]) == (
-        4,
-        1,
-        0.25,
-    )
-    assert cohesion["R"]["cohesion_score"] == 1.0
+    assert (cohesion["J"]["total_votes"], cohesion["J"]["cohesive_votes"]) == (4, 1)
+    assert cohesion["R"]["total_votes"] == cohesion["R"]["cohesive_votes"]
+    # A count for the group alone, with no rate to compare across groups (#109).
+    assert "cohesion_score" not in cohesion["J"]
     assert cohesion["J"]["tema"] == "Projeto de Lei"
 
 
@@ -292,3 +284,84 @@ def test_voting_routes_serve_json(data_dir):
     assert client.get("/api/partidos/CDS-PP/voting-analytics?legislatura=17").status_code == 200
     assert client.get("/api/deputados/999999/voting-analytics").status_code == 404
     assert client.get("/api/partidos/XYZ/voting-analytics").status_code == 404
+
+
+# Framing on the page (#109): the AR publishes no per-deputy roll call, so the tab shows the
+# group's position, the named different votes as a count, and no absences or alignment rate.
+
+DEPUTY_TAB = ROOT / "frontend" / "src" / "components" / "VotingAnalytics.jsx"
+PARTY_TAB = ROOT / "frontend" / "src" / "components" / "PartyVotingAnalytics.jsx"
+
+
+def test_deputy_tab_shows_the_group_position_and_the_named_different_votes():
+    source = DEPUTY_TAB.read_text()
+    assert "Sentido de voto do grupo nas votações em que o deputado tinha lugar" in source
+    assert "Votos diferentes do grupo registados:" in source
+    for text in ("Ausência registada", "overall_alignment", "Alinhamento com o Grupo", "Padrão de Votação"):
+        assert text not in source, text
+    assert 'href="#attendance"' in source
+
+
+def test_party_tab_counts_votes_without_different_votes_and_does_not_rank_groups():
+    source = PARTY_TAB.read_text()
+    assert "Votações sem votos diferentes registados" in source
+    for text in ("Coesão", "coesão", "cohesion_score"):
+        assert text not in source, text
+    assert "não serve para comparar grupos" in source
+
+
+# What a vote was about (#110): the AR leaves most vote descriptions empty, so the lists name
+# the initiative the vote decided, then the vote description, then say none was published.
+
+
+def test_a_vote_on_an_initiative_names_it_with_its_phase_and_link(con):
+    (close,) = voting.deputado_voting_analytics(con, 1)["close_votes"]
+    assert close["iniciativa"] == {
+        "tipo": "Projeto de Lei",
+        "numero": 64,
+        "legislatura": "XVII",
+        "titulo": "Iniciativa 64",
+        "fase": "Votação final global",
+        "url": "https://www.parlamento.pt/ActividadeParlamentar/Paginas/DetalheIniciativa.aspx?BID=64",
+    }
+    assert close["outras_iniciativas"] == 0
+    assert close["objeto"] == "Projeto de Lei n.º 64/XVII: Iniciativa 64"
+
+
+def test_a_vote_on_several_initiatives_names_the_first_and_counts_the_rest(con):
+    (dissent,) = voting.deputado_voting_analytics(con, 1)["dissent_votes"]
+    assert dissent["iniciativa"]["numero"] == 68
+    assert dissent["outras_iniciativas"] == 2
+    assert dissent["objeto"] == "Projeto de Lei n.º 68/XVII: Iniciativa 68 e mais 2 iniciativas"
+
+
+@pytest.mark.parametrize(
+    ("description", "initiatives", "subject"),
+    [
+        ("Voto de pesar", [], "Voto de pesar"),
+        ("  ", [], "Votação sem descrição publicada"),
+        (None, [], "Votação sem descrição publicada"),
+        (
+            "Requerimento",
+            [{"type": "Proposta de Lei", "number": 3, "legislature": "XVI", "title": None, "phase": None}],
+            "Proposta de Lei n.º 3/XVI",
+        ),
+        (
+            None,
+            [
+                {"type": "Projeto de Resolução", "number": None, "legislature": "XVI", "title": "T", "phase": None},
+                {"type": "Projeto de Lei", "number": 9, "legislature": "XVI", "title": "U", "phase": None},
+            ],
+            "Projeto de Resolução: T e mais 1 iniciativa",
+        ),
+    ],
+)
+def test_vote_subject_falls_back_to_the_description_then_says_none_was_published(description, initiatives, subject):
+    assert voting.vote_subject(description, initiatives) == subject
+
+
+def test_vote_list_shows_the_initiative_link_and_never_a_blank_subject():
+    source = (ROOT / "frontend" / "src" / "components" / "VotingAnalytics.jsx").read_text()
+    assert "vote.iniciativa.url" in source
+    assert "vote.iniciativa.fase" in source
+    assert "vote.outras_iniciativas" in source

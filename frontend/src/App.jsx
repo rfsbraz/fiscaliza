@@ -1,5 +1,5 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ExternalLink } from 'lucide-react'
 import Navigation from './components/Navigation'
@@ -12,12 +12,23 @@ const PartidosPage = lazy(() => import('./components/PartidosPage'))
 const PartidoDetalhes = lazy(() => import('./components/PartidoDetalhes'))
 const ColigacaoDetalhes = lazy(() => import('./components/ColigacaoDetalhes'))
 const AgendaPage = lazy(() => import('./components/AgendaPage'))
+const PerguntasPage = lazy(() => import('./components/PerguntasPage'))
+const NotFound = lazy(() => import('./components/NotFound'))
+const Metodologia = lazy(() => import('./components/Metodologia'))
 import { apiFetch } from './config/api'
+import { routeTitle } from './utils/routeTitle'
 import './App.css'
 
 const AppContent = () => {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const { pathname } = useLocation()
+  const landing = useRef({ path: pathname, title: document.title })
+
+  // A layout effect runs before the pages' own effects, so a page that sets its title still wins.
+  useLayoutEffect(() => {
+    document.title = routeTitle(landing.current, pathname)
+  }, [pathname])
 
   useEffect(() => {
     fetchStats()
@@ -99,6 +110,10 @@ const AppContent = () => {
             <Route path="/partidos/:partidoId" element={<PartidoDetalhes />} />
             <Route path="/coligacoes/:coligacaoId" element={<ColigacaoDetalhes />} />
             <Route path="/agenda" element={<AgendaPage />} />
+            <Route path="/perguntas" element={<PerguntasPage />} />
+            <Route path="/perguntas/:legislatura" element={<PerguntasPage />} />
+            <Route path="/metodologia" element={<Metodologia />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </main>
@@ -197,6 +212,21 @@ const AppContent = () => {
           </div>
 
           <DataAttribution />
+
+          <p style={{ textAlign: 'center', margin: '0.75rem 0 0 0' }}>
+            <Link
+              to="/metodologia"
+              style={{
+                fontFamily: "'Source Sans 3', sans-serif",
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: '#1B4332',
+                textDecoration: 'underline',
+              }}
+            >
+              Metodologia e fontes
+            </Link>
+          </p>
 
           {/* Bottom section with branding */}
           <div

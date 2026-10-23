@@ -9,11 +9,10 @@ on:
 jobs:
   backend-lint:
     name: Backend Lint
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       # Pinned: the legacy baseline in pyproject.toml was taken with this version.
@@ -23,15 +22,14 @@ jobs:
 
   backend-test:
     name: Backend Tests
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       # The static export contract runs the browser code with node (tests/test_static_export.py).
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '20'
       - run: pip install -r requirements.txt
@@ -40,13 +38,12 @@ jobs:
 
   contract-tests:
     name: Contract Tests
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
     # No database server: the contracts are checked against service functions reading a
     # DuckDB file built from synthetic fixture Parquet (tests/site_data.py).
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       # The data layer's pins from requirements.txt, without the old stack's packages.
@@ -57,14 +54,13 @@ jobs:
 
   frontend-build:
     name: Frontend Build
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '20'
           cache: 'npm'
@@ -72,17 +68,3 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-
-  terraform-validate:
-    name: Terraform Validate
-    # My Homeberry self-hosted runner: this repo is private, so no GitHub-hosted minutes.
-    runs-on: [self-hosted, homeberry]
-    defaults:
-      run:
-        working-directory: terraform
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-      - run: terraform fmt -check -recursive
-      - run: terraform init -backend=false
-      - run: terraform validate

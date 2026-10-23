@@ -71,56 +71,20 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
     { id: 'close', label: 'Votações Renhidas', icon: Scale }
   ];
 
-  // Alignment with the deputy's own group, by month
-  const PartyDisciplineChart = () => {
-    const { party_discipline } = analytics || {};
-
-    if (!party_discipline || !party_discipline.monthly || party_discipline.overall_alignment == null) {
-      return (
-        <div className="text-center py-8 text-gray-500">
-          <Shield className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <p>Sem votações com sentido de voto conhecido do deputado e do grupo</p>
-        </div>
-      );
-    }
-
-    const alignment = formatDecimal(party_discipline.overall_alignment * 100, 1);
-
+  // Votes where the record names the deputy with a position different from the group's. The
+  // AR publishes no per-deputy roll call, so this is a count of named votes, not an alignment rate.
+  const DifferentVotesCount = () => {
+    const count = analytics?.dissent_votes?.length ?? 0;
     return (
-      <div className="space-y-6">
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-              <Shield className="h-5 w-5 text-blue-600 mr-2" />
-              Alinhamento com o Grupo Parlamentar
-            </h4>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600">{alignment}%</div>
-              <div className="text-sm text-gray-600">
-                {party_discipline.aligned_votes} de {party_discipline.total_votes} votações
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-            {party_discipline.monthly.map((month) => (
-              <div key={month.month} className="relative">
-                <div className="text-xs text-gray-600 mb-1">{month.month}</div>
-                <div
-                  className="h-8 rounded flex items-center justify-center text-xs font-medium bg-blue-100 text-blue-900"
-                  title={`${month.month}: ${month.aligned_votes}/${month.total_votes} votações com o mesmo sentido do grupo`}
-                >
-                  {month.aligned_votes}/{month.total_votes}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 text-sm text-gray-600">
-            Conta as votações em que o deputado e o seu grupo votaram (a favor, contra ou abstenção).
-            Ausências não contam.
-          </div>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+        <div className="text-lg font-semibold text-gray-900 flex items-center">
+          <Target className="h-5 w-5 text-blue-600 mr-2" />
+          Votos diferentes do grupo registados: {count.toLocaleString('pt-PT')}
         </div>
+        <p className="mt-3 text-sm text-gray-600">
+          Votações em plenário em que o registo da votação nomeia o deputado com um sentido de voto diferente
+          do seu grupo parlamentar. Nas restantes, o registo dá só o sentido de voto do grupo.
+        </p>
       </div>
     );
   };
@@ -139,19 +103,18 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
       );
     }
     
-    const total = Object.values(vote_distribution).reduce((sum, count) => sum + count, 0);
-    
+    // Absences are not shown here: the vote record only names a few. Attendance is on its own tab.
     const voteTypes = [
       { key: 'favor', label: 'A Favor', color: 'bg-green-500', textColor: 'text-green-800' },
       { key: 'contra', label: 'Contra', color: 'bg-red-500', textColor: 'text-red-800' },
-      { key: 'abstencao', label: 'Abstenção', color: 'bg-yellow-500', textColor: 'text-yellow-800' },
-      { key: 'ausente', label: 'Ausência registada', color: 'bg-gray-400', textColor: 'text-gray-800' }
+      { key: 'abstencao', label: 'Abstenção', color: 'bg-yellow-500', textColor: 'text-yellow-800' }
     ];
+    const total = voteTypes.reduce((sum, type) => sum + (vote_distribution[type.key] || 0), 0);
 
     return (
       <div className="space-y-6">
         
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {voteTypes.map(type => {
             const count = vote_distribution[type.key] || 0;
             const percentage = formatDecimal(total > 0 ? (count / total) * 100 : 0, 1);
@@ -186,6 +149,10 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
             })}
           </div>
         </div>
+        <p className="text-sm text-gray-600">
+          A presença em plenário está no separador{' '}
+          <a href="#attendance" className="text-blue-600 underline">Presenças</a>.
+        </p>
       </div>
     );
   };
@@ -308,7 +275,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
     favor: 'A Favor',
     contra: 'Contra',
     abstencao: 'Abstenção',
-    ausente: 'Ausência registada'
+    ausente: 'Ausente'
   };
 
   const voteColors = {
@@ -331,8 +298,28 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <div className="text-sm font-medium text-gray-900 line-clamp-3 leading-relaxed mb-2">
-            {vote.objeto}
+            {vote.iniciativa ? (
+              <>
+                <a
+                  href={vote.iniciativa.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-700 hover:underline"
+                >
+                  {vote.iniciativa.tipo}
+                  {vote.iniciativa.numero != null && ` n.º ${vote.iniciativa.numero}/${vote.iniciativa.legislatura}`}
+                </a>
+                {vote.iniciativa.titulo && `: ${vote.iniciativa.titulo}`}
+                {vote.outras_iniciativas > 0 &&
+                  ` e mais ${vote.outras_iniciativas} ${vote.outras_iniciativas === 1 ? 'iniciativa' : 'iniciativas'}`}
+              </>
+            ) : (
+              vote.objeto
+            )}
           </div>
+          {vote.iniciativa?.fase && (
+            <div className="text-xs text-gray-500 mb-2">{vote.iniciativa.fase}</div>
+          )}
           <div className="flex items-center gap-3 flex-wrap text-xs text-gray-500">
             <span>{vote.data ? new Date(vote.data).toLocaleDateString('pt-PT') : 'Data não disponível'}</span>
             {close && (
@@ -444,20 +431,14 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
   const OverviewChart = () => {
     return (
       <div className="space-y-8">
-        {/* Party Discipline Section */}
-        <div>
-          <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Shield className="h-5 w-5 text-blue-600 mr-2" />
-            Alinhamento com o Grupo
-          </h4>
-          <PartyDisciplineChart />
-        </div>
+        {/* Named votes different from the group */}
+        <DifferentVotesCount />
 
-        {/* Vote Distribution Section */}
+        {/* The group's positions on the votes the deputy had a seat for */}
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <PieChart className="h-5 w-5 text-purple-600 mr-2" />
-            Padrão de Votação
+            Sentido de voto do grupo nas votações em que o deputado tinha lugar
           </h4>
           <VoteDistributionChart />
         </div>

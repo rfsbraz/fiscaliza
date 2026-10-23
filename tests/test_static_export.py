@@ -33,13 +33,17 @@ FLAT = {
     "partidos.json": "partidos",
     "coligacoes.json": "coligacoes?include_inactive=false",
     "coligacoes-todas.json": "coligacoes?include_inactive=true",
-    "coligacoes/ad.json": "coligacoes/AD",
-    "coligacoes/ad/deputados.json": "coligacoes/AD/deputados",
-    "coligacoes/ad/partidos.json": "coligacoes/AD/partidos",
+    "coligacoes/ad-2024.json": "coligacoes/ad-2024",
+    "coligacoes/ad-2024/deputados.json": "coligacoes/ad-2024/deputados",
+    "coligacoes/ad-2024/partidos.json": "coligacoes/ad-2024/partidos",
+    "coligacoes/ad-acores-2025.json": "coligacoes/ad-acores-2025",
     "votacoes/recentes/5.json": "votacoes/recentes?limite=5",
     "votacoes/recentes/10.json": "votacoes/recentes",
     "estatisticas/atividade.json": "estatisticas/atividade",
     "health.json": "health",
+    "perguntas.json": "perguntas",
+    "perguntas/xvii.json": "perguntas/XVII",
+    "perguntas/xvi.json": "perguntas/XVI",
 }
 
 
@@ -134,6 +138,20 @@ def test_deputy_search_index_holds_everyone_in_list_order(out, client):
     assert index["deputados"][:20] == first
 
 
+def test_elected_people_who_never_sat_get_a_file(out):
+    # #107: 501 was elected for XVII and never sat; 302 sat in XVI and is suspended in XVII.
+    index = json.loads((out / "deputados.json").read_text())
+    ids = [d["id_cadastro"] for d in index["deputados"]]
+    assert 501 in ids and 500 not in ids
+    assert index["registos"][ids.index(302)] == 2
+    never = json.loads((out / "deputados" / "501.json").read_text())
+    assert never["legislatura_atual"] == "XVII" and list(never["atividades"]) == ["XVII"]
+    assert never["voting_analytics"] == {} and never["attendance"]["legislaturas"] == []
+    suspended = json.loads((out / "deputados" / "302.json").read_text())
+    assert suspended["legislatura_atual"] == "XVII" and list(suspended["atividades"]) == ["XVI", "XVII"]
+    assert list(suspended["voting_analytics"]) == ["XVI"]
+
+
 def test_render_stays_under_the_static_host_limits(out):
     assert export.MAX_FILES == 20_000
     assert export.MAX_FILE_BYTES == 25 * 1024 * 1024
@@ -208,7 +226,11 @@ def _requests(con, flask_app):
     """Every request shape the frontend makes, over the fixture's people, parties and
     coalitions, plus search, paging and interventions filters."""
     reqs = list(FLAT.values())
-    reqs += [f"coligacoes/{c}{s}" for c in ("CDU", "FRS", "NOPE") for s in ("", "/deputados", "/partidos")]
+    reqs += [
+        f"coligacoes/{c}{s}"
+        for c in ("CDU", "FRS", "ad-acores-2025", "AD", "NOPE")
+        for s in ("", "/deputados", "/partidos")
+    ]
     reqs += [
         "deputados?page=1&per_page=20&active_only=false",
         "deputados?page=2&per_page=20&active_only=false",
@@ -222,16 +244,17 @@ def _requests(con, flask_app):
         "deputados?page=1&per_page=20&active_only=false&search=Deputádo%204",
         "deputados?page=1&per_page=20&active_only=false&search=nobody",
     ]
-    people = [r[0] for r in con.execute("select distinct cadastro_id from deputy_legislatures order by 1").fetchall()]
-    sample = sorted({*people[:3], *people[-3:], 1, 2, 90, 231, 232, 301})
+    people = [r[0] for r in con.execute("select distinct cadastro_id from deputy_elections order by 1").fetchall()]
+    sample = sorted({*people[:3], *people[-3:], 1, 2, 90, 231, 232, 301, 302, 303, 501})
     legs = [r[0] for r in con.execute("select legislature from legislature_days").fetchall()]
     for cad in [*sample, 999999]:
         reqs += [f"deputados/{cad}/detalhes", f"deputados/{cad}/conflitos-interesse", f"deputados/{cad}/attendance"]
         reqs += [f"deputados/{cad}/voting-analytics"]
         reqs += [f"deputados/{cad}/voting-analytics?legislatura={leg}" for leg in legs]
         reqs += [f"deputados/{cad}/atividades?page=1&per_page=50"]
-        # The page only offers the legislatures the person served in; others are not rendered.
-        served = con.execute("select legislature from deputy_legislatures where cadastro_id = ?", [cad]).fetchall()
+        # The page only offers the legislatures the person was elected or seated in; others are
+        # not rendered.
+        served = con.execute("select legislature from deputy_elections where cadastro_id = ?", [cad]).fetchall()
         for (leg,) in served:
             for tipo in ("", "interven", "Pergunta"):
                 for order in ("newest", "oldest", "type"):
@@ -251,6 +274,7 @@ def _requests(con, flask_app):
         ]
         reqs += [f"partidos/{g}/voting-analytics?legislatura={leg}" for leg in legs]
     reqs += ["agenda/hoje", "agenda/semana"]
+    reqs += ["perguntas/XV", "perguntas/NOPE"]
     return reqs
 
 

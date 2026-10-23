@@ -216,7 +216,7 @@ const Dashboard = ({ stats }) => {
                     fontSize: '0.875rem',
                   }}
                 />
-                <Legend
+                <Legend itemSorter={null}
                   formatter={(value, entry) => (
                     <span style={{ color: tokens.colors.textSecondary, fontSize: '0.75rem' }}>
                       {value}
