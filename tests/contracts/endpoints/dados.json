@@ -1,0 +1,127 @@
+{
+  "endpoint": "dados",
+  "route": "/api/dados",
+  "keys": [
+    {
+      "path": "tag",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:130"
+    },
+    {
+      "path": "publicado",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:131"
+    },
+    {
+      "path": "source_updated",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dados.jsx:132"
+    },
+    {
+      "path": "release_url",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dados.jsx:169"
+    },
+    {
+      "path": "manifest",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dados.jsx:134"
+    },
+    {
+      "path": "manifest.url",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dados.jsx:179"
+    },
+    {
+      "path": "manifest.bytes",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:181"
+    },
+    {
+      "path": "total_parquet",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:159"
+    },
+    {
+      "path": "total_csv",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:160"
+    },
+    {
+      "path": "conjuntos",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:133"
+    },
+    {
+      "path": "conjuntos[].nome",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:215"
+    },
+    {
+      "path": "conjuntos[].linhas",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dados.jsx:231"
+    },
+    {
+      "path": "conjuntos[].licenca",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:221"
+    },
+    {
+      "path": "conjuntos[].cc_by",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:219"
+    },
+    {
+      "path": "conjuntos[].parquet",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dados.jsx:232"
+    },
+    {
+      "path": "conjuntos[].parquet.bytes",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:113"
+    },
+    {
+      "path": "conjuntos[].parquet.url",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dados.jsx:114"
+    },
+    {
+      "path": "conjuntos[].csv",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dados.jsx:233"
+    },
+    {
+      "path": "conjuntos[].csv.bytes",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/Dados.jsx:113"
+    },
+    {
+      "path": "conjuntos[].csv.url",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dados.jsx:114"
+    }
+  ],
+  "dropped": []
+}

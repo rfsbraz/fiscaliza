@@ -244,10 +244,14 @@ class FakeHttp:
     def get_json(self, url):
         self.calls.append(url)
         assets = [
-            {"name": p.name, "browser_download_url": f"https://example.invalid/{p.name}"}
+            {"name": p.name, "size": p.stat().st_size, "browser_download_url": f"https://example.invalid/{p.name}"}
             for p in sorted(self.release.iterdir())
         ]
-        return {"tag_name": self.release.name, "assets": assets}
+        return {
+            "tag_name": self.release.name,
+            "html_url": f"https://example.invalid/releases/tag/{self.release.name}",
+            "assets": assets,
+        }
 
     def download(self, url, dest):
         self.calls.append(url)
@@ -274,6 +278,53 @@ def test_github_unchanged_tag_downloads_nothing(tmp_path, data_dir):
     http = FakeHttp(release)
     assert not sync.sync(data_dir, http=http).changed
     assert len(http.calls) == 1
+
+
+def _release_tables(data_dir):
+    con = duckdb.connect(str(Path(data_dir) / "current.duckdb"), read_only=True)
+    try:
+        release = con.execute("select published, url, manifest from _release").fetchone()
+        files = {name: (size, url) for name, size, url in con.execute("select * from _release_files").fetchall()}
+        return release, files
+    finally:
+        con.close()
+
+
+def test_a_local_build_keeps_its_manifest_and_file_sizes_without_links(tmp_path, data_dir):
+    release = make_release(tmp_path / "rel")
+    sync.sync(data_dir, from_dir=release)
+    (published, url, manifest), files = _release_tables(data_dir)
+    assert published is False and url is None
+    assert json.loads(manifest) == json.loads((release / "manifest.json").read_text())
+    assert files == {p.name: (p.stat().st_size, None) for p in release.iterdir()}
+
+
+def test_a_github_release_keeps_its_page_and_every_asset_with_its_size(tmp_path, data_dir):
+    release = make_release(tmp_path / "rel")
+    (release / "deputies.csv.gz").write_bytes(b"not downloaded")
+    sync.sync(data_dir, http=FakeHttp(release))
+    (published, url, _), files = _release_tables(data_dir)
+    assert published is True and url == "https://example.invalid/releases/tag/data-2026-10-20"
+    assert files["deputies.csv.gz"] == (14, "https://example.invalid/deputies.csv.gz")
+    assert files["manifest.json"][1] == "https://example.invalid/manifest.json"
+    assert set(files) == {p.name for p in release.iterdir()}
+
+
+def test_a_release_from_another_commit_is_refused(tmp_path, data_dir):
+    release = make_release(tmp_path / "rel")
+    manifest = json.loads((release / "manifest.json").read_text())
+    manifest["data_commit"] = "b" * 40
+    (release / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(sync.SyncError, match="built from bbbbbbbbb, expected aaaaaaaaa"):
+        sync.sync(data_dir, http=FakeHttp(release), data_commit="a" * 40)
+    assert not (data_dir / "current.duckdb").exists()
+    assert sync.sync(data_dir, http=FakeHttp(release), data_commit="b" * 40).changed
+
+
+def test_cli_checks_the_data_commit(tmp_path, data_dir, capsys):
+    release = make_release(tmp_path / "rel")
+    assert main(["sync", "--from-dir", str(release), "--data-dir", str(data_dir), "--data-commit", "c" * 40]) == 1
+    assert "expected ccccccccc" in capsys.readouterr().err
 
 
 def test_cli_exits_non_zero_with_a_clear_message(tmp_path, data_dir, capsys):

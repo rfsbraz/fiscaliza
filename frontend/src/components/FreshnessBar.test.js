@@ -70,3 +70,11 @@ test('the bar and the footer share one health.json fetch', async () => {
   assert.equal(a, b);
   assert.equal(a.source_updated, '2026-10-22');
 });
+
+test('the bar links the download page, with a shorter label on mobile (#186)', () => {
+  const html = render({ sourceUpdated: '2026-10-22', today: '2026-10-23' });
+  const link = html.match(/<a [^>]*href="\/dados"[^>]*>(.*?)<\/a>/s);
+  assert.ok(link, 'no link to /dados');
+  assert.match(link[1], /<span class="freshness-long">Descarregar dados<\/span>/);
+  assert.match(link[1], /<span class="freshness-short">Dados<\/span>/);
+});

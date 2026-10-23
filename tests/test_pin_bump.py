@@ -101,6 +101,57 @@ def test_write_pin_keeps_the_comments_and_clears_the_tag():
     assert out.count("#") == PIN_TEXT.count("#")
 
 
+def test_write_pin_sets_the_release_tag_of_the_new_commit():
+    out = pin_bump.write_pin(PIN_TEXT, NEW, "data-2026-10-23")
+    assert f"commit={NEW}\n" in out and "tag=data-2026-10-23\n" in out
+    assert out.count("#") == PIN_TEXT.count("#")
+
+
+def gh_release(tag, target, draft=False, prerelease=False):
+    return {"tag_name": tag, "target_commitish": target, "draft": draft, "prerelease": prerelease}
+
+
+def release_routes(releases, tags=None):
+    routes = {("GET", f"{PA}/releases?per_page=100"): list(releases)}
+    for tag, sha in (tags or {}).items():
+        routes[("GET", f"{PA}/commits/{tag}")] = {"sha": sha}
+    return routes
+
+
+def test_release_tag_is_the_newest_published_release_of_the_commit():
+    releases = [
+        gh_release("data-2026-10-24", HEAD),
+        gh_release("data-2026-10-23-2", NEW),
+        gh_release("data-2026-10-23", NEW),
+    ]
+    read = FakeGitHub(release_routes(releases, {"data-2026-10-23-2": NEW, "data-2026-10-23": NEW}))
+    assert pin_bump.release_tag(read, NEW) == "data-2026-10-23-2"
+    assert read.writes() == []
+
+
+@pytest.mark.parametrize(
+    "release",
+    [
+        gh_release("data-2026-10-23", NEW, draft=True),
+        gh_release("data-2026-10-23", NEW, prerelease=True),
+        gh_release("v1.0", NEW),
+        gh_release("data-2026-10-23", OLD),
+    ],
+)
+def test_release_tag_skips_drafts_other_names_and_other_commits(release):
+    read = FakeGitHub(release_routes([release], {"data-2026-10-23": NEW, "v1.0": NEW}))
+    assert pin_bump.release_tag(read, NEW) is None
+
+
+def test_release_tag_checks_where_the_tag_points():
+    read = FakeGitHub(release_routes([gh_release("data-2026-10-23", NEW)], {"data-2026-10-23": OLD}))
+    assert pin_bump.release_tag(read, NEW) is None
+
+
+def test_release_tag_none_before_the_first_release():
+    assert pin_bump.release_tag(FakeGitHub(release_routes([])), NEW) is None
+
+
 def test_schema_major():
     assert pin_bump.schema_major(schema("1.2.0")) == 1
     assert pin_bump.schema_major("schema_version: 2.0.0\n") == 2
@@ -195,8 +246,11 @@ def test_pending_past_the_timeout_stops():
 # bump
 
 
-def bump_routes(pin_status="ahead", main_status="ahead", old_schema="1.2.0", new_schema="1.3.0", open_prs=()):
+def bump_routes(
+    pin_status="ahead", main_status="ahead", old_schema="1.2.0", new_schema="1.3.0", open_prs=(), releases=()
+):
     return {
+        **release_routes(releases, {r["tag_name"]: r["target_commitish"] for r in releases}),
         ("GET", f"{PA}/compare/{NEW}...main"): compare(main_status),
         ("GET", f"{PA}/compare/{OLD}...{NEW}"): compare(pin_status, [("1" * 40, "fix(marts): one")]),
         ("GET", f"{PA}/contents/src/parlamento_aberto/models/schema.yml?ref={OLD}"): schema(old_schema),
@@ -217,6 +271,46 @@ def test_bump_to_the_current_pin_does_nothing(pin_file):
     assert result == "noop"
     assert git.calls == [] and write.calls == [] and read.writes() == []
     assert pin_file.read_text() == PIN_TEXT
+
+
+def test_bump_without_a_release_leaves_the_tag_empty(pin_file):
+    do_bump(pin_file)
+    assert f"commit={NEW}\n" in pin_file.read_text() and "tag=\n" in pin_file.read_text()
+
+
+def test_bump_pins_the_release_tag_of_the_new_commit(pin_file):
+    result, _, write, _ = do_bump(pin_file, releases=[gh_release("data-2026-10-23", NEW)])
+    assert result == "opened"
+    assert f"commit={NEW}\n" in pin_file.read_text() and "tag=data-2026-10-23\n" in pin_file.read_text()
+    assert write.writes()[0][2]["title"] == "chore(data): move the data pin to parlamento-aberto bbbbbbb"
+
+
+def pin_with(pin_file, sha, tag=""):
+    pin_file.write_text(pin_bump.write_pin(PIN_TEXT, sha, tag))
+
+
+def test_bump_fills_the_tag_once_the_pinned_commit_is_released(pin_file):
+    # parlamento-aberto dispatches on its push to main, before data-release.yml publishes, so the pin
+    # moves with tag= empty; the next dispatch for the same commit fills it in.
+    pin_with(pin_file, NEW)
+    result, read, write, git = do_bump(pin_file, sha=NEW, releases=[gh_release("data-2026-10-23", NEW)])
+    assert result == "opened"
+    assert pin_file.read_text() == pin_bump.write_pin(PIN_TEXT, NEW, "data-2026-10-23")
+    commit = next(c for c in git.calls if "commit" in c)
+    assert "chore(data): pin the data release data-2026-10-23" in commit
+    post = write.writes()[0]
+    assert post[1] == f"{REPO}/pulls" and post[2]["title"] == "chore(data): pin the data release data-2026-10-23"
+    assert "releases/tag/data-2026-10-23" in post[2]["body"]
+    # No compare and no schema reads: the commit is the same.
+    assert not any("/compare/" in c[1] or "/contents/" in c[1] for c in read.calls)
+
+
+def test_bump_keeps_a_pin_that_already_has_the_tag(pin_file):
+    pin_with(pin_file, NEW, "data-2026-10-23")
+    before = pin_file.read_text()
+    result, _, write, git = do_bump(pin_file, sha=NEW, releases=[gh_release("data-2026-10-23", NEW)])
+    assert result == "noop" and git.calls == [] and write.calls == []
+    assert pin_file.read_text() == before
 
 
 def test_bump_refuses_a_commit_not_on_main(pin_file):

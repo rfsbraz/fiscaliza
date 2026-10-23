@@ -30,3 +30,11 @@ test('without a release the footer keeps the source line, with no date', () => {
   assert.ok(html.includes('Fonte: Assembleia da República, dados abertos.'));
   assert.ok(!html.includes('atualizados a'));
 });
+
+test('the tag links its release only when it is published (#186)', () => {
+  const published = render({ source_updated: '2026-10-22', tag: 'data-2026-10-23', publicado: true });
+  assert.match(published, /href="https:\/\/github.com\/rfsbraz\/parlamento-aberto\/releases\/tag\/data-2026-10-23"/);
+  const local = render({ source_updated: '2026-10-22', tag: 'data-2026-10-23', publicado: false });
+  assert.ok(!local.includes('/releases/tag/'));
+  assert.match(local, /href="https:\/\/github.com\/rfsbraz\/parlamento-aberto"[^>]*>parlamento-aberto \(data-2026-10-23\)/);
+});

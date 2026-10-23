@@ -6,19 +6,19 @@
       "path": "cobertura_declaracoes",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/Metodologia.jsx:125"
+      "read_at": "frontend/src/components/Metodologia.jsx:126"
     },
     {
       "path": "cobertura_declaracoes.com_declaracao",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Metodologia.jsx:129"
+      "read_at": "frontend/src/components/Metodologia.jsx:130"
     },
     {
       "path": "cobertura_declaracoes.total",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Metodologia.jsx:130"
+      "read_at": "frontend/src/components/Metodologia.jsx:131"
     },
     {
       "path": "legislaturas",
@@ -42,7 +42,7 @@
       "path": "legislaturas[].intervencoes_publicadas",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Metodologia.jsx:122"
+      "read_at": "frontend/src/components/Metodologia.jsx:123"
     },
     {
       "path": "legislaturas[].numero",

@@ -21,7 +21,7 @@ spec.loader.exec_module(pages)
 def test_pin_is_one_full_parlamento_aberto_commit():
     pin = pages.read_pin()
     assert re.fullmatch(r"[0-9a-f]{40}", pin.commit)
-    assert pin.tag is None or re.fullmatch(r"data-\d{4}-\d{2}-\d{2}(\.\d+)?", pin.tag)
+    assert pin.tag is None or re.fullmatch(r"data-\d{4}-\d{2}-\d{2}(-\d+)?", pin.tag)
 
 
 def test_pin_with_a_tag(tmp_path):
@@ -404,6 +404,54 @@ def test_build_defaults_the_data_dir_to_data():
     args = pages.parse_args(["build", "--parlamento-aberto", "/pa"])
     sync = next(" ".join(s.argv) for s in pages.plan(args, work=Path("/work")) if "fiscaliza_data" in s.argv)
     assert "--data-dir data" in sync
+
+
+TAGGED = "c" * 40
+
+
+@pytest.fixture
+def tagged_pin(tmp_path, monkeypatch):
+    f = tmp_path / "data-pin"
+    f.write_text(f"commit={TAGGED}\ntag=data-2026-10-23\n")
+    monkeypatch.setattr(pages, "PIN_FILE", f)
+    return f
+
+
+def test_a_pin_with_a_tag_syncs_that_release_even_with_a_checkout(tagged_pin):
+    # The deploy workflow always passes --parlamento-aberto; with a tag the checkout is not used.
+    cmds = [" ".join(c) for c in commands(["deploy", "--parlamento-aberto", "/pa"])]
+    assert not any("worktree" in c or "parlamento_aberto.release" in c for c in cmds)
+    sync = next(c for c in cmds if "fiscaliza_data sync" in c)
+    assert f"--tag data-2026-10-23 --data-commit {TAGGED}" in sync
+    assert any("pages deploy" in c for c in cmds)
+
+
+def test_build_without_a_source_uses_the_pin_tag(tagged_pin):
+    args = pages.parse_args(["build", "--data-dir", "/d"])
+    cmds = [" ".join(s.argv) for s in pages.plan(args, work=Path("/work"))]
+    assert "--tag data-2026-10-23" in cmds[0] and "--data-dir /d" in cmds[0]
+    assert len(cmds) == 2 and "fiscaliza_data.export" in cmds[1]
+
+
+def test_build_without_a_source_or_a_tag_says_what_to_pass(tmp_path, monkeypatch):
+    f = tmp_path / "data-pin"
+    f.write_text(f"commit={TAGGED}\ntag=\n")
+    monkeypatch.setattr(pages, "PIN_FILE", f)
+    with pytest.raises(pages.DeployError, match="--parlamento-aberto"):
+        pages.plan(pages.parse_args(["build"]), work=Path("/work"))
+
+
+def test_a_release_folder_still_wins_over_the_tag(tagged_pin):
+    cmds = [" ".join(c) for c in commands(["deploy", "--release", "/rel"])]
+    sync = next(c for c in cmds if "fiscaliza_data sync" in c)
+    assert "--from-dir /rel" in sync and "--tag" not in sync
+
+
+def test_the_checkout_is_fetched_only_when_the_pin_is_built(tagged_pin):
+    with_tag = pages.parse_args(["deploy", "--parlamento-aberto", "/pa"])
+    assert not pages.builds_the_pin(with_tag, pages.read_pin(tagged_pin))
+    tagged_pin.write_text(f"commit={TAGGED}\ntag=\n")
+    assert pages.builds_the_pin(with_tag, pages.read_pin(tagged_pin))
 
 
 def test_build_takes_no_pages_branch():

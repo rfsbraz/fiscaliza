@@ -117,6 +117,7 @@ def test_routes_cover_every_page_family(dist):
         "/perguntas/XVI",
         "/metodologia",
         "/privacidade",
+        "/dados",
     ):
         assert path in routes, path
     assert "/" not in routes
