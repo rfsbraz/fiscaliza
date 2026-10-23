@@ -4,4 +4,4 @@
 commit=1f8822e370e246cce84eb90e112d052e12a588ed
 # The published data release of that commit, empty while there is none. With it, deploy/pages.py
 # downloads that release from GitHub and checks it was built from the commit above.
-tag=
+tag=data-2026-10-23

@@ -367,8 +367,17 @@ def test_steps_run_in_order():
     assert str(FRONTEND / "public" / "api") in export
 
 
-def test_builds_the_pinned_commit_from_a_parlamento_aberto_checkout():
-    pin = pages.read_pin()
+@pytest.fixture
+def untagged_pin(tmp_path, monkeypatch):
+    # A pin with no release yet: the deploy builds that commit in the parlamento-aberto checkout.
+    f = tmp_path / "data-pin"
+    f.write_text(f"commit={'d' * 40}\ntag=\n")
+    monkeypatch.setattr(pages, "PIN_FILE", f)
+    return f
+
+
+def test_builds_the_pinned_commit_from_a_parlamento_aberto_checkout(untagged_pin):
+    pin = pages.read_pin(untagged_pin)
     cmds = [" ".join(c) for c in commands(["deploy", "--parlamento-aberto", "/pa"])]
     assert any("worktree add --detach" in c and pin.commit in c for c in cmds)
     build = next(c for c in cmds if "parlamento_aberto.release build" in c)
@@ -385,8 +394,8 @@ def test_a_release_folder_must_come_from_the_pin(tmp_path):
         pages.check_release(rel, pages.read_pin())
 
 
-def test_build_makes_the_local_data_from_the_pin_without_uploading():
-    pin = pages.read_pin()
+def test_build_makes_the_local_data_from_the_pin_without_uploading(untagged_pin):
+    pin = pages.read_pin(untagged_pin)
     args = pages.parse_args(["build", "--parlamento-aberto", "/pa", "--data-dir", "/d"])
     cmds = [" ".join(step.argv) for step in pages.plan(args, work=Path("/work"))]
     assert any("worktree add --detach" in c and pin.commit in c for c in cmds)
