@@ -66,25 +66,43 @@
       "path": "legislaturas[].ano_eleicao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:513"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:514"
     },
     {
       "path": "legislaturas[].deputados",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:515"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:527"
     },
     {
       "path": "legislaturas[].legislatura",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:512"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:513"
     },
     {
       "path": "legislaturas[].listas",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:514"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:515"
+    },
+    {
+      "path": "legislaturas[].partidos",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:517"
+    },
+    {
+      "path": "legislaturas[].partidos[].com_lugares",
+      "type": "boolean",
+      "nullable": true,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:521"
+    },
+    {
+      "path": "legislaturas[].partidos[].sigla",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:520"
     },
     {
       "path": "nome",
