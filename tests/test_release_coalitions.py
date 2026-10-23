@@ -2,7 +2,7 @@
 
 Skipped unless FISCALIZA_RELEASE_DIR points at a release folder. No figures are pinned: every
 coalition list must have as many deputies elected as the seats it won, in every legislature
-with seats per circle, whatever the tag. Only counts, no names.
+with seats per circle, whatever the tag. Only counts and the seed's party acronyms, no names.
 """
 
 import os
@@ -48,3 +48,18 @@ def test_every_coalition_list_has_exactly_its_seats(con):
             assert listed["total_deputados"] == len(listed["deputados"]) == seats, (c["id"], leg["legislatura"])
             checked += 1
     assert checked > 0
+
+
+def test_coalition_parties_come_from_every_legislature(con):
+    # #214: the seed's components across the page's legislatures, not only the latest one's.
+    def leg_flags(leg):
+        return [(p["sigla"], p["com_lugares"]) for p in leg["partidos"]]
+
+    def parties(page):
+        return [(p["sigla"], p["com_lugares"]) for p in core.coligacao(con, page)["component_parties"]]
+
+    assert set(parties("CDU")) >= {("PCP", True), ("PEV", True), ("ID", True)}
+    cdu = {leg["legislatura"]: dict(leg_flags(leg)) for leg in core.coligacao(con, "CDU")["legislaturas"]}
+    assert (cdu["V"]["ID"], cdu["XIV"]["PEV"], cdu["XV"]["PEV"]) == (True, True, False)
+    assert {s for s, _ in parties("ad-1979")} >= {"PSD", "CDS", "PPM", "DR"}
+    assert ("PPM", False) in parties("ad-2024")
