@@ -12,10 +12,11 @@ Ids and made-up names only, no real people. Two legislatures:
   Person 501 was elected for XVII and never sat. None of them has a group in XVII.
 
 Person 1 sat for PS in XVI and for PSD in XVII. Birth dates are made up (_born) and every
-tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP) in both legislatures, and
-FRS (PS) in XVI only. In XVII AD has a second list, AD_ACORES, that won seats only in circle 19
-(the Açores, the one circle with a name), with PPM as a component without seats, and CDU lists
-PEV without seats. Seats per circle and list (ballot_list_seats) exist for both legislatures: PSD
+tenth person has none. Coalitions: AD (PSD, CDS-PP) and CDU (PCP, PEV) in both legislatures, and
+FRS (PS) in XVI only. In XVI the AD list also has PPM without seats and the CDU list has ID, and
+PEV wins seats there; in XVII PEV has none (#214, as the seed has CDU, AD 1979 and AD 2024). In
+XVII AD has a second list, AD_ACORES, that won seats only in circle 19 (the Açores, the one
+circle with a name), with PPM as a component without seats. Seats per circle and list (ballot_list_seats) exist for both legislatures: PSD
 and CDS-PP deputies of circles 21 and 22 were not elected on an AD list. The coalition rows carry
 an election link ending in the election year (2024 for XVI, 2025 for XVII), as the seed does.
 The deputies elected on each list (ballot_list_elected) exist for XVI only, as the release has
@@ -156,15 +157,15 @@ def _rows():
     ]
     coalitions = []
     for leg, name, ballot, members in [
-        (XVI, "AD", "AD-LISTA", ["PSD", "CDS-PP"]),
-        (XVI, "CDU", "CDU-LISTA", ["PCP"]),
+        (XVI, "AD", "AD-LISTA", ["PSD", "CDS-PP", "PPM"]),
+        (XVI, "CDU", "CDU-LISTA", ["PCP", "PEV", "ID"]),
         (XVI, "FRS", "FRS-LISTA", ["PS"]),
         (XVII, "AD", "AD-LISTA", ["PSD", "CDS-PP"]),
         (XVII, "AD", AD_ACORES, ["PSD", "CDS-PP", "PPM"]),
         (XVII, "CDU", "CDU-LISTA", ["PCP", "PEV"]),
     ]:
         for group in members:
-            has_seats = group not in ("PPM", "PEV")
+            has_seats = group != "PPM" and (group, leg) != ("PEV", XVII)
             coalitions.append(
                 (
                     leg[0],
