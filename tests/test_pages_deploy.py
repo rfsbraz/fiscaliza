@@ -458,3 +458,11 @@ def test_csp_allows_the_sentry_ingest_host(headers):
     if not sentry_dsn():
         pytest.skip("VITE_SENTRY_DSN is not set in deploy.yml yet")
     assert sentry_ingest()[0] in csp(headers)["connect-src"]
+
+
+def test_sentry_sends_errors_to_the_eu_region(headers):
+    # The privacy note (/privacidade) says error reports go to servers in the EU.
+    assert ".ingest.de.sentry.io/" in sentry_dsn()
+    connect = csp(headers)["connect-src"]
+    assert any(src.endswith(".ingest.de.sentry.io") for src in connect), connect
+    assert not any("ingest.us.sentry.io" in src for src in connect), connect
