@@ -15,6 +15,7 @@ const AgendaPage = lazy(() => import('./components/AgendaPage'))
 const PerguntasPage = lazy(() => import('./components/PerguntasPage'))
 const NotFound = lazy(() => import('./components/NotFound'))
 const Metodologia = lazy(() => import('./components/Metodologia'))
+const Privacidade = lazy(() => import('./components/Privacidade'))
 import { apiFetch } from './config/api'
 import { routeTitle } from './utils/routeTitle'
 import './App.css'
@@ -113,6 +114,7 @@ const AppContent = () => {
             <Route path="/perguntas" element={<PerguntasPage />} />
             <Route path="/perguntas/:legislatura" element={<PerguntasPage />} />
             <Route path="/metodologia" element={<Metodologia />} />
+            <Route path="/privacidade" element={<Privacidade />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -225,6 +227,19 @@ const AppContent = () => {
               }}
             >
               Metodologia e fontes
+            </Link>
+            <span style={{ color: '#D4D4D4', margin: '0 0.75rem' }}>|</span>
+            <Link
+              to="/privacidade"
+              style={{
+                fontFamily: "'Source Sans 3', sans-serif",
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: '#1B4332',
+                textDecoration: 'underline',
+              }}
+            >
+              Privacidade
             </Link>
           </p>
 

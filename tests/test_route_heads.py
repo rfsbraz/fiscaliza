@@ -116,6 +116,7 @@ def test_routes_cover_every_page_family(dist):
         "/perguntas/XVII",
         "/perguntas/XVI",
         "/metodologia",
+        "/privacidade",
     ):
         assert path in routes, path
     assert "/" not in routes
@@ -150,6 +151,7 @@ def test_files_sit_where_pages_serves_the_route(dist):
         "coligacoes/PàF.html",
         "perguntas/XVII.html",
         "metodologia.html",
+        "privacidade.html",
     ):
         assert (dist / rel).is_file(), rel
 

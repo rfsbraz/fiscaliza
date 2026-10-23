@@ -76,6 +76,10 @@ STATIC_ROUTES = {
         "Metodologia e fontes",
         "Como o Fiscaliza trata os dados abertos da Assembleia da República: fontes, regras e limitações.",
     ),
+    "/privacidade": (
+        "Privacidade",
+        "O Fiscaliza não usa cookies nem pede dados pessoais: o que é contado e a quem é enviado.",
+    ),
 }
 # One path segment of a route that becomes a file name: no separators, no . or .., no controls.
 SAFE_SEGMENT = re.compile(r"^(?!\.{1,2}$)[^/\\\x00-\x1f\x7f]+$")
