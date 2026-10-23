@@ -71,11 +71,23 @@ group by all;
 
 -- deputy_elections: one row per person and legislature in which they were elected or held a
 -- seat: an effective period, or a Suspenso(Eleito) one (elected, with the mandate suspended for a
--- reason the data does not give). seated says whether they held the seat at some point in it.
+-- reason the data does not give). seated says whether they held the seat at some point in it,
+-- as the seating rule reads it: an effective period does not seat them when another of their
+-- periods there starts the same day and ends later, since that one wins every day it covers (a
+-- one-day handover next to a suspension that starts that day).
 -- situation, situation_start and situation_end are those of their latest period in it (latest
 -- start, then the longer one), with their circle, and their latest group in it.
 create or replace view deputy_elections as
-with m as (
+with p as (
+    select
+        *,
+        is_effective
+        and coalesce(end_date, date '9999-12-31')
+        >= max(coalesce(end_date, date '9999-12-31')) over (partition by legislature, cadastro_id, start_date)
+            as seats
+    from mandates
+),
+m as (
     -- The latest period as one struct: arg_max skips rows whose value is null, and an open
     -- period has a null end_date.
     select
@@ -85,8 +97,8 @@ with m as (
             struct_pack(deputy_id, circle_id, situation, start_date, end_date),
             struct_pack(s := start_date, e := coalesce(end_date, date '9999-12-31'))
         ) as latest,
-        bool_or(is_effective) as seated
-    from mandates
+        bool_or(seats) as seated
+    from p
     group by legislature, cadastro_id
     having bool_or(is_effective) or bool_or(situation = 'Suspenso(Eleito)')
 ),
