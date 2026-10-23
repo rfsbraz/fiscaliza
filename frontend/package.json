@@ -11,23 +11,23 @@
     "test": "node --test src/"
   },
   "dependencies": {
-    "@sentry/react": "^10.76.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.1",
-    "framer-motion": "^11.3.31",
-    "recharts": "^2.12.7",
-    "lucide-react": "^0.439.0"
+    "@sentry/react": "^11.8.0",
+    "framer-motion": "^14.6.0",
+    "lucide-react": "^1.61.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.4",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "autoprefixer": "^10.6.1",
     "postcss": "^8.5.31",
-    "react-test-renderer": "^18.3.1",
+    "react-test-renderer": "^19.3.1",
     "tailwindcss": "^3.3.6",
-    "vite": "^5.4.2"
+    "vite": "^8.3.5"
   },
   "overrides": {
     "postcss-selector-parser": "^7.1.6"
