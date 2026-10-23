@@ -319,6 +319,11 @@ def test_each_list_and_run_is_its_own_page(con):
             "deputados": xvi,
             "em_funcoes": xvi,
             "contagem": "eleitos",
+            "partidos": [
+                {"sigla": "PSD", "com_lugares": True},
+                {"sigla": "CDS-PP", "com_lugares": True},
+                {"sigla": "PPM", "com_lugares": False},
+            ],
         },
         {
             "legislatura": "XVII",
@@ -327,6 +332,7 @@ def test_each_list_and_run_is_its_own_page(con):
             "deputados": xvii,
             "em_funcoes": xvii,
             "contagem": "eleitos",
+            "partidos": [{"sigla": "PSD", "com_lugares": True}, {"sigla": "CDS-PP", "com_lugares": True}],
         },
     ]
     n = acores["deputy_count"]
@@ -338,6 +344,11 @@ def test_each_list_and_run_is_its_own_page(con):
             "deputados": n,
             "em_funcoes": n,
             "contagem": "eleitos",
+            "partidos": [
+                {"sigla": "PSD", "com_lugares": True},
+                {"sigla": "CDS-PP", "com_lugares": True},
+                {"sigla": "PPM", "com_lugares": False},
+            ],
         }
     ]
     assert {d["circulo"] for d in core.coligacao_deputados(con, "ad-acores-2025")["deputados"]} == {"Açores"}
@@ -601,6 +612,8 @@ def test_coalition_parties_come_from_every_legislature_of_the_page(con):
         ("XVII", [("PCP", True), ("PEV", False)]),
     ]
     assert _flags(core.coligacao_partidos(con, "CDU")["partidos"]) == _flags(cdu["component_parties"])
+    # The seed names a group only where it won seats, so PEV keeps its XVI name.
+    assert {p["sigla"]: p["nome"] for p in cdu["component_parties"]}["PEV"] == "Grupo PEV"
     ad = core.coligacao(con, "ad-2024")
     assert _flags(ad["component_parties"]) == [("PSD", True), ("CDS-PP", True), ("PPM", False)]
     assert [(leg["legislatura"], _flags(leg["partidos"])) for leg in ad["legislaturas"]] == [

@@ -354,18 +354,39 @@ def _coalition_lists(con):
 
 def _summary(con, c):
     """The page with its summary. It is active when it has the open legislature. Its
-    components are the groups of its latest legislature, largest first, with com_lugares false
-    for a group that won no seat on that list; its dates are those of its legislatures."""
+        components are the groups of all its legislatures (#214), largest in the latest one first,
+        then those with seats in more of them, with com_lugares false for a group that won no seat
+        on its lists in any of them, named as in the latest legislature that names them (the seed names
+    a group only where it won seats); each legislature keeps its own groups and seat flags. Its dates
+        are those of its legislatures."""
     latest = c["legislaturas"][-1]
     last = [r for r in c["rows"] if r["legislature"] == latest]
-    components = []
-    for r in last:
-        if r["group_code"] not in [p["sigla"] for p in components]:
-            components.append({"sigla": r["group_code"], "nome": r["group_name"] or r["group_code"]})
-    for p in components:
-        p["com_lugares"] = any(r["has_seats"] for r in last if r["group_code"] == p["sigla"])
+    by_leg = {}
+    names = {}
+    for r in c["rows"]:
+        flags = by_leg.setdefault(r["legislature"], {})
+        flags[r["group_code"]] = flags.get(r["group_code"], False) or bool(r["has_seats"])
+        named = names.setdefault(r["group_code"], {})
+        if r["group_name"]:
+            named[r["legislature"]] = r["group_name"]
     seats = {g["group_acronym"]: g["seats"] for g in repository.seats_by_group(con, latest, last[0]["ref_day"])}
-    components.sort(key=lambda p: (-seats.get(p["sigla"], 0), p["sigla"]))
+    with_seats = {g: sum(1 for flags in by_leg.values() if flags.get(g)) for g in names}
+
+    def order(group):
+        return (-seats.get(group, 0) if group in by_leg[latest] else 0, -with_seats[group], group)
+
+    components = [
+        {
+            "sigla": g,
+            "nome": names[g][max(names[g], key=c["legislaturas"].index)] if names[g] else g,
+            "com_lugares": with_seats[g] > 0,
+        }
+        for g in sorted(names, key=order)
+    ]
+    partidos = {
+        leg: [{"sigla": g, "com_lugares": by_leg[leg][g]} for g in sorted(by_leg[leg], key=order)]
+        for leg in c["legislaturas"]
+    }
     ativa = any(r["is_open"] for r in c["rows"])
     return {
         **c,
@@ -376,6 +397,7 @@ def _summary(con, c):
         "data_formacao": _iso(min(r["start_date"] for r in c["rows"])),
         "data_dissolucao": None if ativa else _iso(max(r["end_date"] for r in c["rows"])),
         "components": components,
+        "partidos_por_legislatura": partidos,
     }
 
 
@@ -475,6 +497,7 @@ def _coalition_dict(con, c, with_legislatures=False):
                     "deputados": len(leg_elected),
                     "em_funcoes": len(_coalition_seated(con, c["rows"], leg, day)),
                     "contagem": leg_contagem,
+                    "partidos": c["partidos_por_legislatura"][leg],
                 }
             )
     return out

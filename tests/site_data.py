@@ -173,7 +173,7 @@ def _rows():
                     ballot,
                     f"Coligação {name}",
                     group,
-                    f"Grupo {group}",
+                    f"Grupo {group}" if has_seats else None,
                     None,
                     f"https://example.org/eleicoes-{ELECTION_YEAR[leg[0]]}",
                     None,

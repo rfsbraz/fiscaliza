@@ -503,6 +503,7 @@ const ColigacaoDetalhes = () => {
                       <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Legislatura</th>
                       <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Eleições</th>
                       <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Lista no boletim</th>
+                      <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Partidos</th>
                       <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Deputados eleitos</th>
                     </tr>
                   </thead>
@@ -512,6 +513,17 @@ const ColigacaoDetalhes = () => {
                         <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>{leg.legislatura}</td>
                         <td style={{ padding: '0.5rem 0.75rem' }}>{leg.ano_eleicao}</td>
                         <td style={{ padding: '0.5rem 0.75rem', fontFamily: tokens.fonts.mono }}>{(leg.listas || []).join(', ')}</td>
+                        <td style={{ padding: '0.5rem 0.75rem' }}>
+                          {(leg.partidos || []).map((p, i) => (
+                            <span key={p.sigla}>
+                              {i > 0 && ', '}
+                              {p.sigla}
+                              {seatsNote(p.com_lugares) && (
+                                <span style={{ color: tokens.colors.textMuted }}> ({seatsNote(p.com_lugares)})</span>
+                              )}
+                            </span>
+                          ))}
+                        </td>
                         <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: tokens.fonts.mono }}>{formatNumber(leg.deputados)}</td>
                       </tr>
                     ))}
