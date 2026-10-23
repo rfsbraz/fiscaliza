@@ -64,8 +64,16 @@ def test_constituinte_deputies_are_not_counted_twice_on_the_site(con):
 
 
 def test_cdu_note_is_the_same_in_xv_xvi_and_xvii(con):
-    # parlamento-aberto #87: XVI had "PPM won no seat.", which is not about the CDU.
-    notes = con.execute(
-        "select distinct note from coalitions where coalition = 'CDU' and legislature in ('XV', 'XVI', 'XVII')"
-    ).fetchall()
-    assert len(notes) == 1
+    # parlamento-aberto #87: XVI had "PPM won no seat.", which is not about the CDU. Since
+    # parlamento-aberto #90 the PEV has its own row with its own note, so the note is compared
+    # per party: one for PCP and one for PEV across the three legislatures.
+    notes = dict(
+        con.execute(
+            "select group_code, list(distinct note) from coalitions "
+            "where coalition = 'CDU' and legislature in ('XV', 'XVI', 'XVII') group by group_code"
+        ).fetchall()
+    )
+    assert notes == {
+        "PCP": ["PEV has had no seats since 2022, so PCP is the only group."],
+        "PEV": ["PEV won no seat."],
+    }
