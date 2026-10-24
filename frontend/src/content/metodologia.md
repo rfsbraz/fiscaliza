@@ -109,6 +109,7 @@ Distinguimos quem foi eleito de quem esteve em funções.
 - Cada deputado tem na sua página todas as legislaturas em que foi eleito, em qualquer situação, com a situação mais recente e as datas. Por exemplo: "Mandato suspenso desde 03/06/2025".
 - Quem foi eleito e suspendeu o mandato antes de tomar lugar continua na lista de deputados e na pesquisa, com a indicação "Sem período em exercício registado".
 - Tudo o que se conta em dias de funções (presenças, votações, tempo de serviço, número de mandatos e comparações) conta só as legislaturas em que a pessoa teve lugar.
+- Um único dia em funções seguido, no mesmo dia ou no dia seguinte, da suspensão do mandato ou da renúncia não conta como lugar quando a pessoa vinha de um período sem lugar. É o que acontece aos deputados que tomam posse como membros do Governo, como em 05/06/2025. Esse dia continua na página do deputado, com as datas.
 - Os dados dizem que um mandato está suspenso, mas não dizem porquê. Não indicamos o motivo de nenhuma suspensão.
 - Há períodos em funções de um só dia, por exemplo na mudança de Governo em junho de 2025. São registos da AR e mantemo-los no histórico.
 
