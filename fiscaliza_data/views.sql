@@ -72,20 +72,45 @@ group by all;
 -- deputy_elections: one row per person and legislature in which they were elected or held a
 -- seat: an effective period, or a Suspenso(Eleito) one (elected, with the mandate suspended for a
 -- reason the data does not give). seated says whether they held the seat at some point in it,
--- as the seating rule reads it: an effective period does not seat them when another of their
--- periods there starts the same day and ends later, since that one wins every day it covers (a
--- one-day handover next to a suspension that starts that day).
+-- counting only effective periods that are a mandate in exercise. Two kinds of one-day handover
+-- (a government member who takes office, as on 2025-06-05) are not:
+-- - an effective period when another of their periods there starts the same day and ends later,
+--   since that one wins every day it covers (a suspension that starts that day, #216);
+-- - a one-day effective period between a period without the seat that ends the day before and a
+--   suspension or renunciation that starts the day after, with no effective period on either
+--   side (#227). The AR's biographies do not list such a legislature, and no plenary sat on any
+--   of those days. A one-day stint that starts a mandate, or a substitute's that ends back as a
+--   substitute, still counts.
 -- situation, situation_start and situation_end are those of their latest period in it (latest
 -- start, then the longer one), with their circle, and their latest group in it.
 create or replace view deputy_elections as
 with p as (
     select
-        *,
-        is_effective
-        and coalesce(end_date, date '9999-12-31')
-        >= max(coalesce(end_date, date '9999-12-31')) over (partition by legislature, cadastro_id, start_date)
-            as seats
-    from mandates
+        m.*,
+        m.is_effective
+        and coalesce(m.end_date, date '9999-12-31')
+        >= max(coalesce(m.end_date, date '9999-12-31')) over (partition by m.legislature, m.cadastro_id, m.start_date)
+        and not (
+            m.start_date = m.end_date
+            and exists (
+                select 1 from mandates b
+                where b.legislature = m.legislature and b.cadastro_id = m.cadastro_id
+                  and not b.is_effective and b.end_date = m.start_date - 1
+            )
+            and exists (
+                select 1 from mandates n
+                where n.legislature = m.legislature and n.cadastro_id = m.cadastro_id
+                  and n.start_date = m.end_date + 1
+                  and (n.situation like 'Suspenso%' or n.situation = 'Renunciou')
+            )
+            and not exists (
+                select 1 from mandates e
+                where e.legislature = m.legislature and e.cadastro_id = m.cadastro_id and e.is_effective
+                  and e.start_date <= m.end_date + 1 and coalesce(e.end_date, date '9999-12-31') >= m.start_date - 1
+                  and not (e.start_date = m.start_date and e.end_date = m.end_date)
+            )
+        ) as seats
+    from mandates m
 ),
 m as (
     -- The latest period as one struct: arg_max skips rows whose value is null, and an open
