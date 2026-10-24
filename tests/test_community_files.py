@@ -55,7 +55,7 @@ def test_nothing_points_at_the_old_repository_name():
 def test_pull_request_template_sections():
     t = (ROOT / ".github" / "pull_request_template.md").read_text()
     headings = re.findall(r"^## (.+)$", t, re.M)
-    assert headings == ["Resumo", "Antes / Depois", "Capturas de ecrã", "Testado"]
+    assert headings == ["O quê e porquê", "Antes / Depois", "Como testou", "Uso de IA"]
     assert "| Antes | Depois |" in t
     assert "Closes #" in t
 
