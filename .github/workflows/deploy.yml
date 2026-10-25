@@ -86,7 +86,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       # Wrangler 4 needs Node 22 or newer; the version itself is pinned in deploy/pages.py.
