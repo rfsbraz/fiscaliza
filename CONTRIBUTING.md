@@ -84,7 +84,17 @@ O site só vale o que valem os seus números:
 - Abra cada pull request a partir de `master`, com uma alteração por pull request. Para atualizar um ramo, faça merge de `master` no ramo.
 - Use [Conventional Commits](https://www.conventionalcommits.org/) em inglês, na forma `type(scope): subject`, por exemplo `fix(voting): show the group's position instead of an alignment rate`.
 - Escreva o título, a descrição, as issues e os comentários em português de Portugal.
-- Preencha o modelo de pull request: um resumo de uma ou duas linhas, uma tabela antes/depois, capturas de ecrã para alterações visíveis e uma linha sobre como foi testado.
+- Preencha o modelo de pull request: o que muda e porquê, a issue que fecha, uma tabela antes/depois, como testou (com capturas de ecrã para alterações visíveis) e se usou IA.
+
+## Pull requests de pouco esforço e automáticos
+
+O Fiscaliza é mantido no meu tempo livre, e cada pull request leva tempo a rever. Fico contente com contribuições de quem usa o Fiscaliza e o quer melhorar.
+
+Fecho sem revisão os pull requests que pareçam feitos para acumular contribuições: contas que abrem muitos pull requests em projetos sem relação entre si, ou alterações feitas sobretudo para somar contribuições e não para corrigir algo com que se deparou. Isto aplica-se mesmo quando a alteração está correta.
+
+Pull requests feitos com ajuda de IA são bem-vindos se leu e percebeu a alteração e consegue responder a perguntas sobre ela. Diga-o no pull request.
+
+A forma mais fácil de ver um pull request integrado é começar por uma issue, combinar a abordagem e só depois abrir o pull request.
 
 ## Licença
 

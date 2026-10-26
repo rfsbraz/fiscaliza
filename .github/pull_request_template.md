@@ -1,8 +1,8 @@
-## Resumo
+## O quê e porquê
 
-<!-- Uma ou duas linhas: o que muda e porquê. -->
+<!-- O que muda e que problema encontrou? -->
 
-Closes #
+Closes #<!-- Combine primeiro a abordagem numa issue. Correções de gralhas e de documentação podem saltar este passo. -->
 
 ## Antes / Depois
 
@@ -10,10 +10,10 @@ Closes #
 | --- | --- |
 |  |  |
 
-## Capturas de ecrã
+## Como testou
 
-<!-- Só para alterações visíveis. Apague esta secção nos outros casos. -->
+<!-- Testes acrescentados e o que correu, por exemplo `pytest` e `cd frontend && npm test`. Capturas de ecrã para alterações visíveis. -->
 
-## Testado
+## Uso de IA
 
-<!-- Uma linha: o que correu, por exemplo `pytest` e `npm test`. -->
+<!-- Pode usar, basta dizê-lo e confirmar que percebe cada linha. -->
