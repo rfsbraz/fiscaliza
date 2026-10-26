@@ -59,8 +59,8 @@ def test_current_legislature_has_230_seats_with_the_known_split(con):
 
 def test_elected_counts_everyone_who_held_a_seat_in_the_legislature(con):
     # 230 seated now, plus person 231 who resigned. Person 500 is a substitute who never sat, 302
-    # and 501 were elected but never took the seat, and 303's one-day handover period never seats
-    # them, since a suspension starts the same day and outlasts it.
+    # and 501 were elected but never took the seat, and the one-day handover periods of 303 and 304
+    # never seat them: a suspension starts the same day (303) or the next day (304, #227).
     assert core.estatisticas(con)["totais"]["deputados_eleitos"] == 231
 
 
@@ -160,13 +160,14 @@ def test_parties_have_their_seat_counts(con):
 
 def test_deputies_list_defaults_to_the_current_legislature_seated_first(con):
     page = core.deputados(con, per_page=100)
-    # 234 elected or seated in XVII less 231, who resigned (#171).
-    assert page["pagination"]["total"] == 233
+    # 235 elected or seated in XVII less 231, who resigned (#171).
+    assert page["pagination"]["total"] == 234
     assert all(d["is_seated"] for d in page["deputados"])
     last = core.deputados(con, page=3, per_page=100)["deputados"]
-    assert [(d["id_cadastro"], d["is_seated"], d["mandate_status"]) for d in last[-3:]] == [
+    assert [(d["id_cadastro"], d["is_seated"], d["mandate_status"]) for d in last[-4:]] == [
         (302, False, "Suspenso(Eleito)"),
         (303, False, "Suspenso(Eleito)"),
+        (304, False, "Suspenso(Eleito)"),
         (501, False, "Suspenso(Eleito)"),
     ]
 
@@ -176,7 +177,7 @@ def test_a_resigned_deputy_is_found_through_the_legislature_filter(con):
     default = core.deputados(con, page=3, per_page=100)["deputados"]
     assert 231 not in [d["id_cadastro"] for d in default]
     xvii = core.deputados(con, legislatura="XVII", per_page=100)
-    assert xvii["pagination"]["total"] == 234
+    assert xvii["pagination"]["total"] == 235
     found = {
         d["id_cadastro"]: d
         for p in (1, 2, 3)
@@ -201,12 +202,13 @@ def test_a_resigned_deputy_is_in_the_current_legislature_but_not_in_office(con):
 
 def test_deputies_list_of_everyone_who_ever_sat(con):
     page = core.deputados(con, active_only=False)
-    # 234 elected or seated in XVII plus 178 only in XVI; 500 is a substitute who never sat.
+    # 235 elected or seated in XVII plus 177 only in XVI; 500 is a substitute who never sat.
     assert page["pagination"]["total"] == 412
     assert page["filters"]["seated_deputies_count"] == 230
-    # Everyone who held a seat in XVII; 303's one-day handover period never seated them.
+    # Everyone who held a seat in XVII; the one-day handover periods of 303 and 304 never seated
+    # them.
     assert page["filters"]["active_deputies_count"] == 231
-    assert page["filters"]["total_deputy_records"] == 464  # 234 in XVII plus 230 in XVI
+    assert page["filters"]["total_deputy_records"] == 465  # 235 in XVII plus 230 in XVI
 
 
 def test_deputy_career_across_legislatures(con):
@@ -247,6 +249,7 @@ def test_a_current_mandate_needs_a_seat_in_the_current_legislature(con):
     assert career(501)["seated_in_current_legislature"] is False
     assert career(302)["seated_in_current_legislature"] is False
     assert career(303)["seated_in_current_legislature"] is False
+    assert career(304)["seated_in_current_legislature"] is False
     assert career(1)["seated_in_current_legislature"] is True
     assert career(300)["seated_in_current_legislature"] is False
 

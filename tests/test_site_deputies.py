@@ -127,6 +127,21 @@ def test_one_day_handover_period_stays_in_the_history_but_is_not_a_mandate(con):
     assert (s["total_mandatos"], s["legislaturas_servidas"]) == (1, "XVI")
 
 
+def test_one_day_handover_before_a_next_day_suspension_is_not_a_mandate(con):
+    # #227: the same handover, with the AR closing the Efetivo period on 2025-06-05 and starting
+    # the suspension on 2025-06-06. The day stays in the history, but a one-day return between a
+    # suspension and the next one is not a mandate in exercise.
+    d = deputies.detalhes(con, 304)
+    assert d["mandate_status"] == "Suspenso(Eleito)" and d["is_seated"] is False
+    assert (d["mandato"]["situacao_inicio"], d["mandato"]["em_exercicio"]) == ("2025-06-06", False)
+    [xvii, xvi] = d["mandatos_historico"]
+    assert (xvii["mandato_inicio"], xvii["mandato_fim"]) == ("2025-06-05", "2025-06-05")
+    assert (xvii["situacao"], xvii["em_exercicio"]) == ("Suspenso(Eleito)", False)
+    assert xvi["em_exercicio"] is True
+    s = d["estatisticas"]
+    assert (s["total_mandatos"], s["legislaturas_servidas"]) == (1, "XVI")
+
+
 def test_elected_person_who_never_sat_has_a_page(con):
     d = deputies.detalhes(con, 501)
     assert (d["nome"], d["legislatura_numero"], d["partido"]) == ("Deputado 501", "XVII", None)
