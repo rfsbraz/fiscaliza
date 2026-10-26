@@ -187,8 +187,8 @@ const LegislatureDropdown = ({
           onChange={handleChange}
           className={`
             ${sizeClasses[size]}
-            appearance-none bg-white border border-gray-300 rounded-md shadow-sm
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+            appearance-none bg-white border border-gray-300 rounded-md shadow-xs
+            focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500
             hover:border-gray-400 transition-colors duration-200
             pr-8 cursor-pointer
           `}

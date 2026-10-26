@@ -77,7 +77,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
     <div className="space-y-8">
       {/* Key Statistics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+        <div className="bg-linear-to-r/srgb from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
           <div className="flex items-center">
             <Users className="h-8 w-8 text-blue-600" />
             <div className="ml-3">
@@ -90,7 +90,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+        <div className="bg-linear-to-r/srgb from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
           <div className="flex items-center">
             <Calendar className="h-8 w-8 text-green-600" />
             <div className="ml-3">
@@ -103,7 +103,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+        <div className="bg-linear-to-r/srgb from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
           <div className="flex items-center">
             <UserCheck className="h-8 w-8 text-purple-600" />
             <div className="ml-3">
@@ -116,7 +116,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
+        <div className="bg-linear-to-r/srgb from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
           <div className="flex items-center">
             <RotateCcw className="h-8 w-8 text-orange-600" />
             <div className="ml-3">
@@ -131,7 +131,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
       </div>
 
       {/* Professional Background */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white rounded-lg shadow-xs border p-6">
         <div className="flex items-center mb-6">
           <Briefcase className="h-6 w-6 text-blue-600 mr-3" />
           <h3 className="text-xl font-semibold text-gray-900">Formação Profissional</h3>
@@ -178,7 +178,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
       </div>
 
       {/* Age Demographics */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white rounded-lg shadow-xs border p-6">
         <div className="flex items-center mb-6">
           <Calendar className="h-6 w-6 text-green-600 mr-3" />
           <h3 className="text-xl font-semibold text-gray-900">Demografia Etária</h3>
@@ -261,26 +261,26 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0 relative">
+                        <div className="shrink-0 relative">
                           {demographics.idades.oldest_deputy.id_cadastro ? (
                             <div className="h-12 w-12 relative group">
                               <img
                                 src={`https://www.parlamento.pt/PublishingImages/Deputados/XVII/${demographics.idades.oldest_deputy.id_cadastro}.jpg`}
                                 alt={demographics.idades.oldest_deputy.nome}
-                                className="h-12 w-12 rounded-full object-cover bg-gray-200 ring-2 ring-white shadow-sm group-hover:ring-blue-300 transition-all duration-200"
+                                className="h-12 w-12 rounded-full object-cover bg-gray-200 ring-2 ring-white shadow-xs group-hover:ring-blue-300 transition-all duration-200"
                                 onError={(e) => {
                                   e.target.style.display = 'none';
                                   e.target.nextSibling.style.display = 'flex';
                                 }}
                               />
                               <div 
-                                className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center ring-2 ring-white shadow-sm hidden"
+                                className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center ring-2 ring-white shadow-xs hidden"
                               >
                                 <User className="h-6 w-6 text-blue-600" />
                               </div>
                             </div>
                           ) : (
-                            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center ring-2 ring-white shadow-sm hover:ring-blue-300 transition-all duration-200">
+                            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center ring-2 ring-white shadow-xs hover:ring-blue-300 transition-all duration-200">
                               <User className="h-6 w-6 text-blue-600" />
                             </div>
                           )}
@@ -350,26 +350,26 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0 relative">
+                        <div className="shrink-0 relative">
                           {demographics.idades.youngest_deputy.id_cadastro ? (
                             <div className="h-12 w-12 relative group">
                               <img
                                 src={`https://www.parlamento.pt/PublishingImages/Deputados/XVII/${demographics.idades.youngest_deputy.id_cadastro}.jpg`}
                                 alt={demographics.idades.youngest_deputy.nome}
-                                className="h-12 w-12 rounded-full object-cover bg-gray-200 ring-2 ring-white shadow-sm group-hover:ring-blue-300 transition-all duration-200"
+                                className="h-12 w-12 rounded-full object-cover bg-gray-200 ring-2 ring-white shadow-xs group-hover:ring-blue-300 transition-all duration-200"
                                 onError={(e) => {
                                   e.target.style.display = 'none';
                                   e.target.nextSibling.style.display = 'flex';
                                 }}
                               />
                               <div 
-                                className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center ring-2 ring-white shadow-sm hidden"
+                                className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center ring-2 ring-white shadow-xs hidden"
                               >
                                 <User className="h-6 w-6 text-blue-600" />
                               </div>
                             </div>
                           ) : (
-                            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center ring-2 ring-white shadow-sm hover:ring-blue-300 transition-all duration-200">
+                            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center ring-2 ring-white shadow-xs hover:ring-blue-300 transition-all duration-200">
                               <User className="h-6 w-6 text-blue-600" />
                             </div>
                           )}
@@ -441,7 +441,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
       {/* Gender and Geographic Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gender Representation */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="bg-white rounded-lg shadow-xs border p-6">
           <div className="flex items-center mb-6">
             <UserCheck className="h-6 w-6 text-purple-600 mr-3" />
             <h3 className="text-xl font-semibold text-gray-900">Representação de Género</h3>
@@ -486,7 +486,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
         </div>
 
         {/* Geographic Distribution */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="bg-white rounded-lg shadow-xs border p-6">
           <div className="flex items-center mb-6">
             <MapPin className="h-6 w-6 text-indigo-600 mr-3" />
             <h3 className="text-xl font-semibold text-gray-900">Distribuição Geográfica</h3>
@@ -517,7 +517,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
 
       {/* Political Experience */}
       <div>
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="bg-white rounded-lg shadow-xs border p-6">
           <div className="flex items-center mb-6">
             <RotateCcw className="h-6 w-6 text-orange-600 mr-3" />
             <h3 className="text-xl font-semibold text-gray-900">Experiência Política</h3>
@@ -645,7 +645,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
       {/* Data Quality Notice */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <div className="flex items-start">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>

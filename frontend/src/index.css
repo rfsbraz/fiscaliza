@@ -1,54 +1,207 @@
 /* index.css - Global styles and Tailwind imports */
 
-@tailwind base;
-@tailwind components;
+/* Tailwind 4 puts its CSS in cascade layers by default, and plain CSS outside a layer beats every
+   layered rule whatever its specificity. App.css is plain CSS, so with the default import its rules
+   would override preflight and the utilities. Importing the parts without layer() keeps the
+   Tailwind 3 cascade: specificity first, then source order.
+
+   The theme is the one part that stays in a layer. Its variables share names with the ones App.css
+   sets on :root (--radius-*, --leading-*, --font-mono, --color-border and more), and App.css must
+   keep winning. theme(inline) puts the theme values straight into the utilities, as Tailwind 3 did,
+   so the utilities don't read those variables at runtime either. */
+@import 'tailwindcss/theme.css' layer(theme) theme(inline);
+@import './styles/tailwind-v3-palette.css' layer(theme);
+@import 'tailwindcss/preflight.css';
+
+/* The colors and radii tailwind.config.js used to add. */
+@theme inline {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+/* Tailwind 3 preflight rules that Tailwind 4 dropped or changed, so the site looks the same:
+   borders default to gray-200 instead of currentcolor, headings and paragraphs get no margin
+   (App.css gives p a bottom margin that this used to override), form fields keep the browser
+   background, placeholders stay gray-400 and buttons keep the pointer. */
+*,
+::after,
+::before,
+::backdrop,
+::file-selector-button {
+  border-color: var(--color-gray-200, currentcolor);
+}
+
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+
+input,
+select,
+optgroup,
+textarea {
+  background-color: revert;
+}
+
+input:where([type='button'], [type='reset'], [type='submit']) {
+  background-color: transparent;
+}
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1;
+  color: var(--color-gray-400);
+}
+
+button,
+[role='button'] {
+  cursor: pointer;
+}
+
+:disabled {
+  cursor: default;
+}
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
+}
+
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
+/* space-x, space-y and divide-y the Tailwind 3 way. Tailwind 4 puts the gap as a bottom or right
+   margin on every child but the last, inside :where(), so the rule has no specificity: the element
+   rules in this file and App.css (h1-h6, p, the * reset) win over it, and the children's own margin
+   utilities add to it. Tailwind 3 put it as a top or left margin on every child but the first, with
+   enough specificity to win. divide-y moved its border the same way. The Tailwind 4 versions of the
+   classes in use are turned off and these take their place. A size not listed here gets the
+   Tailwind 4 behavior. */
+@source not inline('space-y-{1.5,2,3,4,6,8} space-x-{3,4,8} divide-y divide-gray-200');
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
+.space-y-1\.5 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.375rem;
+  margin-bottom: 0;
+}
+
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+.space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+}
+
+.space-y-8 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 2rem;
+  margin-bottom: 0;
+}
+
+.space-x-3 > :not([hidden]) ~ :not([hidden]) {
+  margin-right: 0;
+  margin-left: 0.75rem;
+}
+
+.space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-right: 0;
+  margin-left: 1rem;
+}
+
+.space-x-8 > :not([hidden]) ~ :not([hidden]) {
+  margin-right: 0;
+  margin-left: 2rem;
+}
+
+.divide-y > :not([hidden]) ~ :not([hidden]) {
+  border-top-width: 1px;
+  border-bottom-width: 0;
+}
+
+.divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--color-gray-200);
 }
 
 /* Global reset and base styles */
@@ -72,91 +225,88 @@ code {
 }
 
 /* Custom utility classes */
-@layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.4s ease-out;
-  }
+@utility animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
 
-  .animate-fade-in-delayed {
-    animation: fadeIn 0.4s ease-out 0.1s both;
-  }
+@utility animate-fade-in-delayed {
+  animation: fadeIn 0.4s ease-out 0.1s both;
+}
 
-  .animate-slide-up {
-    animation: slideUp 0.5s ease-out;
-  }
+@utility animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
 
-  .animate-progress {
-    animation: progressFill 0.8s ease-out 0.3s both;
-  }
+@utility animate-progress {
+  animation: progressFill 0.8s ease-out 0.3s both;
+}
 
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(15px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+@utility animate-slide-in {
+  animation: slideIn 0.4s ease-out backwards;
+}
 
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+/* Focus styles for better accessibility */
+@utility focus-ring {
+  @apply focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
 
-  @keyframes progressFill {
-    from {
-      transform: scaleX(0);
-      transform-origin: left;
-    }
-    to {
-      transform: scaleX(1);
-      transform-origin: left;
-    }
-  }
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateX(-12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  .animate-slide-in {
-    animation: slideIn 0.4s ease-out backwards;
-  }
-
-  /* Accessibility improvements */
-  @media (prefers-reduced-motion: reduce) {
-    .animate-fade-in,
-    .animate-fade-in-delayed,
-    .animate-slide-up,
-    .animate-progress {
-      animation: none;
-    }
-  }
-
-  /* Focus styles for better accessibility */
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
-  }
-
-  /* High contrast mode support */
+/* High contrast mode support */
+@utility progress-bar {
   @media (prefers-contrast: high) {
-    .progress-bar {
-      border: 1px solid;
-    }
+    border: 1px solid;
   }
 }
 
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-in-delayed,
+  .animate-slide-up,
+  .animate-progress {
+    animation: none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes progressFill {
+  from {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  to {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
