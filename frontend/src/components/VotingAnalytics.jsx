@@ -76,7 +76,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
   const DifferentVotesCount = () => {
     const count = analytics?.dissent_votes?.length ?? 0;
     return (
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+      <div className="bg-linear-to-r/srgb from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
         <div className="text-lg font-semibold text-gray-900 flex items-center">
           <Target className="h-5 w-5 text-blue-600 mr-2" />
           Votos diferentes do grupo registados: {count.toLocaleString('pt-PT')}
