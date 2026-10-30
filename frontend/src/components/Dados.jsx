@@ -238,9 +238,8 @@ export const DadosView = ({ dados }) => {
               Os elementos públicos do registo de interesses dos Deputados da XVI e da XVII são
               republicados com indicação da Entidade para a Transparência (EpT) como fonte, ao abrigo
               da Lei n.º 52/2019, art. 15.º, n.º 1, e da Lei n.º 26/2016 (LADA), art. 21.º, n.º 1.
-              Ficam excluídos o NIF dos titulares, os dados pessoais, os rendimentos e património, as
-              filiações associativas e os anexos. Estes dois conjuntos têm regras próprias, descritas
-              no ponto 3 da LICENSE-DATA.
+              Fica excluído apenas o NIF dos titulares. Estes dois conjuntos têm regras próprias,
+              descritas no ponto 3 da LICENSE-DATA.
             </p>
           )}
         </section>
