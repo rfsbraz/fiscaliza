@@ -147,8 +147,10 @@ def test_a_failed_ping_does_not_fail_the_deploy(tmp_path, monkeypatch, capsys):
         raise RuntimeError("anything")
 
     monkeypatch.setattr(pages, "indexnow_urls", boom)
+    pages.run_indexnow_step("read the live IndexNow manifest", dist, tmp_path)
     pages.run_indexnow_step("ping IndexNow", dist, tmp_path)
-    assert "warning" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert out.count("warning") == 2
 
 
 @pytest.mark.parametrize("value", ["PS", "MDP/CDE", "XVII", "PàF"])

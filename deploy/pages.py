@@ -16,6 +16,7 @@ See docs/DEPLOY.md.
 """
 
 import argparse
+import hashlib
 import html
 import json
 import os
@@ -25,6 +26,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import unicodedata
+import urllib.error
+import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -94,6 +98,14 @@ STATIC_ROUTES = {
 SAFE_SEGMENT = re.compile(r"^(?!\.{1,2}$)[^/\\\x00-\x1f\x7f]+$")
 # Wrangler 4 needs Node 22 or newer.
 DEFAULT_WRANGLER = "npx --yes wrangler@4.151.3"
+# IndexNow (#236). The key is public by design: engines check it against /<key>.txt, which is
+# frontend/public/<key>.txt. Each deploy publishes INDEXNOW_MANIFEST, a hash per sitemap URL, and
+# a production deploy submits the URLs whose hash differs from the live one.
+INDEXNOW_KEY = "4400aea6a0cd479e278f0c5ef42087d7"
+INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow"
+INDEXNOW_MANIFEST = "indexnow-manifest.json"
+# IndexNow takes at most 10 000 URLs per request.
+INDEXNOW_MAX_URLS = 10_000
 
 
 class DeployError(Exception):
@@ -298,6 +310,117 @@ def write_sitemap(dist, routes):
     return len(urls)
 
 
+def api_slug(value):
+    """The export's path form of a party, coalition or legislature (fiscaliza_data.export.slug), or None."""
+    text = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", text).strip("-") or None
+
+
+def page_hash(dist, path):
+    """What a search engine would see change on a route: its HTML without scripts and links (their
+    names follow each build), plus the export files under api/<kind>/<id> that the page reads."""
+    dist = Path(dist)
+    page = dist / ("index.html" if path == "/" else f"{path.lstrip('/')}.html")
+    text = page.read_text(encoding="utf-8") if page.is_file() else ""
+    text = re.sub(r"<script\b[^>]*>.*?</script>", "", text, flags=re.S)
+    text = re.sub(r"<link\b[^>]*>", "", text)
+    digest = hashlib.sha256(text.encode())
+    kind, _, value = path.strip("/").partition("/")
+    if value:
+        api = dist / "api" / kind
+        for name in sorted({value, api_slug(value)} - {None}):
+            files = [api / f"{name}.json"]
+            if (api / name).is_dir():
+                files += sorted((api / name).rglob("*"))
+            for f in files:
+                if f.is_file():
+                    digest.update(str(f.relative_to(dist)).encode() + b"\0" + f.read_bytes())
+    return digest.hexdigest()[:16]
+
+
+def indexnow_manifest(dist, routes):
+    """{"version": 1, "pages": {sitemap URL: page_hash}} for / and every route."""
+    return {"version": 1, "pages": {route_url(path): page_hash(dist, path) for path in ["/", *routes]}}
+
+
+def indexnow_changed(previous, current):
+    """New and changed URLs in sitemap order, then removed ones. With no previous manifest, every URL."""
+    now = current["pages"]
+    before = previous.get("pages") if isinstance(previous, dict) and previous.get("version") == 1 else None
+    if not isinstance(before, dict):
+        return list(now)
+    return [url for url in now if before.get(url) != now[url]] + [url for url in before if url not in now]
+
+
+def indexnow_payload(urls):
+    return {
+        "host": SITE.split("://", 1)[1],
+        "key": INDEXNOW_KEY,
+        "keyLocation": f"{SITE}/{INDEXNOW_KEY}.txt",
+        "urlList": list(urls),
+    }
+
+
+def _http_get(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "fiscaliza-deploy", "Cache-Control": "no-cache"})  # noqa: S310
+    with urllib.request.urlopen(req, timeout=30) as res:  # noqa: S310
+        return res.read()
+
+
+def _http_post(url, body):
+    req = urllib.request.Request(  # noqa: S310
+        url, data=body, method="POST", headers={"Content-Type": "application/json; charset=utf-8"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as res:  # noqa: S310
+            return res.status
+    except urllib.error.HTTPError as e:
+        return e.code
+
+
+def indexnow_urls(get, current):
+    """The URLs to submit against the live manifest. The first deploy (404) submits every URL; a live
+    manifest that cannot be read gives None, and the ping is skipped rather than send everything."""
+    try:
+        previous = json.loads(get(f"{SITE}/{INDEXNOW_MANIFEST}"))
+    except urllib.error.HTTPError as e:
+        return indexnow_changed(None, current) if e.code == 404 else None
+    except Exception:
+        return None
+    return indexnow_changed(previous, current)
+
+
+def indexnow_ping(urls, post=_http_post):
+    """POSTs the URLs to IndexNow and says what happened. Never raises."""
+    if not urls:
+        return "IndexNow: nothing to submit"
+    try:
+        status = post(INDEXNOW_ENDPOINT, json.dumps(indexnow_payload(urls[:INDEXNOW_MAX_URLS])).encode())
+    except Exception as e:
+        return f"warning: IndexNow ping failed: {e}"
+    sent = len(urls[:INDEXNOW_MAX_URLS])
+    return f"IndexNow answered {status} for {sent} URL{'' if sent == 1 else 's'}"
+
+
+def run_indexnow_step(name, dist, work):
+    """The two IndexNow steps of a production deploy. Any failure is a warning: the deploy goes on."""
+    saved = Path(work) / "indexnow-urls.json"
+    try:
+        if name == "read the live IndexNow manifest":
+            urls = indexnow_urls(_http_get, json.loads((Path(dist) / INDEXNOW_MANIFEST).read_text()))
+            saved.parent.mkdir(parents=True, exist_ok=True)
+            saved.write_text(json.dumps(urls))
+            if urls is None:
+                print("  warning: could not read the live IndexNow manifest; this deploy will not ping")
+            else:
+                print(f"  {len(urls)} URLs changed since the live deploy")
+        else:
+            urls = json.loads(saved.read_text())
+            print("  warning: IndexNow skipped" if urls is None else f"  {indexnow_ping(urls)}")
+    except Exception as e:
+        print(f"  warning: {name} failed: {e}")
+
+
 def prepare(dist):
     """Turn a generic build into a Pages one: the _headers and _redirects files, a 404.html that
     is the app, one HTML file per app route with its own head (write_route_pages) and a
@@ -313,6 +436,7 @@ def prepare(dist):
     routes = route_heads(dist / "api")
     if write_route_pages(dist, routes):
         write_sitemap(dist, routes)
+        (dist / INDEXNOW_MANIFEST).write_text(json.dumps(indexnow_manifest(dist, routes)), encoding="utf-8")
     files = [p for p in dist.rglob("*") if p.is_file()]
     if len(files) >= MAX_FILES:
         raise DeployError(f"{dist} has {len(files)} files; Pages takes fewer than {MAX_FILES}")
@@ -412,13 +536,17 @@ def plan(args, work):
         Step("install", ["npm", "ci"], cwd=FRONTEND),
         Step("build", ["npm", "run", "build"], cwd=FRONTEND),
         Step("prepare for Pages", ["prepare", str(FRONTEND / "dist")]),
-        Step(
-            "upload",
-            [*wrangler, "pages", "deploy", "dist", "--project-name", PROJECT, "--branch", branch],
-            cwd=FRONTEND,
-        ),
     ]
-    return steps
+    upload = Step(
+        "upload",
+        [*wrangler, "pages", "deploy", "dist", "--project-name", PROJECT, "--branch", branch],
+        cwd=FRONTEND,
+    )
+    if branch != PRODUCTION_BRANCH:
+        return [*steps, upload]
+    # Only production tells IndexNow: read the live manifest before the upload replaces it, ping after.
+    indexnow = ["indexnow", str(FRONTEND / "dist"), str(work)]
+    return [*steps, Step("read the live IndexNow manifest", indexnow), upload, Step("ping IndexNow", indexnow)]
 
 
 def run(args):
@@ -446,6 +574,9 @@ def run(args):
             print(f"[{step.name}]", flush=True)
             if step.argv[0] == "prepare":
                 print(f"  {prepare(step.argv[1])} files")
+                continue
+            if step.argv[0] == "indexnow":
+                run_indexnow_step(step.name, step.argv[1], step.argv[2])
                 continue
             subprocess.run(step.argv, cwd=step.cwd, env={**os.environ, **step.env}, check=True)
     except subprocess.CalledProcessError as e:
