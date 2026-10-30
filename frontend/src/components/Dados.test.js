@@ -67,7 +67,11 @@ test('sets outside the CC BY 4.0 carry the badge and the EpT note', () => {
   assert.match(interests, /Fora da CC BY 4.0/);
   assert.ok(!html.match(/data-set="deputies".*?<\/code>/s)[0].includes('Fora da CC BY'));
   assert.match(text(html), /2 dos 3 conjuntos estão sob a CC BY 4.0/);
-  assert.match(text(html), /Entidade para a Transparência não entram nos ficheiros publicados/);
+  const note = text(html);
+  assert.ok(note.includes('com indicação da Entidade para a Transparência (EpT) como fonte'));
+  assert.ok(note.includes('Lei n.º 52/2019, art. 15.º, n.º 1, e da Lei n.º 26/2016 (LADA), art. 21.º, n.º 1'));
+  assert.ok(note.includes('Ficam excluídos o NIF dos titulares, os dados pessoais, os rendimentos e património, as filiações associativas e os anexos.'));
+  assert.ok(!note.includes('não entram nos ficheiros publicados'));
 });
 
 test('groups follow the page order, and a set the page does not know goes last', () => {
