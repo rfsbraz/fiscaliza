@@ -70,7 +70,9 @@ test('sets outside the CC BY 4.0 carry the badge and the EpT note', () => {
   const note = text(html);
   assert.ok(note.includes('com indicação da Entidade para a Transparência (EpT) como fonte'));
   assert.ok(note.includes('Lei n.º 52/2019, art. 15.º, n.º 1, e da Lei n.º 26/2016 (LADA), art. 21.º, n.º 1'));
-  assert.ok(note.includes('Ficam excluídos o NIF dos titulares, os dados pessoais, os rendimentos e património, as filiações associativas e os anexos.'));
+  assert.ok(note.includes('Fica excluído apenas o NIF dos titulares.'));
+  assert.ok(!note.includes('rendimentos e património'));
+  assert.ok(!note.includes('filiações associativas'));
   assert.ok(!note.includes('não entram nos ficheiros publicados'));
 });
 
