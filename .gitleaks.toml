@@ -30,3 +30,12 @@ condition = "AND"
 targetRules = ["password-assignment"]
 commits = ["112445cf869e3c2fabe7fa2dd524c421a8bda140"]
 paths = ['''^CONTRIBUTING\.md$''']
+
+# The IndexNow key is public by design: it is served at https://fiscaliza.pt/<key>.txt. The first
+# IndexNow commit wrote it into deploy/pages.py, which now reads it from that file name instead.
+[[allowlists]]
+description = "the public IndexNow key in deploy/pages.py at the first IndexNow commit"
+condition = "AND"
+targetRules = ["generic-api-key"]
+commits = ["9fafc9703bbcbbc03dd7428530e2f0bab992c4d9"]
+paths = ['''^deploy/pages\.py$''']

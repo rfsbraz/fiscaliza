@@ -267,6 +267,25 @@ O `/robots.txt` é um ficheiro real de `frontend/public`: permite tudo e indica
 Um ficheiro de dados que não existe em `/api` também responde 404. O frontend trata tudo o que não
 é JSON como não encontrado.
 
+## IndexNow
+
+Cada deploy de produção avisa o IndexNow (Bing, Yandex e outros) das páginas que mudaram. A chave é
+o ficheiro `frontend/public/4400aea6a0cd479e278f0c5ef42087d7.txt`, servido na raiz do site.
+`deploy/pages.py` lê a chave do nome desse ficheiro.
+
+O sitemap não tem datas, por isso o passo do Pages escreve também `indexnow-manifest.json`: um hash
+por URL do sitemap, feito com o head da página (sem scripts nem tags `<link>`, que apontam para ficheiros com hash) e os
+ficheiros de `/api` dessa rota. Antes do upload o deploy lê o manifesto que está no ar e guarda os
+URLs cujo hash mudou, mais os que entraram ou saíram do sitemap. Depois do upload faz um POST para
+`https://api.indexnow.org/indexnow` com essa lista. Um nome novo de um asset não muda nenhum hash.
+
+- Se o manifesto no ar dá 404 (o primeiro deploy), envia todos os URLs do sitemap.
+- Se o manifesto não se consegue ler por outra razão, não envia nada, em vez de enviar tudo.
+- Previews e `build` não avisam ninguém.
+- Uma falha em qualquer um dos dois passos é só um aviso no log. O deploy continua.
+
+As rotas estáticas e o `/` só têm o head no hash, por isso uma mudança só no texto da app não as envia.
+
 ## Cabeçalhos
 
 `deploy/_headers`, copiado para o build:
