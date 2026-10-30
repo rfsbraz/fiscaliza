@@ -270,8 +270,8 @@ Um ficheiro de dados que não existe em `/api` também responde 404. O frontend 
 ## IndexNow
 
 Cada deploy de produção avisa o IndexNow (Bing, Yandex e outros) das páginas que mudaram. A chave é
-o ficheiro `frontend/public/4400aea6a0cd479e278f0c5ef42087d7.txt`, servido na raiz do site, e o
-mesmo valor está em `INDEXNOW_KEY` em `deploy/pages.py`.
+o ficheiro `frontend/public/4400aea6a0cd479e278f0c5ef42087d7.txt`, servido na raiz do site.
+`deploy/pages.py` lê a chave do nome desse ficheiro.
 
 O sitemap não tem datas, por isso o passo do Pages escreve também `indexnow-manifest.json`: um hash
 por URL do sitemap, feito com o head da página (sem scripts nem tags `<link>`, que apontam para ficheiros com hash) e os

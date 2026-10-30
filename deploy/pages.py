@@ -98,10 +98,12 @@ STATIC_ROUTES = {
 SAFE_SEGMENT = re.compile(r"^(?!\.{1,2}$)[^/\\\x00-\x1f\x7f]+$")
 # Wrangler 4 needs Node 22 or newer.
 DEFAULT_WRANGLER = "npx --yes wrangler@4.151.3"
-# IndexNow (#236). The key is public by design: engines check it against /<key>.txt, which is
-# frontend/public/<key>.txt. Each deploy publishes INDEXNOW_MANIFEST, a hash per sitemap URL, and
-# a production deploy submits the URLs whose hash differs from the live one.
-INDEXNOW_KEY = "4400aea6a0cd479e278f0c5ef42087d7"
+# IndexNow (#236). The key is public by design: engines check it against /<key>.txt, so the one
+# copy is the name of frontend/public/<key>.txt. Each deploy publishes INDEXNOW_MANIFEST, a hash
+# per sitemap URL, and a production deploy submits the URLs whose hash differs from the live one.
+INDEXNOW_KEY = next(
+    (f.stem for f in sorted((FRONTEND / "public").glob("*.txt")) if re.fullmatch(r"[0-9a-f]{32}", f.stem)), None
+)
 INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow"
 INDEXNOW_MANIFEST = "indexnow-manifest.json"
 # IndexNow takes at most 10 000 URLs per request.
