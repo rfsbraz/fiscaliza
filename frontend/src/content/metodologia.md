@@ -113,7 +113,7 @@ Distinguimos quem foi eleito de quem esteve em funções.
 - Os dados dizem que um mandato está suspenso, mas não dizem porquê. Não indicamos o motivo de nenhuma suspensão.
 - Há períodos em funções de um só dia, por exemplo na mudança de Governo em junho de 2025. São registos da AR e mantemo-los no histórico.
 
-No topo da lista de deputados, "230 em exercício" é o número de deputados com lugar na data dos dados. O segundo número conta todas as pessoas que tiveram lugar em algum momento da legislatura, substitutos incluídos, por isso é maior do que os 230 lugares.
+No topo da lista de deputados, "230 em exercício" é o número de deputados com lugar na data dos dados. O segundo número conta todas as pessoas que tiveram lugar em algum momento da legislatura, substitutos incluídos, por isso é maior do que os 230 lugares. A página inicial mostra os mesmos dois números e um terceiro: as pessoas nas listas da legislatura, que inclui quem foi eleito e suspendeu o mandato antes de tomar lugar. É o número de deputados que a lista mostra quando se escolhe a legislatura.
 
 Nas páginas das coligações, o número principal são os deputados eleitos pelas listas da coligação, como no resultado das eleições. Até à VI Legislatura vêm das listas de eleitos publicadas; a partir da VII, dos mandatos que começam no primeiro dia da legislatura, incluindo quem suspendeu o mandato ou renunciou logo nesse dia. Um nome da lista que não conseguimos ligar a um deputado conta na mesma, sem página. Por baixo mostramos quantos deputados dos partidos da coligação, nos círculos onde a lista elegeu, estavam em funções no último dia da legislatura (ou na data dos dados, se a legislatura está em curso). A diferença vem de substituições e de mudanças de grupo.
 

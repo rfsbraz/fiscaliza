@@ -64,6 +64,13 @@ def test_elected_counts_everyone_who_held_a_seat_in_the_legislature(con):
     assert core.estatisticas(con)["totais"]["deputados_eleitos"] == 231
 
 
+def test_listed_counts_everyone_on_the_legislature_lists(con):
+    # The 231 who held a seat, plus 500, 302, 501 and the handover deputy who never sat: the people
+    # /deputados lists for the legislature, so the home page can explain all three numbers (#254).
+    totais = core.estatisticas(con)["totais"]
+    assert totais["deputados_listados"] == 235
+
+
 def test_circle_distribution_is_the_top_ten_circles_by_seats(con):
     circles = core.estatisticas(con)["distribuicao_circulos"]
     assert len(circles) == 10

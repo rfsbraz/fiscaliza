@@ -92,6 +92,8 @@ def estatisticas(con, legislatura=None):
         "totais": {
             "deputados": seated,
             "deputados_eleitos": repository.people_seated(con, leg["legislature"]),
+            # Everyone /deputados lists for the legislature: elected or substitutes, seated or not.
+            "deputados_listados": repository.deputies_count(con, leg["legislature"], leg["legislature"])[0],
             "deputados_em_exercicio": seated,
             "seated_deputies": seated,
             "partidos": len(groups),

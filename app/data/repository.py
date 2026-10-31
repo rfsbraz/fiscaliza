@@ -1423,7 +1423,11 @@ def attendance_between(con, legislature, start, end):
 # to their first answer, where both dates are there and in order. The source spaces some
 # recipient names differently from one question to the next; the spacing is evened out.
 _GOVERNMENT_QUESTIONS = """
-    select r.legislature, r.question_id, trim(regexp_replace(r.recipient, '\\s+', ' ', 'g')) as recipient,
+    select r.legislature, r.question_id, r.sent_date,
+           trim(regexp_replace(r.recipient, '\\s+', ' ', 'g')) as recipient,
+           -- The office, whoever holds it: Ministra da Saúde and Ministro da Saúde are one (#254).
+           regexp_replace(trim(regexp_replace(r.recipient, '\\s+', ' ', 'g')),
+                          '^(Ministr|Secretári)[oa]\\b', '\\1o') as office,
            not (r.is_withdrawn or r.is_returned) as counted,
            r.is_withdrawn, r.is_returned,
            r.answer_count > 0 as answered,
@@ -1463,15 +1467,17 @@ def question_totals(con, legislature=None):
 
 
 def question_recipients(con, legislature):
-    """The same figures per recipient of a legislature's perguntas, most perguntas first."""
+    """The same figures per recipient of a legislature's perguntas, most perguntas first. A
+    Ministro and a Ministra (or Secretário and Secretária de Estado) of the same office are one
+    recipient, named as its latest pergunta names it."""
     return _rows(
         con,
         f"""
         with g as ({_GOVERNMENT_QUESTIONS})
-        select recipient, {_QUESTION_FIGURES}
+        select arg_max(recipient, sent_date) as recipient, {_QUESTION_FIGURES}
         from g
         where legislature = ?
-        group by all
+        group by office
         order by perguntas desc, recipient
         """,  # noqa: S608
         [legislature],
