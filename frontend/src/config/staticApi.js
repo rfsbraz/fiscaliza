@@ -138,8 +138,31 @@ function activities(bundle, params) {
   return answer(200, {
     ...found,
     intervencoes: matched.slice((page - 1) * perPage, page * perPage),
-    intervention_metadata: { total, page, per_page: perPage, pages: Math.ceil(total / perPage) },
+    intervention_metadata: { total, page, per_page: perPage, pages: Math.ceil(total / perPage), ...summary(matched) },
   });
+}
+
+// What the interventions tab sums up, over every match and not the page shown, as the API
+// answers it (#244).
+function summary(interventions) {
+  const perType = {};
+  const perMonth = {};
+  let latest = null;
+  for (const i of interventions) {
+    const type = i.tipo || 'Outro';
+    perType[type] = (perType[type] || 0) + 1;
+    if (i.data) {
+      const month = i.data.slice(0, 7);
+      perMonth[month] = (perMonth[month] || 0) + 1;
+      if (latest === null || i.data > latest) latest = i.data;
+    }
+  }
+  const byCount = Object.entries(perType).sort(([a, x], [b, y]) => y - x || (a < b ? -1 : a > b ? 1 : 0));
+  return {
+    por_tipo: Object.fromEntries(byCount),
+    por_mes: Object.fromEntries(Object.entries(perMonth).sort(([a], [b]) => (a < b ? -1 : 1))),
+    ultima: latest,
+  };
 }
 
 function votingAnalytics(bundle, params) {

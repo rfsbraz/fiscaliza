@@ -107,7 +107,7 @@ const hasNot = (re) => assert.ok(!re.test(page), `${re} is on the page`);
 test('the career count and the legislature count each say what they cover', () => {
   has(/1[\s.]?320 em plenário, em todos os mandatos/);
   has(/60 intervenções na XVII Legislatura/);
-  hasNot(/nesta legislatura/);
+  hasNot(/intervenções nesta legislatura/);
 });
 
 test('"Por tipo" counts every intervention of the legislature, not the 50 loaded', () => {

@@ -700,19 +700,6 @@ def test_deputy_modules_have_no_sqlalchemy_or_old_database_import(path):
     assert [n for n in names if n.split(".")[0] in {"sqlalchemy", "flask_sqlalchemy", "database"}] == []
 
 
-# Evolution chart
-
-
-def test_evolution_bars_are_scaled_to_their_values():
-    # A percentage height inside a column with no height of its own resolves to auto, so every
-    # bar fell back to the same minimum. The bars get a pixel height out of a fixed track.
-    source = COMPONENT.read_text()
-    assert "height: `${Math.max(height, 8)}%`" not in source
-    assert "const EVOLUTION_TRACK_PX = " in source
-    assert "Math.round((total / maxValue) * EVOLUTION_TRACK_PX)" in source
-    assert "height: `${barHeight}px`" in source
-
-
 # Written questions to the Government (#114)
 
 ACTIVITY_URL = "https://www.parlamento.pt/DeputadoGP/Paginas/ActividadeDeputado.aspx?BID={}&lg={}"

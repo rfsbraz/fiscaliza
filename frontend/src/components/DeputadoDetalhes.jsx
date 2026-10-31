@@ -17,7 +17,7 @@ import InterventionsSummaryBar, { ActivityBadge, VideoIndicator } from './deputy
 import TimelineSparkline, { ActivityHeatmap, TrendIndicator, BarSparkline } from './charts/TimelineSparkline';
 import PolicySpecializationChart, { PolicyRadar, TopicTag } from './charts/PolicySpecializationChart';
 import InterestTable, { ACTIVITY_COLUMNS, SHAREHOLDING_COLUMNS } from './deputy/InterestTable';
-import { formatDecimal, legislatureName, plural } from '../utils/format';
+import { formatDecimal, formatNumber, legislatureName, plural } from '../utils/format';
 
 // TODO: Deputy mandate linking limitation
 // Current system uses name-based linking to connect same person across legislaturas
@@ -1536,6 +1536,9 @@ const DeputadoDetalhes = () => {
               {/* Latest legislature only: how the projetos were signed and how they ended */}
               {(() => {
                 const latest = deputado.estatisticas.iniciativas_legislaturas?.[0];
+                // The notes go with the per-legislature block below; with no earlier
+                // legislature there is no block, so they go here.
+                const notes = deputado.estatisticas.iniciativas_legislaturas.length === 1;
                 if (!latest) {
                   return (
                     <p style={{ margin: 0, fontSize: '0.875rem', color: tokens.colors.textSecondary }}>
@@ -1548,9 +1551,15 @@ const DeputadoDetalhes = () => {
                     <div style={{ fontSize: '0.75rem', color: tokens.colors.textMuted, marginBottom: '8px' }}>
                       {legislatureName(latest.legislatura)}{latest.aberta ? ' (em curso)' : ''}
                     </div>
-                    <SigningCounts assinatura={latest.assinatura} showNote={false} />
+                    <SigningCounts assinatura={latest.assinatura} showNote={notes} />
                     <div style={{ padding: '12px 0 0 0', marginTop: '12px', borderTop: `1px solid ${tokens.colors.border}` }}>
-                      <ApprovalLines aprovacao={latest.aprovacao} aberta={latest.aberta} showNote={false} />
+                      <ApprovalLines aprovacao={latest.aprovacao} aberta={latest.aberta} showNote={notes} />
+                    </div>
+                    <div style={{ padding: '12px 0 0 0', marginTop: '12px', borderTop: `1px solid ${tokens.colors.border}` }}>
+                      <GroupComparison
+                        comparacao={deputado.estatisticas.comparacao?.iniciativas_subscricao_restrita}
+                        label="Iniciativas com subscrição restrita, comparação com o grupo parlamentar"
+                      />
                     </div>
                   </div>
                 );
@@ -1601,10 +1610,10 @@ const DeputadoDetalhes = () => {
                   color: tokens.colors.textPrimary,
                   fontFamily: tokens.fonts.mono,
                 }}>
-                  {deputado.estatisticas.intervencoes_parlamentares.toLocaleString('pt-PT')}
+                  {formatNumber(deputado.estatisticas.intervencoes_parlamentares)}
                 </span>
                 <span style={{ fontSize: '0.875rem', color: tokens.colors.textSecondary, marginLeft: '8px' }}>
-                  em plenário
+                  em plenário, em todos os mandatos
                 </span>
               </div>
 
@@ -1849,8 +1858,8 @@ const DeputadoDetalhes = () => {
             </section>
           )}
 
-          {/* INITIATIVES PER LEGISLATURE: signing and outcomes, then the group comparison */}
-          {deputado.estatisticas.iniciativas_legislaturas?.length > 0 && (
+          {/* EARLIER LEGISLATURES: the latest is in the Iniciativas card above */}
+          {deputado.estatisticas.iniciativas_legislaturas?.length > 1 && (
             <section style={{
               backgroundColor: tokens.colors.bgSecondary,
               border: `1px solid ${tokens.colors.border}`,
@@ -1865,108 +1874,12 @@ const DeputadoDetalhes = () => {
                   fontWeight: 600,
                   color: tokens.colors.primary,
                   margin: '0 0 4px 0',
-                }}>Projetos por legislatura</h4>
+                }}>Projetos nas legislaturas anteriores</h4>
                 <p style={{ fontSize: '0.8125rem', color: tokens.colors.textSecondary, margin: 0 }}>
                   Projetos de lei, de resolução e de deliberação: como foram assinados e como terminaram
                 </p>
               </header>
-              <InitiativeRecordTable rows={deputado.estatisticas.iniciativas_legislaturas} />
-              <div style={{ marginTop: '16px' }}>
-                <GroupComparison
-                  comparacao={deputado.estatisticas.comparacao?.iniciativas_subscricao_restrita}
-                  label="Iniciativas com subscrição restrita, comparação com o grupo parlamentar"
-                />
-              </div>
-            </section>
-          )}
-
-          {/* LEGISLATURE EVOLUTION */}
-          {deputado.estatisticas.evolucao_legislaturas && deputado.estatisticas.evolucao_legislaturas.length > 1 && (
-            <section style={{
-              backgroundColor: tokens.colors.bgSecondary,
-              border: `1px solid ${tokens.colors.border}`,
-              borderRadius: '6px',
-              padding: '20px',
-              marginBottom: '24px',
-            }}>
-              <header style={{ marginBottom: '20px' }}>
-                <h4 style={{
-                  fontFamily: tokens.fonts.headline,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  color: tokens.colors.textPrimary,
-                  margin: '0 0 4px 0',
-                }}>Evolução por Legislatura</h4>
-                <p style={{ fontSize: '0.8125rem', color: tokens.colors.textSecondary, margin: 0 }}>
-                  Atividade legislativa ao longo das legislaturas
-                </p>
-              </header>
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'space-around',
-                height: '160px',
-                gap: '8px',
-                paddingBottom: '32px',
-                position: 'relative',
-              }}>
-                {(() => {
-                  // Pixel heights out of a fixed track: a percentage height inside a column
-                  // with no height of its own resolves to auto and every bar looked the same.
-                  const EVOLUTION_TRACK_PX = 96;
-                  const maxValue = Math.max(...deputado.estatisticas.evolucao_legislaturas.map(e => e.iniciativas + e.intervencoes));
-                  // Reverse to show oldest first (left to right)
-                  const sortedEvolution = [...deputado.estatisticas.evolucao_legislaturas].reverse();
-
-                  return sortedEvolution.map((leg, index) => {
-                    const total = leg.iniciativas + leg.intervencoes;
-                    const barHeight = maxValue > 0 ? Math.max(Math.round((total / maxValue) * EVOLUTION_TRACK_PX), 4) : 4;
-                    const isLast = index === sortedEvolution.length - 1;
-
-                    return (
-                      <div
-                        key={leg.legislatura}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          flex: 1,
-                          maxWidth: '80px',
-                        }}
-                      >
-                        <div style={{
-                          fontFamily: tokens.fonts.mono,
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          color: tokens.colors.textSecondary,
-                          marginBottom: '8px',
-                        }}>
-                          {total}
-                        </div>
-                        <div style={{
-                          width: '100%',
-                          height: `${barHeight}px`,
-                          backgroundColor: isLast ? tokens.colors.primary : tokens.colors.infoSecondary || '#3D5A80',
-                          borderRadius: '4px 4px 0 0',
-                          transition: 'height 0.5s ease',
-                        }} />
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '8px',
-                          fontFamily: tokens.fonts.mono,
-                          fontSize: '0.75rem',
-                          fontWeight: isLast ? 600 : 400,
-                          color: isLast ? tokens.colors.primary : tokens.colors.textMuted,
-                        }}>
-                          {leg.legislatura}
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-
+              <InitiativeRecordTable rows={deputado.estatisticas.iniciativas_legislaturas.slice(1)} />
             </section>
           )}
 
@@ -2136,10 +2049,9 @@ const DeputadoDetalhes = () => {
                         marginTop: '6px',
                         fontFamily: tokens.fonts.body,
                       }}>
-                        {interventionTypeFilter
-                          ? `${atividades?.intervencoes?.length || 0} de ${totalInterventions} intervenções (filtrado por "${interventionTypeFilter}")`
-                          : `${totalInterventions} intervenções nesta legislatura`
-                        }
+                        {`${plural(totalInterventions, 'intervenção', 'intervenções')}${
+                          interventionTypeFilter ? ` do tipo "${interventionTypeFilter}"` : ''
+                        } na ${legislatureName(atividades?.legislatura?.numero)}`}
                       </p>
                     )}
                   </div>
@@ -2230,15 +2142,8 @@ const DeputadoDetalhes = () => {
                     totalInterventions={totalInterventions}
                     comparison={atividades.comparacao_intervencoes}
                     videoCount={atividades.intervencoes?.filter(i => i.url_video)?.length || 0}
-                    lastInterventionDate={atividades.intervencoes?.[0]?.data}
-                    typeBreakdown={(() => {
-                      const breakdown = {};
-                      atividades.intervencoes?.forEach(i => {
-                        const tipo = i.tipo || 'Outro';
-                        breakdown[tipo] = (breakdown[tipo] || 0) + 1;
-                      });
-                      return breakdown;
-                    })()}
+                    lastInterventionDate={atividades.intervention_metadata?.ultima}
+                    typeBreakdown={atividades.intervention_metadata?.por_tipo || {}}
                   />
                 )}
 
@@ -2269,20 +2174,10 @@ const DeputadoDetalhes = () => {
                         Atividade ao longo do tempo
                       </h4>
                       <TimelineSparkline
-                        data={(() => {
-                          // Group interventions by month
-                          const monthlyData = {};
-                          atividades.intervencoes?.forEach(i => {
-                            if (i.data) {
-                              const monthKey = i.data.substring(0, 7);
-                              monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
-                            }
-                          });
-                          return Object.entries(monthlyData)
-                            .sort(([a], [b]) => a.localeCompare(b))
-                            .slice(-12) // Last 12 months
-                            .map(([date, value]) => ({ date, value }));
-                        })()}
+                        data={Object.entries(atividades.intervention_metadata?.por_mes || {})
+                          .sort(([a], [b]) => a.localeCompare(b))
+                          .slice(-12) // Last 12 months
+                          .map(([date, value]) => ({ date, value }))}
                         width={280}
                         height={50}
                         color={tokens.colors.primary}
