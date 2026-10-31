@@ -6,31 +6,31 @@
       "path": "coligacao",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:208"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:218"
     },
     {
       "path": "coligacao.id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:214"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:224"
     },
     {
       "path": "coligacao.nome",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:223"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:233"
     },
     {
       "path": "coligacao.sigla",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:221"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:231"
     },
     {
       "path": "demografia",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:804"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:822"
     },
     {
       "path": "demografia.experiencia_politica",
@@ -264,109 +264,109 @@
       "path": "deputados",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:292"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:302"
     },
     {
       "path": "deputados[].circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:650"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:661"
     },
     {
       "path": "deputados[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:552"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:562"
     },
     {
       "path": "deputados[].id_cadastro",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:617"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:628"
     },
     {
       "path": "deputados[].mandato_ativo",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:655"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:666"
     },
     {
       "path": "deputados[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:569"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:579"
     },
     {
       "path": "deputados[].picture_url",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:565"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:575"
     },
     {
       "path": "deputados[].profissao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:631"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:642"
     },
     {
       "path": "deputados[].ultima_legislatura",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:656"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:667"
     },
     {
       "path": "historico",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:292"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:302"
     },
     {
       "path": "historico.periodo_atividade",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:510"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:520"
     },
     {
       "path": "historico.total_circulos",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:292"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:302"
     },
     {
       "path": "historico.total_legislaturas",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:527"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:537"
     },
     {
       "path": "mandatos_ativos",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:246"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:256"
     },
     {
       "path": "partido",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:197"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:207"
     },
     {
       "path": "partido.nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:206"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:216"
     },
     {
       "path": "partido.sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:197"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:207"
     },
     {
       "path": "total",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:241"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:251"
     }
   ],
   "dropped": [
