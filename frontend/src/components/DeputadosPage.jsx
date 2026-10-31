@@ -32,6 +32,9 @@ const DeputadosPage = () => {
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState(null)
   const [filters, setFilters] = useState(null)
+  // The header counts everyone, so it keeps the totals of the unfiltered list (#248).
+  const [totais, setTotais] = useState(null)
+  const [pesquisado, setPesquisado] = useState('')
 
   useEffect(() => {
     fetchDeputados()
@@ -55,6 +58,8 @@ const DeputadosPage = () => {
       setDeputados(data.deputados || [])
       setPagination(data.pagination)
       setFilters(data.filters)
+      setPesquisado(search)
+      if (!search) setTotais({ pessoas: data.pagination?.total, mandatos: data.filters?.total_deputy_records })
     } catch (error) {
       console.error('Erro ao carregar deputados:', error)
     } finally {
@@ -101,10 +106,10 @@ const DeputadosPage = () => {
           {filters ? (
             <>
               <span style={{ fontFamily: tokens.fonts.mono, fontWeight: 600, color: tokens.colors.primary }}>
-                {formatNumber(pagination?.total)}
+                {formatNumber(totais ? totais.pessoas : pagination?.total)}
               </span> pessoas únicas · {' '}
               <span style={{ fontFamily: tokens.fonts.mono, fontWeight: 600 }}>
-                {formatNumber(filters.total_deputy_records)}
+                {formatNumber(totais ? totais.mandatos : filters.total_deputy_records)}
               </span> mandatos totais · {' '}
               <span style={{ fontFamily: tokens.fonts.mono, fontWeight: 600, color: tokens.colors.primary }}>
                 {formatNumber(filters.seated_deputies_count || filters.active_deputies_count)}
@@ -187,9 +192,25 @@ const DeputadosPage = () => {
             letterSpacing: '0.05em',
           }}
         >
-          A mostrar todos os deputados da história parlamentar
+          {pesquisado
+            ? `${plural(pagination?.total ?? 0, 'resultado', 'resultados')} para «${pesquisado}»`
+            : 'A mostrar todos os deputados da história parlamentar'}
         </p>
       </div>
+
+      {pesquisado && !loading && deputados.length === 0 && (
+        <p
+          style={{
+            textAlign: 'center',
+            padding: '2rem 1rem',
+            fontFamily: tokens.fonts.body,
+            fontSize: '0.9375rem',
+            color: tokens.colors.textSecondary,
+          }}
+        >
+          {`Nenhum deputado corresponde a «${pesquisado}». Pesquise por nome, sigla ou nome do partido.`}
+        </p>
+      )}
 
       {/* Deputados Grid */}
       <div

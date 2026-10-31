@@ -127,7 +127,7 @@ const Dashboard = ({ stats }) => {
         backgroundColor: tokens.colors.border,
         border: `1px solid ${tokens.colors.border}`,
         borderRadius: '4px',
-        marginBottom: '2.5rem',
+        marginBottom: '0.75rem',
         overflow: 'hidden',
       }}>
         <MetricCard
@@ -153,6 +153,24 @@ const Dashboard = ({ stats }) => {
           sublabel="Partidos efetivos"
         />
       </section>
+      <p style={{
+        margin: '0 0 2.5rem',
+        maxWidth: '72ch',
+        fontSize: '0.875rem',
+        lineHeight: 1.6,
+        color: tokens.colors.textSecondary,
+      }}>
+        {formatNumber(seatedDeputados)} deputados em exercício na data dos dados.{' '}
+        {formatNumber(totalElected)} pessoas tiveram lugar em algum momento da legislatura, substitutos incluídos.
+        {totais.deputados_listados != null && (
+          <>
+            {' '}{formatNumber(totais.deputados_listados)} estão nas listas da legislatura em{' '}
+            <Link to="/deputados" style={{ color: 'inherit', textDecoration: 'underline' }}>Deputados</Link>, contando
+            quem suspendeu o mandato antes de tomar lugar.
+          </>
+        )}{' '}
+        <Link to="/metodologia" style={{ color: 'inherit', textDecoration: 'underline' }}>Como contamos</Link>
+      </p>
 
       {/* Main Content Grid */}
       <div style={{

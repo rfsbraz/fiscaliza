@@ -64,6 +64,13 @@ def test_elected_counts_everyone_who_held_a_seat_in_the_legislature(con):
     assert core.estatisticas(con)["totais"]["deputados_eleitos"] == 231
 
 
+def test_listed_counts_everyone_on_the_legislature_lists(con):
+    # The 231 who held a seat, plus 500, 302, 501 and the handover deputy who never sat: the people
+    # /deputados lists for the legislature, so the home page can explain all three numbers (#254).
+    totais = core.estatisticas(con)["totais"]
+    assert totais["deputados_listados"] == 235
+
+
 def test_circle_distribution_is_the_top_ten_circles_by_seats(con):
     circles = core.estatisticas(con)["distribuicao_circulos"]
     assert len(circles) == 10
@@ -267,6 +274,18 @@ def test_a_suspended_xvii_mandate_is_the_latest_legislature(con):
 def test_search_ignores_case_and_accents(con):
     found = core.deputados(con, search="NOME COMPLÉTO 300", active_only=False)["deputados"]
     assert [d["id_cadastro"] for d in found] == [300]
+
+
+def test_search_matches_a_party_by_acronym_or_name(con):
+    # #248: "Pesquisar por nome ou partido" finds the people who sat in that group.
+    members = {
+        r[0] for r in con.execute("select cadastro_id from group_memberships where group_acronym = 'CH'").fetchall()
+    }
+    assert members
+    for term in ("ch", "CH", "Grupo CH"):
+        found = core.deputados(con, search=term, active_only=False, per_page=100)
+        assert found["pagination"]["total"] == len(members), term
+        assert all("CH" in d["career_info"]["parties_served"] for d in found["deputados"]), term
 
 
 def test_legislature_filter_and_paging(con):
