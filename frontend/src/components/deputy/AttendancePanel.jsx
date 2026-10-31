@@ -135,33 +135,35 @@ const Records = ({ registos, showGroup }) => {
         <p style={muted}>Presente no Plenário em todas as reuniões das listas desta legislatura.</p>
       ) : (
         <>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ textAlign: 'left', color: tokens.colors.textMuted, fontSize: '0.75rem' }}>
-                <th style={{ padding: '6px 8px' }}>Data</th>
-                <th style={{ padding: '6px 8px' }}>Reunião</th>
-                <th style={{ padding: '6px 8px' }}>Registo</th>
-                {showGroup && <th style={{ padding: '6px 8px' }}>Grupo</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map((r) => (
-                <tr key={`${r.reuniao_id}-${r.codigo}`} style={{ borderTop: `1px solid ${tokens.colors.border}` }}>
-                  <td style={{ padding: '8px', fontFamily: tokens.fonts.mono, whiteSpace: 'nowrap' }}>{day(r.data)}</td>
-                  <td style={{ padding: '8px', color: tokens.colors.textSecondary }}>
-                    {r.tipo_reuniao}{r.solene ? ' (fora da taxa)' : ''}
-                  </td>
-                  <td style={{ padding: '8px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                      <CodeChip code={r.codigo} category={r.categoria} />
-                      <span style={{ color: tokens.colors.textSecondary }}>{r.descricao}</span>
-                    </span>
-                  </td>
-                  {showGroup && <td style={{ padding: '8px', color: tokens.colors.textSecondary }}>{r.grupo}</td>}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ textAlign: 'left', color: tokens.colors.textMuted, fontSize: '0.75rem' }}>
+                  <th style={{ padding: '6px 8px' }}>Data</th>
+                  <th style={{ padding: '6px 8px' }}>Reunião</th>
+                  <th style={{ padding: '6px 8px' }}>Registo</th>
+                  {showGroup && <th style={{ padding: '6px 8px' }}>Grupo</th>}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {shown.map((r) => (
+                  <tr key={`${r.reuniao_id}-${r.codigo}`} style={{ borderTop: `1px solid ${tokens.colors.border}` }}>
+                    <td style={{ padding: '8px', fontFamily: tokens.fonts.mono, whiteSpace: 'nowrap' }}>{day(r.data)}</td>
+                    <td style={{ padding: '8px', color: tokens.colors.textSecondary }}>
+                      {r.tipo_reuniao}{r.solene ? ' (fora da taxa)' : ''}
+                    </td>
+                    <td style={{ padding: '8px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                        <CodeChip code={r.codigo} category={r.categoria} />
+                        <span style={{ color: tokens.colors.textSecondary }}>{r.descricao}</span>
+                      </span>
+                    </td>
+                    {showGroup && <td style={{ padding: '8px', color: tokens.colors.textSecondary }}>{r.grupo}</td>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {registos.length > RECORDS_SHOWN && (
             <button
               type="button"
@@ -274,7 +276,7 @@ const AttendancePanel = ({ data }) => {
           <li>{data.definicao.por_justificar}</li>
           <li>{data.definicao.cobertura} {data.definicao.motivo}</li>
         </ul>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: '8px' }}>
           {data.codigos.map((c) => (
             <div key={c.codigo} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8125rem', color: tokens.colors.textSecondary }}>
               <CodeChip code={c.codigo} category={c.categoria} />

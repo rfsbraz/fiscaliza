@@ -368,9 +368,7 @@ const PartidoDetalhes = () => {
             gap: '0',
             backgroundColor: tokens.colors.bgWarm || '#F8F6F0',
             borderBottom: `1px solid ${tokens.colors.borderWarm || '#E8E4DA'}`,
-            overflowX: 'auto',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
+            flexWrap: 'wrap',
           }}>
             {[
               { id: 'deputados', label: 'Deputados', icon: Users },
@@ -491,7 +489,8 @@ const PartidoDetalhes = () => {
                 {dados.historico && (
                   <div style={{
                     display: 'flex',
-                    gap: '24px',
+                    flexWrap: 'wrap',
+                    gap: '12px 24px',
                     padding: '16px 20px',
                     backgroundColor: tokens.colors.bgWarm || '#F8F6F0',
                     border: `1px solid ${tokens.colors.borderWarm || '#E8E4DA'}`,
@@ -563,8 +562,8 @@ const PartidoDetalhes = () => {
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = tokens.colors.bgPrimary}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ flex: '1 1 200px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <div style={{ flexShrink: 0, position: 'relative' }}>
                               {deputado.picture_url ? (
@@ -649,7 +648,7 @@ const PartidoDetalhes = () => {
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem', color: tokens.colors.textMuted }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 1rem', fontSize: '0.875rem', color: tokens.colors.textMuted }}>
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             <MapPin style={{ width: '16px', height: '16px', marginRight: '0.25rem' }} />
                             <span style={{ fontFamily: tokens.fonts.body }}>{deputado.circulo}</span>

@@ -208,8 +208,8 @@ const ColigacaoDetalhes = () => {
           }}
         >
           <div style={{ padding: '1.5rem 2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-              <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <div style={{ flex: '1 1 260px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                   <h1
                     style={{
@@ -293,8 +293,8 @@ const ColigacaoDetalhes = () => {
                 </div>
               </div>
 
-              <div style={{ textAlign: 'right', marginLeft: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', color: tokens.colors.textSecondary, marginBottom: '0.5rem' }}>
+              <div style={{ textAlign: 'right', marginLeft: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', color: tokens.colors.textSecondary, marginBottom: '0.5rem' }}>
                   <Users style={{ width: '20px', height: '20px', marginRight: '0.5rem' }} />
                   <span
                     style={{
@@ -350,7 +350,7 @@ const ColigacaoDetalhes = () => {
           }}
         >
           <div style={{ borderBottom: `1px solid ${tokens.colors.border}` }}>
-            <nav style={{ display: 'flex', overflowX: 'auto' }}>
+            <nav style={{ display: 'flex', flexWrap: 'wrap' }}>
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -461,7 +461,7 @@ const ColigacaoDetalhes = () => {
                     Nenhum deputado encontrado para esta coligação
                   </p>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '1rem' }}>
                     {deputados.map((deputado, index) => (
                       <motion.div
                         key={deputado.id ?? `${deputado.circulo}-${deputado.nome}`}
