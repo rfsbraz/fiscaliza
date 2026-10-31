@@ -258,7 +258,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
             <div className="divide-y divide-gray-200">
               {demographics.idades?.oldest_deputy && (
                 <div className="py-4 hover:bg-gray-100 transition-colors rounded">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
                         <div className="shrink-0 relative">
@@ -301,7 +301,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
                         <span className="font-bold text-red-600">{demographics.idades.oldest_deputy.idade} anos</span>
@@ -347,7 +347,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
               
               {demographics.idades?.youngest_deputy && (
                 <div className="py-4 hover:bg-gray-100 transition-colors rounded">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
                         <div className="shrink-0 relative">
@@ -390,7 +390,7 @@ const PartyDemographics = ({ partidoId, dadosDemograficos, partidoInfo }) => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
                         <span className="font-bold text-blue-600">{demographics.idades.youngest_deputy.idade} anos</span>
