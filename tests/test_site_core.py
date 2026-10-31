@@ -269,6 +269,18 @@ def test_search_ignores_case_and_accents(con):
     assert [d["id_cadastro"] for d in found] == [300]
 
 
+def test_search_matches_a_party_by_acronym_or_name(con):
+    # #248: "Pesquisar por nome ou partido" finds the people who sat in that group.
+    members = {
+        r[0] for r in con.execute("select cadastro_id from group_memberships where group_acronym = 'CH'").fetchall()
+    }
+    assert members
+    for term in ("ch", "CH", "Grupo CH"):
+        found = core.deputados(con, search=term, active_only=False, per_page=100)
+        assert found["pagination"]["total"] == len(members), term
+        assert all("CH" in d["career_info"]["parties_served"] for d in found["deputados"]), term
+
+
 def test_legislature_filter_and_paging(con):
     page = core.deputados(con, legislatura="XVI", page=2, per_page=500)
     assert page["pagination"]["per_page"] == 100

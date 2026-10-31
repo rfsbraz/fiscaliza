@@ -234,6 +234,11 @@ def deputados(con, page=1, per_page=20, search=None, legislatura=None, active_on
     }
 
 
+def grupos_por_sigla(con):
+    """{group acronym: its names}: what the deputies search matches a party by (#248)."""
+    return repository.group_names_by_acronym(con)
+
+
 # Coalitions. The seed has one row per legislature, list and group, under a short name that
 # comes back over the years (AD in 1979 and in 2024) and covers lists that ran only in one
 # autonomous region (AD in the Açores, Madeira Primeiro). A page is one list and run (#111):

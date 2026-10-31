@@ -116,16 +116,30 @@ def groups(con, legislature):
 MANDATE_ENDED = ("Renunciou", "Falecido/a", "Perda de Mandato", "Desistência")
 
 
+# A deputies search: the parliamentary or full name contains it, or the person sat in a group
+# whose acronym is it or whose name contains it (#248), ignoring case and accents.
+_SEARCH = """($search is null
+    or contains(strip_accents(lower(d.parliamentary_name)), strip_accents(lower($search)))
+    or contains(strip_accents(lower(d.full_name)), strip_accents(lower($search)))
+    or exists (
+        select 1
+        from group_memberships gm
+        left join parliamentary_groups pg on pg.group_acronym = gm.group_acronym
+        where gm.cadastro_id = d.cadastro_id
+          and (strip_accents(lower(gm.group_acronym)) = strip_accents(lower($search))
+               or contains(strip_accents(lower(pg.name)), strip_accents(lower($search))))
+    ))"""
+
+
 def deputies_page(con, current, legislature=None, current_only=True, search=None, limit=20, offset=0):
     """People who were elected or held a seat, one row each: in ``legislature`` if given, else in
     the current legislature with a mandate that did not end (MANDATE_ENDED) if ``current_only``,
-    else in any. ``search`` matches the
-    parliamentary or full name, ignoring case and accents. Seated people come first, then the
+    else in any. ``search`` is _SEARCH. Seated people come first, then the
     rest of the current legislature, then by latest legislature and name. Each row carries
     ``total`` (people matched) and ``records`` (their person-legislature rows)."""
     return _rows(
         con,
-        """
+        f"""
         with people as (
             select
                 cadastro_id,
@@ -143,15 +157,13 @@ def deputies_page(con, current, legislature=None, current_only=True, search=None
                    p.cadastro_id in (select cadastro_id from deputy_current) as is_seated
             from people p
             join deputies d on d.cadastro_id = p.cadastro_id
-            where $search is null
-               or contains(strip_accents(lower(d.parliamentary_name)), strip_accents(lower($search)))
-               or contains(strip_accents(lower(d.full_name)), strip_accents(lower($search)))
+            where {_SEARCH}
         )
         select *, count(*) over () as total, sum(legislatures) over () as records
         from matched
         order by is_seated desc, in_current desc, last_start desc, parliamentary_name, cadastro_id
         limit $limit offset $offset
-        """,
+        """,  # noqa: S608 - a fixed SQL fragment, values are bound
         {
             "current": current,
             "legislature": legislature,
@@ -168,7 +180,7 @@ def deputies_count(con, current, legislature=None, current_only=True, search=Non
     """Total people and person-legislature rows for an empty page of deputies_page."""
     row = _one(
         con,
-        """
+        f"""
         with people as (
             select cadastro_id, count(*) as legislatures
             from deputy_elections
@@ -180,10 +192,8 @@ def deputies_count(con, current, legislature=None, current_only=True, search=Non
         select count(*) as total, coalesce(sum(legislatures), 0) as records
         from people p
         join deputies d on d.cadastro_id = p.cadastro_id
-        where $search is null
-           or contains(strip_accents(lower(d.parliamentary_name)), strip_accents(lower($search)))
-           or contains(strip_accents(lower(d.full_name)), strip_accents(lower($search)))
-        """,
+        where {_SEARCH}
+        """,  # noqa: S608 - a fixed SQL fragment, values are bound
         {
             "current": current,
             "legislature": legislature,
@@ -843,6 +853,15 @@ def group_names(con, legislatures):
         [list(legislatures)],
     )
     return {(r["legislature"], r["group_acronym"]): r["name"] for r in rows}
+
+
+def group_names_by_acronym(con):
+    """{group acronym: its names over the legislatures, sorted}, for a search by party."""
+    rows = con.execute(
+        "select group_acronym, list(distinct name order by name) from parliamentary_groups "
+        "where name is not null group by 1 order by 1"
+    ).fetchall()
+    return dict(rows)
 
 
 def deputy_activity_by_legislature(con, cadastro_ids):
