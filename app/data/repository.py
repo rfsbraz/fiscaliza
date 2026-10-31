@@ -116,16 +116,30 @@ def groups(con, legislature):
 MANDATE_ENDED = ("Renunciou", "Falecido/a", "Perda de Mandato", "Desistência")
 
 
+# A deputies search: the parliamentary or full name contains it, or the person sat in a group
+# whose acronym is it or whose name contains it (#248), ignoring case and accents.
+_SEARCH = """($search is null
+    or contains(strip_accents(lower(d.parliamentary_name)), strip_accents(lower($search)))
+    or contains(strip_accents(lower(d.full_name)), strip_accents(lower($search)))
+    or exists (
+        select 1
+        from group_memberships gm
+        left join parliamentary_groups pg on pg.group_acronym = gm.group_acronym
+        where gm.cadastro_id = d.cadastro_id
+          and (strip_accents(lower(gm.group_acronym)) = strip_accents(lower($search))
+               or contains(strip_accents(lower(pg.name)), strip_accents(lower($search))))
+    ))"""
+
+
 def deputies_page(con, current, legislature=None, current_only=True, search=None, limit=20, offset=0):
     """People who were elected or held a seat, one row each: in ``legislature`` if given, else in
     the current legislature with a mandate that did not end (MANDATE_ENDED) if ``current_only``,
-    else in any. ``search`` matches the
-    parliamentary or full name, ignoring case and accents. Seated people come first, then the
+    else in any. ``search`` is _SEARCH. Seated people come first, then the
     rest of the current legislature, then by latest legislature and name. Each row carries
     ``total`` (people matched) and ``records`` (their person-legislature rows)."""
     return _rows(
         con,
-        """
+        f"""
         with people as (
             select
                 cadastro_id,
@@ -143,15 +157,13 @@ def deputies_page(con, current, legislature=None, current_only=True, search=None
                    p.cadastro_id in (select cadastro_id from deputy_current) as is_seated
             from people p
             join deputies d on d.cadastro_id = p.cadastro_id
-            where $search is null
-               or contains(strip_accents(lower(d.parliamentary_name)), strip_accents(lower($search)))
-               or contains(strip_accents(lower(d.full_name)), strip_accents(lower($search)))
+            where {_SEARCH}
         )
         select *, count(*) over () as total, sum(legislatures) over () as records
         from matched
         order by is_seated desc, in_current desc, last_start desc, parliamentary_name, cadastro_id
         limit $limit offset $offset
-        """,
+        """,  # noqa: S608 - a fixed SQL fragment, values are bound
         {
             "current": current,
             "legislature": legislature,
@@ -168,7 +180,7 @@ def deputies_count(con, current, legislature=None, current_only=True, search=Non
     """Total people and person-legislature rows for an empty page of deputies_page."""
     row = _one(
         con,
-        """
+        f"""
         with people as (
             select cadastro_id, count(*) as legislatures
             from deputy_elections
@@ -180,10 +192,8 @@ def deputies_count(con, current, legislature=None, current_only=True, search=Non
         select count(*) as total, coalesce(sum(legislatures), 0) as records
         from people p
         join deputies d on d.cadastro_id = p.cadastro_id
-        where $search is null
-           or contains(strip_accents(lower(d.parliamentary_name)), strip_accents(lower($search)))
-           or contains(strip_accents(lower(d.full_name)), strip_accents(lower($search)))
-        """,
+        where {_SEARCH}
+        """,  # noqa: S608 - a fixed SQL fragment, values are bound
         {
             "current": current,
             "legislature": legislature,
@@ -845,6 +855,15 @@ def group_names(con, legislatures):
     return {(r["legislature"], r["group_acronym"]): r["name"] for r in rows}
 
 
+def group_names_by_acronym(con):
+    """{group acronym: its names over the legislatures, sorted}, for a search by party."""
+    rows = con.execute(
+        "select group_acronym, list(distinct name order by name) from parliamentary_groups "
+        "where name is not null group by 1 order by 1"
+    ).fetchall()
+    return dict(rows)
+
+
 def deputy_activity_by_legislature(con, cadastro_ids):
     """Per person and legislature: initiatives the person signed and their plenary interventions."""
     return _rows(
@@ -1404,7 +1423,11 @@ def attendance_between(con, legislature, start, end):
 # to their first answer, where both dates are there and in order. The source spaces some
 # recipient names differently from one question to the next; the spacing is evened out.
 _GOVERNMENT_QUESTIONS = """
-    select r.legislature, r.question_id, trim(regexp_replace(r.recipient, '\\s+', ' ', 'g')) as recipient,
+    select r.legislature, r.question_id, r.sent_date,
+           trim(regexp_replace(r.recipient, '\\s+', ' ', 'g')) as recipient,
+           -- The office, whoever holds it: Ministra da Saúde and Ministro da Saúde are one (#254).
+           regexp_replace(trim(regexp_replace(r.recipient, '\\s+', ' ', 'g')),
+                          '^(Ministr|Secretári)[oa]\\b', '\\1o') as office,
            not (r.is_withdrawn or r.is_returned) as counted,
            r.is_withdrawn, r.is_returned,
            r.answer_count > 0 as answered,
@@ -1444,15 +1467,17 @@ def question_totals(con, legislature=None):
 
 
 def question_recipients(con, legislature):
-    """The same figures per recipient of a legislature's perguntas, most perguntas first."""
+    """The same figures per recipient of a legislature's perguntas, most perguntas first. A
+    Ministro and a Ministra (or Secretário and Secretária de Estado) of the same office are one
+    recipient, named as its latest pergunta names it."""
     return _rows(
         con,
         f"""
         with g as ({_GOVERNMENT_QUESTIONS})
-        select recipient, {_QUESTION_FIGURES}
+        select arg_max(recipient, sent_date) as recipient, {_QUESTION_FIGURES}
         from g
         where legislature = ?
-        group by all
+        group by office
         order by perguntas desc, recipient
         """,  # noqa: S608
         [legislature],

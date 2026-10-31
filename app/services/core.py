@@ -92,6 +92,8 @@ def estatisticas(con, legislatura=None):
         "totais": {
             "deputados": seated,
             "deputados_eleitos": repository.people_seated(con, leg["legislature"]),
+            # Everyone /deputados lists for the legislature: elected or substitutes, seated or not.
+            "deputados_listados": repository.deputies_count(con, leg["legislature"], leg["legislature"])[0],
             "deputados_em_exercicio": seated,
             "seated_deputies": seated,
             "partidos": len(groups),
@@ -232,6 +234,11 @@ def deputados(con, page=1, per_page=20, search=None, legislatura=None, active_on
         },
         "legislatura": legislatura or None,
     }
+
+
+def grupos_por_sigla(con):
+    """{group acronym: its names}: what the deputies search matches a party by (#248)."""
+    return repository.group_names_by_acronym(con)
 
 
 # Coalitions. The seed has one row per legislature, list and group, under a short name that
