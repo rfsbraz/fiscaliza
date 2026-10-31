@@ -8,6 +8,7 @@ counted apart and left out of the rate and the median. A question to two recipie
 for each recipient, and once in the legislature totals.
 """
 
+import re
 from pathlib import Path
 
 import duckdb
@@ -74,14 +75,26 @@ def test_open_legislature_per_recipient_and_marked_provisional(con):
 def test_closed_legislature_and_an_answer_without_a_date(con):
     page = questions.perguntas_legislatura(con, "XVI")
     assert page["provisoria"] is False
-    # 6002's recipient is spaced differently and still counts for Ministro das Finanças. 6003 was
-    # answered but has no answer date: it counts as answered and stays out of the median.
+    # 6002's recipient is spaced differently and still counts for Finanças. 6003 was answered but
+    # has no answer date: it counts as answered and stays out of the median. 6003 is to Ministra
+    # das Finanças, the same office as 6002's Ministro: one row, named as the latest pergunta has it.
     assert page["destinatarios"] == [
-        _row("Ministro das Finanças", 2, 2, 100.0, 10, sem_data=1),
+        _row("Ministra das Finanças", 2, 2, 100.0, 10, sem_data=1),
         _row("Ministra da Saúde", 1, 1, 100.0, 40),
     ]
     assert page["totais"]["mediana_dias"] == 25
     assert page["totais"]["respondidas_sem_data"] == 1
+
+
+def test_an_office_is_one_row_whoever_holds_it(con):
+    # Ministro and Ministra (or Secretário and Secretária de Estado) of the same office are one
+    # recipient: a new minister does not split its perguntas in two (#254).
+    def office(name):
+        return re.sub(r"^(Ministr|Secretári)[oa]\b", r"\1o", name)
+
+    for leg in ("XVII", "XVI"):
+        names = [r["destinatario"] for r in questions.perguntas_legislatura(con, leg)["destinatarios"]]
+        assert len({office(n) for n in names}) == len(names), names
 
 
 def test_requerimentos_are_not_perguntas(con):

@@ -10,6 +10,7 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from urllib.parse import unquote
 
 import pytest
 
@@ -240,6 +241,28 @@ def test_old_coalition_pages_move_to_the_latest_list():
         assert rules[old] == "/coligacoes/ad-2024", old
     for old in ("/coligacoes/Madeira%20Primeiro", "/coligacoes/madeira-primeiro"):
         assert rules[old] == "/coligacoes/madeira-primeiro-2024", old
+
+
+def test_a_route_typed_in_lowercase_moves_to_its_page(dist):
+    # /perguntas/xvii and /partidos/ps had no file and answered 404 (#254). prepare adds a 301 from
+    # the lowercase form of each route to the route, after the rules in deploy/_redirects.
+    pages.prepare(dist)
+    text = (dist / "_redirects").read_text()
+    assert text.startswith(pages.REDIRECTS_FILE.read_text())
+    rules = [tuple(line.split()) for line in text.splitlines() if line.strip() and not line.startswith("#")]
+    moves = {source: destination for source, destination, _ in rules}
+    assert moves["/perguntas/xvii"] == "/perguntas/XVII"
+    assert moves["/partidos/ps"] == "/partidos/PS"
+    assert moves["/partidos/mdp/cde"] == "/partidos/MDP/CDE"
+    assert moves["/coligacoes/p%C3%A0f"] == "/coligacoes/P%C3%A0F"
+    files = {"/" + str(p.relative_to(dist).with_suffix("")) for p in dist.rglob("*.html")}
+    for source, destination, code in rules:
+        assert code == "301", source
+        # No rule hides a page, and each one lands on one.
+        assert unquote(source) not in files, source
+    for source, destination in moves.items():
+        if source not in {r[0] for r in redirect_rules()}:
+            assert unquote(destination) in files, destination
 
 
 def test_every_app_route_has_a_page(dist):
