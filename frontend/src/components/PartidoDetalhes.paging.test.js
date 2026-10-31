@@ -6,6 +6,7 @@ import { createServer } from 'vite';
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { PARTY_ROUTE } from '../utils/party.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const vite = await createServer({
@@ -51,7 +52,7 @@ const render = async () => {
       React.createElement(
         MemoryRouter,
         { initialEntries: ['/partidos/XP#deputados'] },
-        React.createElement(Routes, null, React.createElement(Route, { path: '/partidos/:partidoId', element: React.createElement(PartidoDetalhes) })),
+        React.createElement(Routes, null, React.createElement(Route, { path: PARTY_ROUTE, element: React.createElement(PartidoDetalhes) })),
       ),
     );
   });

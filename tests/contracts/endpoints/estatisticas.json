@@ -6,103 +6,103 @@
       "path": "distribuicao_circulos",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:19"
+      "read_at": "frontend/src/components/Dashboard.jsx:20"
     },
     {
       "path": "distribuicao_circulos[].circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:457"
+      "read_at": "frontend/src/components/Dashboard.jsx:458"
     },
     {
       "path": "distribuicao_circulos[].deputados",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:481"
+      "read_at": "frontend/src/components/Dashboard.jsx:482"
     },
     {
       "path": "distribuicao_partidos",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:19"
+      "read_at": "frontend/src/components/Dashboard.jsx:20"
     },
     {
       "path": "distribuicao_partidos[].deputados",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:29"
+      "read_at": "frontend/src/components/Dashboard.jsx:30"
     },
     {
       "path": "distribuicao_partidos[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:606"
+      "read_at": "frontend/src/components/Dashboard.jsx:607"
     },
     {
       "path": "distribuicao_partidos[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:634"
+      "read_at": "frontend/src/components/Dashboard.jsx:635"
     },
     {
       "path": "distribuicao_partidos[].sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:28"
+      "read_at": "frontend/src/components/Dashboard.jsx:29"
     },
     {
       "path": "legislatura",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:19"
+      "read_at": "frontend/src/components/Dashboard.jsx:20"
     },
     {
       "path": "legislatura.numero",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:51"
+      "read_at": "frontend/src/components/Dashboard.jsx:52"
     },
     {
       "path": "totais",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:19"
+      "read_at": "frontend/src/components/Dashboard.jsx:20"
     },
     {
       "path": "totais.deputados",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:22"
+      "read_at": "frontend/src/components/Dashboard.jsx:23"
     },
     {
       "path": "totais.deputados_eleitos",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:23"
+      "read_at": "frontend/src/components/Dashboard.jsx:24"
     },
     {
       "path": "totais.deputados_listados",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:165"
+      "read_at": "frontend/src/components/Dashboard.jsx:166"
     },
     {
       "path": "totais.deputados_em_exercicio",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:22"
+      "read_at": "frontend/src/components/Dashboard.jsx:23"
     },
     {
       "path": "totais.partidos",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:136"
+      "read_at": "frontend/src/components/Dashboard.jsx:137"
     },
     {
       "path": "totais.seated_deputies",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/Dashboard.jsx:22"
+      "read_at": "frontend/src/components/Dashboard.jsx:23"
     }
   ],
   "dropped": []
