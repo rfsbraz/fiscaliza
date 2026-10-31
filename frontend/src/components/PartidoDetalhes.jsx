@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Users, MapPin, User, BarChart3, TrendingUp, UserCheck, Handshake } from 'lucide-react';
 import PartyVotingAnalytics from './PartyVotingAnalytics';
 import PartyDemographics from './PartyDemographics';
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
-import { LoadingSpinner } from './common';
+import { LoadingSpinner, Pagination } from './common';
 import { plural, NOT_AVAILABLE } from '../utils/format';
 import NotFound from './NotFound';
+
+const POR_PAGINA = 50;
+const paginas = (page, total) => {
+  const pages = Math.ceil(total / POR_PAGINA);
+  return { page, pages, has_prev: page > 1, has_next: page < pages };
+};
 
 const PartidoDetalhes = () => {
   const { '*': partidoId } = useParams();
@@ -16,6 +22,9 @@ const PartidoDetalhes = () => {
   const [dados, setDados] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // A party has up to a thousand deputies: the tab draws one page of them (#250).
+  const [pagina, setPagina] = useState(1);
+  const listaRef = useRef(null);
 
   // Get active tab from URL hash, default to 'deputados'
   const getActiveTabFromUrl = () => {
@@ -71,6 +80,7 @@ const PartidoDetalhes = () => {
       }
     };
 
+    setPagina(1);
     if (partidoId) {
       fetchDados();
     }
@@ -550,8 +560,8 @@ const PartidoDetalhes = () => {
                   </div>
                 )}
 
-                <div>
-                  {dados.deputados.map((deputado) => (
+                <div ref={listaRef}>
+                  {dados.deputados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA).map((deputado) => (
                     <div
                       key={deputado.id}
                       style={{
@@ -571,6 +581,7 @@ const PartidoDetalhes = () => {
                                   <img
                                     src={deputado.picture_url}
                                     alt={deputado.nome}
+                                    loading="lazy"
                                     style={{
                                       width: '48px',
                                       height: '48px',
@@ -719,6 +730,13 @@ const PartidoDetalhes = () => {
                     </div>
                   ))}
                 </div>
+                <Pagination
+                  pagination={paginas(pagina, dados.deputados.length)}
+                  onPageChange={(p) => {
+                    setPagina(p);
+                    listaRef.current?.scrollIntoView?.({ block: 'start' });
+                  }}
+                />
 
                 {/* Resumo por Círculo */}
                 <div
