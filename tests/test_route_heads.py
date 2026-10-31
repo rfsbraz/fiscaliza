@@ -256,7 +256,7 @@ def test_a_route_typed_in_lowercase_moves_to_its_page(dist):
     assert moves["/partidos/mdp/cde"] == "/partidos/MDP/CDE"
     assert moves["/coligacoes/p%C3%A0f"] == "/coligacoes/P%C3%A0F"
     files = {"/" + str(p.relative_to(dist).with_suffix("")) for p in dist.rglob("*.html")}
-    for source, destination, code in rules:
+    for source, _, code in rules:
         assert code == "301", source
         # No rule hides a page, and each one lands on one.
         assert unquote(source) not in files, source
