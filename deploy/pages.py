@@ -454,7 +454,9 @@ def prepare(dist):
     moves = case_redirects(routes)
     rules = REDIRECTS_FILE.read_text()
     if moves:
-        rules += "\n# Lowercase forms of the routes, added by deploy/pages.py (case_redirects).\n" + "\n".join(moves) + "\n"
+        rules += (
+            "\n# Lowercase forms of the routes, added by deploy/pages.py (case_redirects).\n" + "\n".join(moves) + "\n"
+        )
     count = sum(1 for line in rules.splitlines() if line.strip() and not line.startswith("#"))
     if count > MAX_STATIC_REDIRECTS:
         raise DeployError(f"_redirects has {count} rules; Pages takes at most {MAX_STATIC_REDIRECTS}")
