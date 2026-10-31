@@ -6,91 +6,91 @@
       "path": "cobertura",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3471"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3477"
     },
     {
       "path": "cobertura.ate",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3482"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3488"
     },
     {
       "path": "cobertura.com_declaracao",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3480"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3486"
     },
     {
       "path": "cobertura.de",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3480"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3486"
     },
     {
       "path": "cobertura.total",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3481"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3487"
     },
     {
       "path": "declara_outras_atividades",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3498"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3504"
     },
     {
       "path": "declara_participacoes",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3499"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3505"
     },
     {
       "path": "ept",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3441"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3447"
     },
     {
       "path": "ept.legislaturas",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3457"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3463"
     },
     {
       "path": "ept.pendente",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3441"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3447"
     },
     {
       "path": "ept.url",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3464"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3470"
     },
     {
       "path": "full_name",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3579"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3585"
     },
     {
       "path": "is_exclusive",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3504"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3510"
     },
     {
       "path": "legislatura",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3491"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3497"
     },
     {
       "path": "professional_activities",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3525"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3531"
     },
     {
       "path": "professional_activities[].end_date",
@@ -126,43 +126,43 @@
       "path": "sem_declaracao",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3618"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3624"
     },
     {
       "path": "sem_declaracao.antes_da_cobertura",
       "type": "boolean",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3631"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3637"
     },
     {
       "path": "sem_declaracao.legislatura",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3633"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3639"
     },
     {
       "path": "sem_declaracao.lei_52_2019",
       "type": "boolean",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3645"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3651"
     },
     {
       "path": "sem_declaracao.url_ept",
       "type": "string",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3641"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3647"
     },
     {
       "path": "sem_declaracao.url_parlamento",
       "type": "string",
       "nullable": false,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3637"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3643"
     },
     {
       "path": "shareholdings",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3530"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3536"
     },
     {
       "path": "shareholdings[].entity_name",
@@ -186,7 +186,7 @@
       "path": "tem_declaracao",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3489"
+      "read_at": "frontend/src/components/DeputadoDetalhes.jsx:3495"
     }
   ],
   "dropped": [
