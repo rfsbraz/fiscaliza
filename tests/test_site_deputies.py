@@ -102,7 +102,6 @@ def test_elected_with_the_mandate_suspended_keeps_the_legislature(con):
     s = d["estatisticas"]
     assert (s["total_mandatos"], s["legislaturas_servidas"], s["nivel_experiencia"]) == (1, "XVI", "Novato")
     assert s["tempo_servico_anos"] == round((date(2025, 6, 2) - date(2024, 3, 26)).days / 365.25, 1)
-    assert [e["legislatura"] for e in s["evolucao_legislaturas"]] == ["XVI"]
 
 
 def test_one_day_handover_period_stays_in_the_history_but_is_not_a_mandate(con):
@@ -157,7 +156,7 @@ def test_elected_person_who_never_sat_has_a_page(con):
     }
     s = d["estatisticas"]
     assert (s["total_mandatos"], s["legislaturas_servidas"], s["nivel_experiencia"]) == (0, "", None)
-    assert s["tempo_servico_anos"] == 0 and s["evolucao_legislaturas"] == [] and s["assiduidade"] is None
+    assert s["tempo_servico_anos"] == 0 and s["assiduidade"] is None
     assert [m["legislatura_numero"] for m in d["mandatos_historico"]] == ["XVII"]
     a = deputies.atividades(con, 501)
     assert a["legislatura"]["numero"] == "XVII" and a["deputado"]["served_in_legislature"] is False
@@ -195,10 +194,8 @@ def test_counts_across_the_career(con):
         {"codigo": "R", "descricao": "Projeto de Resolução", "total": 2},
         {"codigo": "A", "descricao": "Apreciação Parlamentar", "total": 1},
     ]
-    assert s["evolucao_legislaturas"] == [
-        {"legislatura": "XVII", "iniciativas": 9, "intervencoes": 3},
-        {"legislatura": "XVI", "iniciativas": 1, "intervencoes": 5},
-    ]
+    # Initiatives plus interventions per legislature added unlike things; not published.
+    assert "evolucao_legislaturas" not in s
 
 
 def test_no_career_total_rate_or_ranking(con):
@@ -334,7 +331,15 @@ def test_interventions_of_the_latest_legislature_newest_first(con):
         "paginas": "3-4",
         "url_diario": "https://example.org/dar/3",
     }
-    assert a["intervention_metadata"] == {"total": 3, "page": 1, "per_page": 50, "pages": 1}
+    assert a["intervention_metadata"] == {
+        "total": 3,
+        "page": 1,
+        "per_page": 50,
+        "pages": 1,
+        "por_tipo": {"Intervenção": 1, "Pedido de esclarecimento": 1, "Declaração politica": 1},
+        "por_mes": {"2026-09": 3},
+        "ultima": "2026-09-18",
+    }
 
 
 def test_intervention_comparison_only_for_a_closed_legislature(con):
@@ -370,7 +375,24 @@ def test_interventions_filter_sort_and_paging(con):
     assert [i["tipo"] for i in by_type] == sorted(i["tipo"] for i in by_type)
     page = deputies.atividades(con, 1, "XVI", page=2, per_page=2)
     assert len(page["intervencoes"]) == 2
-    assert page["intervention_metadata"] == {"total": 5, "page": 2, "per_page": 2, "pages": 3}
+    assert {k: page["intervention_metadata"][k] for k in ("total", "page", "per_page", "pages")} == {
+        "total": 5,
+        "page": 2,
+        "per_page": 2,
+        "pages": 3,
+    }
+
+
+def test_interventions_summary_counts_every_page_not_the_one_loaded(con):
+    # The page showed "Por tipo" and the timeline from the first 50 loaded; the summary covers
+    # every intervention that matches, whatever the page, the order or the page size.
+    meta = deputies.atividades(con, 1, "XVI", ordem="oldest", page=2, per_page=2)["intervention_metadata"]
+    assert meta["por_tipo"] == {"Intervenção": 3, "Pergunta": 1, "Interpelação à mesa": 1}
+    assert sum(meta["por_tipo"].values()) == meta["total"] == 5
+    assert meta["por_mes"] == {"2024-04": 1, "2024-05": 1, "2024-06": 1, "2024-07": 1, "2024-08": 1}
+    assert meta["ultima"] == "2024-08-10"
+    filtered = deputies.atividades(con, 1, "XVI", tipo="Pergunta")["intervention_metadata"]
+    assert (filtered["total"], filtered["por_tipo"], filtered["ultima"]) == (1, {"Pergunta": 1}, "2024-06-10")
 
 
 def test_initiatives_of_the_legislature_with_their_outcome(con):
