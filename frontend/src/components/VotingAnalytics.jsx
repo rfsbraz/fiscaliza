@@ -536,7 +536,7 @@ const VotingAnalytics = ({ deputadoId, legislatura }) => {
         <nav style={{
           display: 'flex',
           gap: '0',
-          overflowX: 'auto',
+          flexWrap: 'wrap',
         }}>
           {charts.map((chart, index) => {
             const Icon = chart.icon;

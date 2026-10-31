@@ -1492,7 +1492,7 @@ const DeputadoDetalhes = () => {
           {/* Primary Stats Grid - 2x2 on desktop, 1 column on mobile */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
             gap: '16px',
             marginBottom: '24px',
           }}>
@@ -2036,9 +2036,7 @@ const DeputadoDetalhes = () => {
             gap: '0',
             backgroundColor: tokens.colors.bgWarm || '#F8F6F0',
             borderBottom: `1px solid ${tokens.colors.borderWarm || '#E8E4DA'}`,
-            overflowX: 'auto',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
+            flexWrap: 'wrap',
           }}>
             {tabs.map((tab, index) => {
               const Icon = tab.icon;
@@ -2113,6 +2111,8 @@ const DeputadoDetalhes = () => {
                 {/* Tab Section Header */}
                 <div style={{
                   display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '12px',
                   justifyContent: 'space-between',
                   alignItems: 'flex-start',
                   marginBottom: '24px',
@@ -2143,9 +2143,9 @@ const DeputadoDetalhes = () => {
                       </p>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', maxWidth: '100%' }}>
                     {atividades && atividades.intervencoes.length > 0 && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxWidth: '100%' }}>
                         <select
                           value={interventionTypeFilter}
                           onChange={(e) => {
@@ -2164,6 +2164,7 @@ const DeputadoDetalhes = () => {
                             fontFamily: tokens.fonts.body,
                             cursor: 'pointer',
                             outline: 'none',
+                            maxWidth: '100%',
                           }}
                         >
                           <option value="">Todos os tipos</option>
@@ -2189,6 +2190,7 @@ const DeputadoDetalhes = () => {
                             fontFamily: tokens.fonts.body,
                             cursor: 'pointer',
                             outline: 'none',
+                            maxWidth: '100%',
                           }}
                         >
                           <option value="newest">Mais recentes</option>
@@ -2246,7 +2248,7 @@ const DeputadoDetalhes = () => {
                 {atividades && atividades.intervencoes?.length > 0 && (
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))',
                     gap: '16px',
                     marginBottom: '24px',
                   }}>
@@ -2283,7 +2285,7 @@ const DeputadoDetalhes = () => {
                             .slice(-12) // Last 12 months
                             .map(([date, value]) => ({ date, value }));
                         })()}
-                        width={280}
+                        width={180}
                         height={50}
                         color={tokens.colors.primary}
                         showTrend={true}
@@ -2646,6 +2648,8 @@ const DeputadoDetalhes = () => {
                 {/* Tab Section Header */}
                 <div style={{
                   display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '12px',
                   justifyContent: 'space-between',
                   alignItems: 'flex-start',
                   marginBottom: '24px',
@@ -2671,7 +2675,7 @@ const DeputadoDetalhes = () => {
                       Projetos de lei e resoluções apresentados pelo deputado
                     </p>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
                     {atividades && atividades.iniciativas && atividades.iniciativas.length > 0 && (
                       <div style={{
                         fontFamily: tokens.fonts.mono,
@@ -2753,7 +2757,7 @@ const DeputadoDetalhes = () => {
                     {/* Phase 2: Enhanced Analytics Grid */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))',
                       gap: '16px',
                       marginTop: '16px',
                     }}>
@@ -2939,8 +2943,8 @@ const DeputadoDetalhes = () => {
                           </h4>
 
                           {/* Details */}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 1rem' }}>
                               <div style={{
                                 fontFamily: tokens.fonts.body,
                                 fontSize: '0.875rem',
@@ -3081,7 +3085,7 @@ const DeputadoDetalhes = () => {
 
                               <div style={{
                                 display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
                                 gap: '1rem',
                                 fontSize: '0.875rem'
                               }}>
@@ -3373,6 +3377,8 @@ const DeputadoDetalhes = () => {
                 {/* Tab Section Header */}
                 <div style={{
                   display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '12px',
                   justifyContent: 'space-between',
                   alignItems: 'flex-start',
                   marginBottom: '24px',
@@ -3411,6 +3417,8 @@ const DeputadoDetalhes = () => {
                 {/* Tab Section Header */}
                 <div style={{
                   display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '12px',
                   justifyContent: 'space-between',
                   alignItems: 'flex-start',
                   marginBottom: '24px',
