@@ -1093,15 +1093,25 @@ def interventions(con, cadastro_ids):
     )
 
 
-def interventions_count(con, cadastro_id, legislature, kind=None):
-    return con.execute(
+def interventions_summary(con, cadastro_id, legislature, kind=None):
+    """The person's interventions in a legislature that match ``kind`` (as interventions_page),
+    counted per type and month, whatever page is shown: one row per (type, month) with ``total``
+    and ``latest`` (the newest date in the group). An empty type counts as "Outro"; an undated
+    intervention has month None."""
+    return _rows(
+        con,
         """
-        select count(*) from interventions
+        select coalesce(nullif(intervention_type, ''), 'Outro') as type,
+               strftime(meeting_date, '%Y-%m') as month,
+               count(*) as total,
+               max(meeting_date) as latest
+        from interventions
         where cadastro_id = $cad and legislature = $leg
           and ($kind is null or contains(lower(intervention_type), lower($kind)))
+        group by all
         """,
         {"cad": cadastro_id, "leg": legislature, "kind": kind or None},
-    ).fetchone()[0]
+    )
 
 
 def interventions_by_legislature(con):

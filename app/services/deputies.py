@@ -7,6 +7,7 @@ context (F09) and the family fields of the interest register (F15). Attendance (
 app.services.attendance; the card here reads its latest rate (``estatisticas.assiduidade``).
 """
 
+from collections import Counter
 from datetime import date
 
 from app.data import repository
@@ -225,14 +226,6 @@ def detalhes(con, cadastro_id, rows=None):
             "nivel_experiencia": _experience(len(career)),
             "total_mandatos": len(career),
             "legislaturas_servidas": ", ".join(c["legislature"] for c in career),
-            "evolucao_legislaturas": [
-                {
-                    "legislatura": c["legislature"],
-                    "iniciativas": activity.get(c["legislature"], {}).get("initiatives", 0),
-                    "intervencoes": activity.get(c["legislature"], {}).get("interventions", 0),
-                }
-                for c in reversed(career)
-            ],
             # F06 and F07: per legislature and type, never a career total or a ranking.
             "iniciativas_legislaturas": _initiative_record(rows, cadastro_id, career),
             # F08: within the group only. Initiatives on restricted lists in the latest
@@ -363,6 +356,22 @@ def _atividades(con, cadastro_id, legislatura, rows, interventions):
     return out
 
 
+def _interventions_summary(groups):
+    """What the interventions tab sums up, over every matched intervention and not the page
+    shown (#244): counts per type and per month, and the newest date."""
+    per_type, per_month = Counter(), Counter()
+    for g in groups:
+        per_type[g["type"]] += g["total"]
+        if g["month"]:
+            per_month[g["month"]] += g["total"]
+    dates = [g["latest"] for g in groups if g["latest"]]
+    return {
+        "por_tipo": dict(sorted(per_type.items(), key=lambda kv: (-kv[1], kv[0]))),
+        "por_mes": dict(sorted(per_month.items())),
+        "ultima": _iso(max(dates)) if dates else None,
+    }
+
+
 def atividades(con, cadastro_id, legislatura=None, tipo=None, ordem="newest", page=1, per_page=50):
     page = max(page, 1)
     per_page = min(max(per_page, 1), MAX_PER_PAGE)
@@ -371,8 +380,15 @@ def atividades(con, cadastro_id, legislatura=None, tipo=None, ordem="newest", pa
         rows = repository.interventions_page(
             con, cadastro_id, name, kind=tipo, order=ordem, limit=per_page, offset=(page - 1) * per_page
         )
-        total = rows[0]["total"] if rows else repository.interventions_count(con, cadastro_id, name, kind=tipo)
-        return rows, {"total": total, "page": page, "per_page": per_page, "pages": (total + per_page - 1) // per_page}
+        groups = repository.interventions_summary(con, cadastro_id, name, kind=tipo)
+        total = sum(g["total"] for g in groups)
+        return rows, {
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": (total + per_page - 1) // per_page,
+            **_interventions_summary(groups),
+        }
 
     return _atividades(con, cadastro_id, legislatura, None, one_page)
 
