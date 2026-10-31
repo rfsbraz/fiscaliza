@@ -7,9 +7,10 @@ import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
 import { plural, NOT_AVAILABLE } from '../utils/format';
+import NotFound from './NotFound';
 
 const PartidoDetalhes = () => {
-  const { partidoId } = useParams();
+  const { '*': partidoId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const [dados, setDados] = useState(null);
@@ -64,7 +65,7 @@ const PartidoDetalhes = () => {
         const data = await response.json();
         setDados(data);
       } catch (err) {
-        setError(err.message);
+        setError(err);
       } finally {
         setLoading(false);
       }
@@ -77,6 +78,10 @@ const PartidoDetalhes = () => {
 
   if (loading) {
     return <LoadingSpinner message="A carregar dados do partido" />;
+  }
+
+  if (error?.status === 404) {
+    return <NotFound />;
   }
 
   if (error) {
@@ -98,7 +103,7 @@ const PartidoDetalhes = () => {
               marginBottom: '1rem',
             }}
           >
-            Erro: {error}
+            Erro: {error.message}
           </p>
           <Link
             to="/partidos"

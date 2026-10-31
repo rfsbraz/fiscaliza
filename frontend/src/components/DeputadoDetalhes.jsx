@@ -18,6 +18,7 @@ import TimelineSparkline, { ActivityHeatmap, TrendIndicator, BarSparkline } from
 import PolicySpecializationChart, { PolicyRadar, TopicTag } from './charts/PolicySpecializationChart';
 import InterestTable, { ACTIVITY_COLUMNS, SHAREHOLDING_COLUMNS } from './deputy/InterestTable';
 import { formatDecimal, legislatureName, plural } from '../utils/format';
+import { notAPartyName, partyPath } from '../utils/party';
 
 // TODO: Deputy mandate linking limitation
 // Current system uses name-based linking to connect same person across legislaturas
@@ -1220,9 +1221,14 @@ const DeputadoDetalhes = () => {
                 </div>
 
                 {/* Partido */}
-                {deputado.partido && (
+                {deputado.partido && notAPartyName(deputado.partido.sigla) && (
+                  <span style={{ fontSize: '0.813rem', fontWeight: 500, color: tokens.colors.textSecondary }}>
+                    {notAPartyName(deputado.partido.sigla)}
+                  </span>
+                )}
+                {deputado.partido && partyPath(deputado.partido.id) && (
                   <Link
-                    to={`/partidos/${encodeURIComponent(deputado.partido.id)}`}
+                    to={partyPath(deputado.partido.id)}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',

@@ -42,7 +42,9 @@ export const apiFetch = async (endpoint) => {
   });
 
   if (!response.ok) {
-    throw new Error(`Não foi possível carregar os dados (erro ${status}).`);
+    const error = new Error(`Não foi possível carregar os dados (erro ${status}).`);
+    error.status = status;
+    throw error;
   }
 
   return response;

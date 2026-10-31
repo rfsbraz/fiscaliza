@@ -3,6 +3,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 import { tokens, partidoCores } from '../styles/tokens'
 import { LoadingSpinner } from './common'
 import { formatDecimal, formatNumber, legislatureName, plural } from '../utils/format'
+import { partyPath } from '../utils/party';
 
 /**
  * Dashboard - Data Observatory Style
@@ -585,7 +586,7 @@ const Dashboard = ({ stats }) => {
                   >
                     <td style={{ padding: '1rem 1.5rem' }}>
                       <Link
-                        to={`/partidos/${encodeURIComponent(partido.id)}`}
+                        to={partyPath(partido.id)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',

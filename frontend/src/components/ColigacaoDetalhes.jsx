@@ -6,6 +6,7 @@ import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner } from './common';
 import { coalitionScope, formatNumber, plural, seatedNote, seatsNote } from '../utils/format';
+import { partyPath } from '../utils/party';
 
 // Coalition colors based on political spectrum
 const spectrumColors = {
@@ -403,7 +404,7 @@ const ColigacaoDetalhes = () => {
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = tokens.colors.bgPrimary}
                   >
                     <Link
-                      to={`/partidos/${partido.sigla}`}
+                      to={partyPath(partido.sigla)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
