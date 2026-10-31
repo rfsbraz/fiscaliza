@@ -3,11 +3,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createStaticApi, legislatureName, slug } from './staticApi.js';
 
-const person = (id, nome, nomeCompleto, active = true, inCurrent = active) => ({
+const person = (id, nome, nomeCompleto, active = true, inCurrent = active, parties = []) => ({
   id_cadastro: id,
   nome,
   nome_completo: nomeCompleto,
-  career_info: { is_currently_active: active, in_current_legislature: inCurrent, total_mandates: 1 },
+  career_info: { is_currently_active: active, in_current_legislature: inCurrent, total_mandates: 1, parties_served: parties },
 });
 
 const intervention = (id, tipo, data) => ({ id, tipo, data });
@@ -15,13 +15,14 @@ const intervention = (id, tipo, data) => ({ id, tipo, data });
 const FILES = {
   'deputados.json': {
     deputados: [
-      person(1, 'José Sá', 'José Maria Sá'),
-      person(2, 'Ana Lopes', 'Ana Conceição Lopes'),
+      person(1, 'José Sá', 'José Maria Sá', true, true, ['PSD']),
+      person(2, 'Ana Lopes', 'Ana Conceição Lopes', true, true, ['PS', 'CH']),
       person(3, 'Rui Gonçalves', 'Rui Gonçalves Antunes', false),
       // Resigned in the current legislature: no longer in office.
       person(4, 'Inês Faria', 'Inês Faria Costa', false, true),
     ],
     registos: [1, 2, 3, 4],
+    grupos: { PSD: ['Partido Social Democrata'], PS: ['Partido Socialista'], CH: ['Chega'] },
     filters: { active_deputies_count: 2, seated_deputies_count: 2 },
   },
   'deputados/7.json': {
@@ -78,6 +79,16 @@ test('deputy search ignores case and accents and matches either name', async () 
   const none = await a.get('deputados?active_only=false&search=zzz');
   assert.deepEqual(none.body.deputados, []);
   assert.equal(none.body.pagination.pages, 0);
+});
+
+test('deputy search matches a group by its whole acronym or part of its name', async () => {
+  const a = api();
+  const ids = async (term) =>
+    (await a.get(`deputados?active_only=false&search=${encodeURIComponent(term)}`)).body.deputados.map((d) => d.id_cadastro);
+  assert.deepEqual(await ids('psd'), [1]);
+  assert.deepEqual(await ids('PS'), [2]);
+  assert.deepEqual(await ids('Chega'), [2]);
+  assert.deepEqual(await ids('social'), [1, 2]);
 });
 
 test('deputy list pages and filters like the API', async () => {

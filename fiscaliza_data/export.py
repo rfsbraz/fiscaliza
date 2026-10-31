@@ -187,7 +187,8 @@ def _question_files(con, svc, w):
 
 def _deputy_index(con, core, w):
     """Everyone the deputies page can list, in its order, for search and paging in the browser.
-    ``registos`` is each person's number of legislatures, for the records count of a search."""
+    ``registos`` is each person's number of legislatures, for the records count of a search, and
+    ``grupos`` each group acronym's names, for a search by party (#248)."""
     first, people = _all_pages(
         lambda page, per_page: core.deputados(con, page=page, per_page=per_page, active_only=False),
         "deputados",
@@ -199,6 +200,7 @@ def _deputy_index(con, core, w):
         {
             "deputados": people,
             "registos": [counts[p["id_cadastro"]] for p in people],
+            "grupos": core.grupos_por_sigla(con),
             "filters": {
                 "active_deputies_count": first["filters"]["active_deputies_count"],
                 "seated_deputies_count": first["filters"]["seated_deputies_count"],
