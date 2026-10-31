@@ -509,7 +509,7 @@ export const InitiativeOutcomesSummary = ({
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))',
         gap: '16px',
       }}>
         {/* Approved */}
