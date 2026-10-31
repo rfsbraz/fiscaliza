@@ -372,7 +372,7 @@ const PartyVotingAnalytics = ({ partidoId, legislatura }) => {
     <div className="space-y-6">
       {/* Chart Navigation */}
       <div className="border-b border-gray-200">
-        <nav className="flex space-x-8 overflow-x-auto">
+        <nav className="flex flex-wrap gap-x-8">
           {charts.map((chart) => {
             const Icon = chart.icon;
             return (

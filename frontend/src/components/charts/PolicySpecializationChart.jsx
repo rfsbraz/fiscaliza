@@ -146,8 +146,8 @@ const PolicySpecializationChart = ({
               {/* Area label */}
               <div
                 style={{
-                  width: '140px',
-                  flexShrink: 0,
+                  flex: '0 1 140px',
+                  minWidth: 0,
                   fontSize: '0.8125rem',
                   color: tokens.colors.textSecondary,
                   textAlign: 'right',
@@ -161,7 +161,7 @@ const PolicySpecializationChart = ({
               </div>
 
               {/* Bar container */}
-              <div style={{ flex: 1, position: 'relative' }}>
+              <div style={{ flex: 1, minWidth: '40px', position: 'relative' }}>
                 <div
                   style={{
                     height: '24px',

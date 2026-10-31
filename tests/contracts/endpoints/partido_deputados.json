@@ -30,7 +30,7 @@
       "path": "demografia",
       "type": "object",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:804"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:803"
     },
     {
       "path": "demografia.experiencia_politica",
@@ -270,49 +270,49 @@
       "path": "deputados[].circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:650"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:649"
     },
     {
       "path": "deputados[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:552"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:551"
     },
     {
       "path": "deputados[].id_cadastro",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:617"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:616"
     },
     {
       "path": "deputados[].mandato_ativo",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:655"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:654"
     },
     {
       "path": "deputados[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:569"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:568"
     },
     {
       "path": "deputados[].picture_url",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:565"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:564"
     },
     {
       "path": "deputados[].profissao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:631"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:630"
     },
     {
       "path": "deputados[].ultima_legislatura",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:656"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:655"
     },
     {
       "path": "historico",
@@ -324,7 +324,7 @@
       "path": "historico.periodo_atividade",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:510"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:509"
     },
     {
       "path": "historico.total_circulos",
@@ -336,7 +336,7 @@
       "path": "historico.total_legislaturas",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidoDetalhes.jsx:527"
+      "read_at": "frontend/src/components/PartidoDetalhes.jsx:526"
     },
     {
       "path": "mandatos_ativos",

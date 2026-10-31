@@ -154,7 +154,7 @@ const PartidosPage = () => {
         transition={{ delay: 0.1 }}
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
           gap: '1rem',
         }}
       >
@@ -291,7 +291,7 @@ const PartidosPage = () => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
               gap: '1rem',
             }}
           >
@@ -461,7 +461,7 @@ const PartidosPage = () => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
               gap: '1rem',
             }}
           >
