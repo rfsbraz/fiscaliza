@@ -235,8 +235,11 @@ export const DadosView = ({ dados }) => {
           ))}
           {title === EPT_GROUP && (
             <p style={{ ...p, fontSize: '0.8125rem', color: colors.textMuted, margin: '0.5rem 0 0 0' }}>
-              Estes dois conjuntos têm regras próprias, descritas no ponto 3 da LICENSE-DATA. As linhas
-              vindas da Entidade para a Transparência não entram nos ficheiros publicados.
+              Os elementos públicos do registo de interesses dos Deputados da XVI e da XVII são
+              republicados com indicação da Entidade para a Transparência (EpT) como fonte, ao abrigo
+              da Lei n.º 52/2019, art. 15.º, n.º 1, e da Lei n.º 26/2016 (LADA), art. 21.º, n.º 1.
+              Fica excluído apenas o NIF dos titulares. Estes dois conjuntos têm regras próprias,
+              descritas no ponto 3 da LICENSE-DATA.
             </p>
           )}
         </section>
