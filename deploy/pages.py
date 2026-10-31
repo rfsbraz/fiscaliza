@@ -48,6 +48,7 @@ PREVIEW_BRANCH = "preview"
 # Cloudflare Pages limits per deployment (free plan).
 MAX_FILES = 20_000
 MAX_FILE_BYTES = 25 * 1024 * 1024
+MAX_STATIC_REDIRECTS = 2_000
 SITE = "https://fiscaliza.pt"
 # sitemaps.org limits per sitemap file; more URLs go into numbered files under a sitemap index.
 SITEMAP_MAX_URLS = 50_000
@@ -272,6 +273,21 @@ def render_head(template, path, title, description):
     return out
 
 
+def case_redirects(routes):
+    """["/perguntas/xvii /perguntas/XVII 301", ...]: a 301 from the lowercase form of each route
+    to the route, so a link typed in lowercase opens the page and not 404 (#254). Pages matches
+    _redirects with case, so the rule never hides the route's own file. None where the lowercase
+    form is a route itself or two routes share it."""
+    lower = {}
+    for path in routes:
+        lower.setdefault(path.lower(), []).append(path)
+    rules = []
+    for source, paths in lower.items():
+        if len(paths) == 1 and paths[0] != source and source not in routes:
+            rules.append(f"{quote(source, safe='/')} {quote(paths[0], safe='/')} 301")
+    return rules
+
+
 def write_route_pages(dist, routes=None):
     """One HTML file per app route, where Pages serves it: /deputados/2105 is deputados/2105.html.
     Link previews read these heads; the browser loads the same app. Returns the number written."""
@@ -434,8 +450,17 @@ def prepare(dist):
     if not (dist / "404.html").is_file():
         shutil.copyfile(dist / "index.html", dist / "404.html")
     shutil.copyfile(HEADERS_FILE, dist / "_headers")
-    shutil.copyfile(REDIRECTS_FILE, dist / "_redirects")
     routes = route_heads(dist / "api")
+    moves = case_redirects(routes)
+    rules = REDIRECTS_FILE.read_text()
+    if moves:
+        rules += (
+            "\n# Lowercase forms of the routes, added by deploy/pages.py (case_redirects).\n" + "\n".join(moves) + "\n"
+        )
+    count = sum(1 for line in rules.splitlines() if line.strip() and not line.startswith("#"))
+    if count > MAX_STATIC_REDIRECTS:
+        raise DeployError(f"_redirects has {count} rules; Pages takes at most {MAX_STATIC_REDIRECTS}")
+    (dist / "_redirects").write_text(rules)
     if write_route_pages(dist, routes):
         write_sitemap(dist, routes)
         (dist / INDEXNOW_MANIFEST).write_text(json.dumps(indexnow_manifest(dist, routes)), encoding="utf-8")

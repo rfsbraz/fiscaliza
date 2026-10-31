@@ -12,13 +12,13 @@
       "path": "distribuicao_circulos[].circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:440"
+      "read_at": "frontend/src/components/Dashboard.jsx:458"
     },
     {
       "path": "distribuicao_circulos[].deputados",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:464"
+      "read_at": "frontend/src/components/Dashboard.jsx:482"
     },
     {
       "path": "distribuicao_partidos",
@@ -36,13 +36,13 @@
       "path": "distribuicao_partidos[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:589"
+      "read_at": "frontend/src/components/Dashboard.jsx:607"
     },
     {
       "path": "distribuicao_partidos[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/Dashboard.jsx:617"
+      "read_at": "frontend/src/components/Dashboard.jsx:635"
     },
     {
       "path": "distribuicao_partidos[].sigla",
@@ -79,6 +79,12 @@
       "type": "scalar",
       "nullable": true,
       "read_at": "frontend/src/components/Dashboard.jsx:24"
+    },
+    {
+      "path": "totais.deputados_listados",
+      "type": "scalar",
+      "nullable": true,
+      "read_at": "frontend/src/components/Dashboard.jsx:166"
     },
     {
       "path": "totais.deputados_em_exercicio",
