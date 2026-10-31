@@ -194,44 +194,46 @@ const InterventionsSummaryBar = ({
             flexDirection: 'column',
             gap: '12px',
           }}>
-            {/* Video count */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}>
+            {/* Video count: the export has no videos yet, so show it only when there are */}
+            {videoCount > 0 && (
               <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '4px',
-                backgroundColor: videoCount > 0 ? tokens.colors.statusGreenBg : tokens.colors.bgTertiary,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                gap: '8px',
               }}>
-                <Video size={16} style={{
-                  color: videoCount > 0 ? tokens.colors.statusGreen : tokens.colors.textMuted,
-                }} />
-              </div>
-              <div>
-                <span style={{
-                  fontFamily: tokens.fonts.mono,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  color: tokens.colors.textPrimary,
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '4px',
+                  backgroundColor: tokens.colors.statusGreenBg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}>
-                  {videoCount}
-                </span>
-                <span style={{
-                  fontFamily: tokens.fonts.body,
-                  fontSize: '0.8125rem',
-                  color: tokens.colors.textSecondary,
-                  marginLeft: '4px',
-                }}>
-                  com vídeo
-                </span>
+                  <Video size={16} style={{
+                    color: tokens.colors.statusGreen,
+                  }} />
+                </div>
+                <div>
+                  <span style={{
+                    fontFamily: tokens.fonts.mono,
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: tokens.colors.textPrimary,
+                  }}>
+                    {videoCount}
+                  </span>
+                  <span style={{
+                    fontFamily: tokens.fonts.body,
+                    fontSize: '0.8125rem',
+                    color: tokens.colors.textSecondary,
+                    marginLeft: '4px',
+                  }}>
+                    com vídeo
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
             {/* Last activity */}
             {lastInterventionDate && (
               <div style={{
