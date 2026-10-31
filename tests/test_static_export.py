@@ -244,6 +244,9 @@ def _requests(con, flask_app):
         "deputados?page=2&per_page=5&active_only=false&search=Profiss",
         "deputados?page=1&per_page=20&active_only=false&search=Deputádo%204",
         "deputados?page=1&per_page=20&active_only=false&search=nobody",
+        "deputados?page=1&per_page=20&active_only=false&search=ch",
+        "deputados?page=2&per_page=20&active_only=false&search=Grupo%20CH",
+        "deputados?page=1&per_page=20&active_only=false&search=PSD",
     ]
     people = [r[0] for r in con.execute("select distinct cadastro_id from deputy_elections order by 1").fetchall()]
     sample = sorted({*people[:3], *people[-3:], 1, 2, 90, 231, 232, 301, 302, 303, 501})

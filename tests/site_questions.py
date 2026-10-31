@@ -11,7 +11,8 @@ Perguntas to the Government (``question_type='Pergunta'``, ``recipient_category=
   person 90, to Ministro das Finanças, returned.
 - XVI: 6001 by person 1 (PS), to Ministra da Saúde, answered after 40 days. 6002 and 6003 by
   person 301, to Ministro das Finanças: 6002 answered after 10 days (its recipient spaced
-  differently, as the source sometimes has it), 6003 answered with no answer date.
+  differently, as the source sometimes has it), 6003 answered with no answer date. 6003 is to
+  Ministra das Finanças: the same office, after a new minister took it.
 
 7006 is a requerimento by person 1, not a pergunta.
 """
@@ -50,7 +51,14 @@ QUESTIONS = {
         [(301, "PSD")],
         [("Ministro  das Finanças ", "2024-06-11", True, False, False, False)],
     ),
-    6003: ("XVI", "Pergunta", "2024-07-01", [(301, "PSD")], [(FINANCAS, None, True, False, False, False)]),
+    # A new minister took the office: the source names it Ministra from then on.
+    6003: (
+        "XVI",
+        "Pergunta",
+        "2024-07-01",
+        [(301, "PSD")],
+        [("Ministra das Finanças", None, True, False, False, False)],
+    ),
 }
 
 

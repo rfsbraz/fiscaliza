@@ -92,12 +92,21 @@ function deputyList(index, params) {
   const activeOnly = flagArg(params, 'active_only', 'true');
   const search = params.get('search') || null;
   const needle = search === null ? null : fold(search);
+  // A party matches by its whole acronym or part of a name, as in the API (#248).
+  const groups = needle === null ? null : new Set(
+    Object.entries(index.grupos || {})
+      .filter(([acronym, names]) => fold(acronym) === needle || names.some((n) => fold(n).includes(needle)))
+      .map(([acronym]) => acronym),
+  );
+  const matches = (d) =>
+    fold(d.nome).includes(needle) || fold(d.nome_completo).includes(needle) ||
+    (d.career_info.parties_served || []).some((g) => groups.has(g) || fold(g) === needle);
   const matched = [];
   let records = 0;
   index.deputados.forEach((d, i) => {
     // In office, as the API lists it: a resigned deputy is not (#171).
     if (activeOnly && !d.career_info.is_currently_active) return;
-    if (needle !== null && !fold(d.nome).includes(needle) && !fold(d.nome_completo).includes(needle)) return;
+    if (needle !== null && !matches(d)) return;
     matched.push(d);
     records += index.registos[i];
   });
