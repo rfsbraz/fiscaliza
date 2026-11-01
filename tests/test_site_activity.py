@@ -149,8 +149,10 @@ def test_agenda_panels_load_and_fail_on_their_own():
     assert "Promise.allSettled(" in source
     for endpoint in ("agenda/hoje", "agenda/semana", "votacoes/recentes?limite=5", "estatisticas/atividade"):
         assert f"'{endpoint}'" in source
-    for panel in ("hoje", "semana", "votacoes"):
-        assert f"activeTab === '{panel}' && !{PANEL_STATE[panel]} && <PainelIndisponivel" in source
+    assert "activeTab === 'votacoes' && !votacoesRecentes && <PainelIndisponivel" in source
+    # #246: the agenda answers 503 until it is in the open data; its tabs only show with data.
+    for panel in ("hoje", "semana"):
+        assert f"{PANEL_STATE[panel]} && {{ id: '{panel}'" in source
 
 
 def test_agenda_page_has_no_demo_data_banner():
