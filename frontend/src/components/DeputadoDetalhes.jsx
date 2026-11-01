@@ -533,13 +533,15 @@ const DossierSection = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
+  // The export has no record for most sections; a section that says so is noise.
+  if (isEmpty) return null;
+
   return (
     <div style={{
       borderBottom: `1px solid ${tokens.colors.borderWarm || '#E8E4DA'}`,
-      opacity: isEmpty ? 0.6 : 1,
     }}>
       <button
-        onClick={() => !isEmpty && setIsExpanded(!isExpanded)}
+        onClick={() => setIsExpanded(!isExpanded)}
         style={{
           width: '100%',
           display: 'flex',
@@ -548,10 +550,10 @@ const DossierSection = ({
           padding: '16px 20px',
           background: 'none',
           border: 'none',
-          cursor: isEmpty ? 'default' : 'pointer',
+          cursor: 'pointer',
           transition: 'background-color 0.15s ease',
         }}
-        onMouseEnter={(e) => !isEmpty && (e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.02)')}
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.02)')}
         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
         aria-expanded={isExpanded}
       >
@@ -573,30 +575,27 @@ const DossierSection = ({
           <span style={{
             fontFamily: tokens.fonts.mono,
             fontSize: '0.75rem',
-            color: isEmpty ? tokens.colors.textMuted : tokens.colors.textSecondary,
+            color: tokens.colors.textSecondary,
             backgroundColor: tokens.colors.bgTertiary,
             padding: '4px 8px',
             borderRadius: '4px',
-            fontStyle: isEmpty ? 'italic' : 'normal',
           }}>
-            {isEmpty ? 'Sem registos' : count}
+            {count}
           </span>
-          {!isEmpty && (
-            <ChevronDown
-              style={{
-                width: '16px',
-                height: '16px',
-                color: tokens.colors.textMuted,
-                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s ease',
-              }}
-            />
-          )}
+          <ChevronDown
+            style={{
+              width: '16px',
+              height: '16px',
+              color: tokens.colors.textMuted,
+              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}
+          />
         </div>
       </button>
 
       {/* Preview when collapsed */}
-      {!isExpanded && !isEmpty && preview && (
+      {!isExpanded && preview && (
         <div style={{
           padding: '0 20px 12px 50px',
           fontSize: '0.8125rem',
@@ -610,7 +609,7 @@ const DossierSection = ({
       )}
 
       {/* Expanded content */}
-      {isExpanded && !isEmpty && (
+      {isExpanded && (
         <div style={{
           padding: '16px 20px',
           backgroundColor: 'white',
@@ -635,6 +634,9 @@ const BiographicalDossier = ({ deputado }) => {
   const condecoracoesCount = deputado.condecoracoes?.length || 0;
   const obrasCount = deputado.obras_publicadas?.length || 0;
   const orgaosCount = deputado.atividades_orgaos?.length || 0;
+  const hasRecords = deputado.profissao || deputado.biografia ||
+    habilitacoesCount + cargosCount + titulosCount + condecoracoesCount + obrasCount + orgaosCount > 0;
+  if (!hasRecords) return null;
 
   return (
     <section style={{
