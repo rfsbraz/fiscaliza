@@ -1,7 +1,7 @@
 # The parlamento-aberto commit Fiscaliza is built from. This is the only place it is set:
 # deploy/pages.py builds the release from it, and refuses a release folder built from anything else.
 # Move it on purpose, after checking the new data, in its own commit.
-commit=916077f7d6ff3a6bd1c725e29167dcfef7ddea4b
+commit=dbb821073a2bba39df7547a6235ae4751df5d843
 # The published data release of that commit, empty while there is none. With it, deploy/pages.py
 # downloads that release from GitHub and checks it was built from the commit above.
-tag=data-2026-11-01
+tag=data-2026-11-01-2
