@@ -43,20 +43,20 @@ const AgendaPage = () => {
   const [votacoesRecentes, setVotacoesRecentes] = useState(null);
   const [estatisticas, setEstatisticas] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('hoje');
+  const [escolhido, setActiveTab] = useState(null);
 
   useEffect(() => {
     fetchDados();
   }, []);
 
-  // Each panel loads and fails on its own. Today and the week still come from the old
-  // agenda code until the agenda mart lands, so a failed request there must not take the
-  // votes and the stats down with it.
+  // Each panel loads and fails on its own. The agenda is not in the open data yet
+  // (parlamento-aberto #73), so its requests answer 503: that is expected, not an error,
+  // and its tabs stay hidden until it answers with data.
   const fetchDados = async () => {
     setLoading(true);
     const pedidos = [
-      ['agenda/hoje', () => apiFetch('agenda/hoje'), setAgendaHoje],
-      ['agenda/semana', () => apiFetch('agenda/semana'), setAgendaSemana],
+      ['agenda/hoje', () => apiFetch('agenda/hoje'), setAgendaHoje, true],
+      ['agenda/semana', () => apiFetch('agenda/semana'), setAgendaSemana, true],
       ['votacoes/recentes', () => apiFetch('votacoes/recentes?limite=5'), setVotacoesRecentes],
       ['estatisticas/atividade', () => apiFetch('estatisticas/atividade'), setEstatisticas],
     ];
@@ -64,10 +64,10 @@ const AgendaPage = () => {
       pedidos.map(([, pedido]) => pedido().then((res) => res.json()))
     );
     resultados.forEach((resultado, i) => {
-      const [nome, , setter] = pedidos[i];
+      const [nome, , setter, opcional] = pedidos[i];
       if (resultado.status === 'fulfilled') {
         setter(resultado.value);
-      } else {
+      } else if (!opcional) {
         console.error(`Erro ao carregar ${nome}:`, resultado.reason);
       }
     });
@@ -105,10 +105,11 @@ const AgendaPage = () => {
   }
 
   const tabs = [
-    { id: 'hoje', label: 'Hoje', icon: Calendar },
-    { id: 'semana', label: 'Esta Semana', icon: Activity },
+    agendaHoje && { id: 'hoje', label: 'Hoje', icon: Calendar },
+    agendaSemana && { id: 'semana', label: 'Esta Semana', icon: Activity },
     { id: 'votacoes', label: 'Votações', icon: Vote }
-  ];
+  ].filter(Boolean);
+  const activeTab = escolhido ?? tabs[0].id;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -235,7 +236,8 @@ const AgendaPage = () => {
           overflow: 'hidden',
         }}
       >
-        {/* Tab Headers */}
+        {/* Tab Headers: a single tab needs no tab bar */}
+        {tabs.length > 1 && (
         <div style={{ borderBottom: `1px solid ${tokens.colors.border}` }}>
           <nav style={{ display: 'flex', padding: '0 1.5rem' }}>
             {tabs.map((tab) => {
@@ -269,10 +271,10 @@ const AgendaPage = () => {
             })}
           </nav>
         </div>
+        )}
 
         {/* Tab Content */}
         <div style={{ padding: '1.5rem' }}>
-          {activeTab === 'hoje' && !agendaHoje && <PainelIndisponivel titulo="Agenda de hoje indisponível" mensagem="A agenda do Parlamento ainda não está disponível nos dados abertos que usamos. Vai aparecer aqui quando for publicada." />}
 
           {activeTab === 'hoje' && agendaHoje && (
             <div>
@@ -517,7 +519,6 @@ const AgendaPage = () => {
             </div>
           )}
 
-          {activeTab === 'semana' && !agendaSemana && <PainelIndisponivel titulo="Agenda da semana indisponível" mensagem="A agenda do Parlamento ainda não está disponível nos dados abertos que usamos. Vai aparecer aqui quando for publicada." />}
 
           {activeTab === 'semana' && agendaSemana && (
             <div>

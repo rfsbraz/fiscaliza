@@ -6,85 +6,85 @@
       "path": "data",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:297"
+      "read_at": "frontend/src/components/AgendaPage.jsx:299"
     },
     {
       "path": "eventos",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:306"
+      "read_at": "frontend/src/components/AgendaPage.jsx:308"
     },
     {
       "path": "eventos[].descricao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:338"
+      "read_at": "frontend/src/components/AgendaPage.jsx:340"
     },
     {
       "path": "eventos[].estado",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:310"
+      "read_at": "frontend/src/components/AgendaPage.jsx:312"
     },
     {
       "path": "eventos[].hora_fim",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:368"
+      "read_at": "frontend/src/components/AgendaPage.jsx:370"
     },
     {
       "path": "eventos[].hora_inicio",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:367"
+      "read_at": "frontend/src/components/AgendaPage.jsx:369"
     },
     {
       "path": "eventos[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:313"
+      "read_at": "frontend/src/components/AgendaPage.jsx:315"
     },
     {
       "path": "eventos[].local",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:371"
+      "read_at": "frontend/src/components/AgendaPage.jsx:373"
     },
     {
       "path": "eventos[].tipo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:309"
+      "read_at": "frontend/src/components/AgendaPage.jsx:311"
     },
     {
       "path": "eventos[].titulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:336"
+      "read_at": "frontend/src/components/AgendaPage.jsx:338"
     },
     {
       "path": "resumo",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:424"
+      "read_at": "frontend/src/components/AgendaPage.jsx:426"
     },
     {
       "path": "resumo.outros_eventos",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:501"
+      "read_at": "frontend/src/components/AgendaPage.jsx:503"
     },
     {
       "path": "resumo.reunioes_comissao",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:479"
+      "read_at": "frontend/src/components/AgendaPage.jsx:481"
     },
     {
       "path": "resumo.sessoes_plenarias",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:457"
+      "read_at": "frontend/src/components/AgendaPage.jsx:459"
     }
   ],
   "dropped": []
