@@ -111,7 +111,23 @@ test('interventions are filtered, sorted and paged in the browser', async () => 
   assert.deepEqual(await ids('tipo_intervencao=interven'), [5, 3]);
   assert.deepEqual(await ids('page=2&per_page=3'), [9]);
   const meta = (await a.get('deputados/7/atividades?tipo_intervencao=Pergunta&per_page=50')).body.intervention_metadata;
-  assert.deepEqual(meta, { total: 1, page: 1, per_page: 50, pages: 1 });
+  assert.deepEqual(meta, {
+    total: 1,
+    page: 1,
+    per_page: 50,
+    pages: 1,
+    por_tipo: { Pergunta: 1 },
+    por_mes: { '2026-09': 1 },
+    ultima: '2026-09-18',
+  });
+});
+
+test('the interventions summary counts every match, not the page loaded', async () => {
+  const meta = (await api().get('deputados/7/atividades?ordenacao_intervencoes=oldest&page=2&per_page=3')).body
+    .intervention_metadata;
+  assert.deepEqual(meta.por_tipo, { 'Intervenção': 2, Pergunta: 1, 'Declaração política': 1 });
+  assert.deepEqual(meta.por_mes, { '2026-09': 3 });
+  assert.equal(meta.ultima, '2026-09-18');
 });
 
 test('one file per deputy, fetched once for all their endpoints', async () => {
