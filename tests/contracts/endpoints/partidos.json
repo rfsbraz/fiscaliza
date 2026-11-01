@@ -6,31 +6,31 @@
       "path": "partidos",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:92"
+      "read_at": "frontend/src/components/PartidosPage.jsx:93"
     },
     {
       "path": "partidos[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:302"
+      "read_at": "frontend/src/components/PartidosPage.jsx:303"
     },
     {
       "path": "partidos[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:346"
+      "read_at": "frontend/src/components/PartidosPage.jsx:347"
     },
     {
       "path": "partidos[].num_deputados",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:358"
+      "read_at": "frontend/src/components/PartidosPage.jsx:359"
     },
     {
       "path": "partidos[].sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:299"
+      "read_at": "frontend/src/components/PartidosPage.jsx:300"
     }
   ],
   "dropped": []

@@ -6,6 +6,7 @@ import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner, PageHeader } from './common';
 import { coalitionScope, formatDecimal, legislatureName, seatsNote } from '../utils/format';
+import { partyPath } from '../utils/party';
 
 const PartidosPage = () => {
   const [partidos, setPartidos] = useState([]);
@@ -409,7 +410,7 @@ const PartidosPage = () => {
                       </div>
 
                       <Link
-                        to={`/partidos/${partido.sigla}`}
+                        to={partyPath(partido.sigla)}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',

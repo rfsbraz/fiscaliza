@@ -7,6 +7,7 @@ import { createServer } from 'vite';
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { PARTY_ROUTE } from '../utils/party.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const vite = await createServer({
@@ -108,6 +109,6 @@ test('the coalition header and tabs fit a phone', async () => {
 });
 
 test('the party and deputy tabs wrap instead of hiding', async () => {
-  tabsWrap(await render('/partidos/XP#deputados', '/partidos/:partidoId', PartidoDetalhes), 'partido');
+  tabsWrap(await render('/partidos/XP#deputados', PARTY_ROUTE, PartidoDetalhes), 'partido');
   tabsWrap(await render('/deputados/1#biografia', '/deputados/:cadId', DeputadoDetalhes), 'deputado');
 });

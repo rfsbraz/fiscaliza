@@ -6,7 +6,7 @@
       "path": "coligacoes",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:93"
+      "read_at": "frontend/src/components/PartidosPage.jsx:94"
     },
     {
       "path": "coligacoes[].ambito",
@@ -18,43 +18,43 @@
       "path": "coligacoes[].ativa",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:506"
+      "read_at": "frontend/src/components/PartidosPage.jsx:507"
     },
     {
       "path": "coligacoes[].component_parties",
       "type": "array",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:593"
+      "read_at": "frontend/src/components/PartidosPage.jsx:594"
     },
     {
       "path": "coligacoes[].component_parties[].com_lugares",
       "type": "boolean",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:622"
+      "read_at": "frontend/src/components/PartidosPage.jsx:623"
     },
     {
       "path": "coligacoes[].component_parties[].sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:610"
+      "read_at": "frontend/src/components/PartidosPage.jsx:611"
     },
     {
       "path": "coligacoes[].contagem",
       "type": "string",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:587"
+      "read_at": "frontend/src/components/PartidosPage.jsx:588"
     },
     {
       "path": "coligacoes[].data_dissolucao",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:644"
+      "read_at": "frontend/src/components/PartidosPage.jsx:645"
     },
     {
       "path": "coligacoes[].deputy_count",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:576"
+      "read_at": "frontend/src/components/PartidosPage.jsx:577"
     },
     {
       "path": "coligacoes[].eleicoes",
@@ -66,25 +66,25 @@
       "path": "coligacoes[].espectro_politico",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/PartidosPage.jsx:469"
+      "read_at": "frontend/src/components/PartidosPage.jsx:470"
     },
     {
       "path": "coligacoes[].id",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:472"
+      "read_at": "frontend/src/components/PartidosPage.jsx:473"
     },
     {
       "path": "coligacoes[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:548"
+      "read_at": "frontend/src/components/PartidosPage.jsx:549"
     },
     {
       "path": "coligacoes[].sigla",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/PartidosPage.jsx:503"
+      "read_at": "frontend/src/components/PartidosPage.jsx:504"
     }
   ],
   "dropped": []

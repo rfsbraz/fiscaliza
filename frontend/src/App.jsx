@@ -20,6 +20,7 @@ const Dados = lazy(() => import('./components/Dados'))
 const Privacidade = lazy(() => import('./components/Privacidade'))
 import { apiFetch } from './config/api'
 import { routeTitle } from './utils/routeTitle'
+import { PARTY_ROUTE } from './utils/party'
 import './App.css'
 
 const AppContent = () => {
@@ -111,7 +112,7 @@ const AppContent = () => {
             <Route path="/deputados" element={<DeputadosPage />} />
             <Route path="/deputados/:cadId" element={<DeputadoDetalhes />} />
             <Route path="/partidos" element={<PartidosPage />} />
-            <Route path="/partidos/:partidoId" element={<PartidoDetalhes />} />
+            <Route path={PARTY_ROUTE} element={<PartidoDetalhes />} />
             <Route path="/coligacoes/:coligacaoId" element={<ColigacaoDetalhes />} />
             <Route path="/agenda" element={<AgendaPage />} />
             <Route path="/perguntas" element={<PerguntasPage />} />

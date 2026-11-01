@@ -6,37 +6,37 @@
       "path": "deputados",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:156"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:157"
     },
     {
       "path": "deputados[].circulo",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:563"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:564"
     },
     {
       "path": "deputados[].id",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:466"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:467"
     },
     {
       "path": "deputados[].id_cadastro",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:480"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:481"
     },
     {
       "path": "deputados[].nome",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:557"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:558"
     },
     {
       "path": "deputados[].partido_sigla",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:560"
+      "read_at": "frontend/src/components/ColigacaoDetalhes.jsx:561"
     }
   ],
   "dropped": []
