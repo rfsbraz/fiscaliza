@@ -1292,7 +1292,7 @@ def recent_plenary_votes(con, legislature, limit):
         with plenary as (
             select v.vote_id, v.date, v.result, v.unanimous, v.description,
                    list(i.title order by i.initiative_id) filter (where i.title is not null) as titles,
-                   list(iv.initiative_id order by iv.initiative_id)
+                   list(distinct iv.initiative_id order by iv.initiative_id)
                        filter (where iv.initiative_id is not null) as initiative_ids,
                    min(iv.phase) as phase,
                    coalesce(bool_or({_PROCEDURAL_PHASE}), false) as procedural

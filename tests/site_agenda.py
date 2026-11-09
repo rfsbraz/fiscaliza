@@ -43,6 +43,8 @@ def agenda_tables():
     initiative_votes = [
         # vote_id, initiative_id, initiative_legislature, body, phase
         (300, 51, "XVII", "plenary", "Votação na generalidade"),
+        # The same link twice, as the release can publish it (tests/site_votes.py).
+        (300, 51, "XVII", "plenary", "Votação na generalidade"),
         (301, 51, "XVII", "plenary", "Votação final global"),
         (302, 52, "XVII", "plenary", "Votação final global"),
         (303, 53, "XVII", "plenary", "Votação na generalidade"),

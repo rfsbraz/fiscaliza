@@ -40,7 +40,8 @@ const VOTE = {
 };
 
 test('a vote card shows the day of the vote in the Azores too', () => {
-  assert.equal(new Date().getTimezoneOffset() > 0, true, 'the test runs west of UTC');
+  // The Azores are UTC+0 in summer, so check the offset on the vote's own day (UTC-1).
+  assert.equal(new Date(2026, 9, 28).getTimezoneOffset() > 0, true, 'the vote day is west of UTC');
   const card = text(React.createElement(VoteCard, { votacao: VOTE }));
   assert.match(card, /28\/10\/2026/);
   assert.doesNotMatch(card, /27\/10\/2026/);
