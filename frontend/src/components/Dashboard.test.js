@@ -55,3 +55,10 @@ test('with no lists count the note leaves that sentence out', () => {
   assert.match(text, /pessoas tiveram lugar em algum momento da legislatura/);
   assert.doesNotMatch(text, /nas listas da legislatura/);
 });
+
+test('the home page has no majority or fragmentation lead (#265)', () => {
+  const text = render(STATS);
+  for (const gone of ['Fragmentação', 'Faltam', 'para maioria', 'Maioria Absoluta', 'Governo Minoritário', 'Balanço Parlamentar']) {
+    assert.doesNotMatch(text, new RegExp(gone), gone);
+  }
+});
