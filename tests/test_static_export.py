@@ -40,6 +40,7 @@ FLAT = {
     "votacoes/recentes/5.json": "votacoes/recentes?limite=5",
     "votacoes/recentes/10.json": "votacoes/recentes",
     "estatisticas/atividade.json": "estatisticas/atividade",
+    "estatisticas/decisoes.json": "estatisticas/decisoes",
     "health.json": "health",
     "dados.json": "dados",
     "perguntas.json": "perguntas",

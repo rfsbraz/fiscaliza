@@ -43,6 +43,8 @@ static export load all of them.
   interventions 5001 to 5003. The voting tests load it alone.
 - questions (tests/site_questions.py): written questions 6001 to 6003 (XVI) and 7001 to 7007
   (XVII), with their authors and recipients.
+- decisions (tests/site_decisions.py): votes 401 to 405 on 2026-10-15, the last plenary day in
+  the release, on initiatives 81 to 85. The home page decision tests load it alone.
 
 Plenary attendance (_attendance below, the plenary_attendance mart) goes in with the deputies
 set. Each list holds whoever had a seat that day, everyone PR (present) unless listed here.
@@ -65,6 +67,7 @@ import duckdb
 
 from fiscaliza_data import sync
 from tests.site_agenda import agenda_tables
+from tests.site_decisions import decision_tables
 from tests.site_questions import question_tables
 from tests.site_votes import voting_tables
 
@@ -270,6 +273,7 @@ def _activity():
     declarations. Returns {table: (create sql, rows)}."""
     initiatives = [
         # legislature, initiative_id, number, type_code, type, title, first_event_date, text_url
+        # (author_kind is left empty)
         ("XVII", 1, 1, "J", "Projeto de Lei", "Iniciativa 1", "2025-07-01", "https://example.org/1.pdf"),
         ("XVII", 2, 2, "R", "Projeto de Resolução", "Iniciativa 2", "2025-08-01", None),
         ("XVII", 3, 3, "J", "Projeto de Lei", "Iniciativa 3", "2025-09-01", None),
@@ -411,8 +415,8 @@ def _activity():
     return {
         "initiatives": (
             "legislature varchar, initiative_id bigint, number integer, type_code varchar, type varchar, "
-            "title varchar, first_event_date date, text_url varchar",
-            initiatives,
+            "title varchar, first_event_date date, text_url varchar, author_kind varchar",
+            [(*row, None) for row in initiatives],
         ),
         "initiative_authors": (
             "legislature varchar, initiative_id bigint, author_type varchar, cadastro_id bigint, "
@@ -560,6 +564,7 @@ ACTIVITY_SETS = {
     "agenda": agenda_tables,
     "votes": voting_tables,
     "questions": question_tables,
+    "decisions": decision_tables,
 }
 
 
