@@ -147,3 +147,24 @@ test('a joint vote names only its Government initiatives as rejected', () => {
   assert.match(t, /Proposta de Lei n\.º 81\/XVII: Iniciativa 81/);
   assert.doesNotMatch(t, /Iniciativa 80/);
 });
+
+test('a joint vote card shows every author once', () => {
+  const joint = {
+    ...BODY.decisoes[0],
+    iniciativas: [
+      ini(80, 'Projeto de Lei', 80, 'Iniciativa 80', 'Grupos Parlamentares'),
+      ...BODY.decisoes[0].iniciativas,
+      ini(79, 'Projeto de Lei', 79, 'Iniciativa 79', 'Grupos Parlamentares'),
+    ],
+  };
+  const t = text(React.createElement(DecisoesView, { body: { ...BODY, decisoes: [joint] } }));
+  assert.match(t, /Grupos Parlamentares Governo/);
+  assert.equal(t.match(/Grupos Parlamentares/g).length, 1);
+});
+
+test('a rejected Government initiative with no title shows no null', () => {
+  const untitled = { ...BODY.decisoes[0], iniciativas: [ini(81, 'Proposta de Lei', 81, null, 'Governo')] };
+  const t = text(React.createElement(GovernoView, { body: { ...BODY, decisoes: [untitled] } }));
+  assert.match(t, /Proposta de Lei n\.º 81\/XVII · Votação na generalidade/);
+  assert.doesNotMatch(t, /null/);
+});

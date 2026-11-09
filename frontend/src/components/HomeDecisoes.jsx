@@ -113,7 +113,9 @@ const Card = ({ decisao }) => {
         {decisao.iniciativas.map((i) => (
           <span key={`${i.legislatura}-${i.id}`} style={tag}>{initiativeName(i)}</span>
         ))}
-        {first.autoria && <span style={tag}>{first.autoria}</span>}
+        {[...new Set(decisao.iniciativas.map((i) => i.autoria).filter(Boolean))].map((autoria) => (
+          <span key={autoria} style={tag}>{autoria}</span>
+        ))}
       </div>
       <h3 style={{ fontFamily: fonts.headline, fontSize: '1rem', lineHeight: 1.3, margin: '0.375rem 0', color: colors.textPrimary }}>
         {first.titulo || initiativeName(first)}
@@ -199,7 +201,7 @@ export const GovernoView = ({ body }) => {
                 <li key={d.vote_id}>
                   <Link to={`/votacoes/${d.vote_id}`} style={{ color: 'inherit', textDecoration: 'underline' }}>
                     {governmentOwn(d)
-                      .map((i) => `${initiativeName(i)}: ${i.titulo}`)
+                      .map((i) => (i.titulo ? `${initiativeName(i)}: ${i.titulo}` : initiativeName(i)))
                       .join('; ')}
                   </Link>{' '}
                   · {d.fase}

@@ -6,13 +6,13 @@
       "path": "data",
       "type": "string",
       "nullable": true,
-      "read_at": "frontend/src/components/HomeDecisoes.jsx:135"
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:137"
     },
     {
       "path": "decisoes",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/HomeDecisoes.jsx:135"
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:137"
     },
     {
       "path": "decisoes[].vote_id",
@@ -30,7 +30,7 @@
       "path": "decisoes[].resultado",
       "type": "string",
       "nullable": false,
-      "read_at": "frontend/src/components/HomeDecisoes.jsx:123"
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:125"
     },
     {
       "path": "decisoes[].unanimidade",
@@ -42,7 +42,7 @@
       "path": "decisoes[].fase",
       "type": "string",
       "nullable": false,
-      "read_at": "frontend/src/components/HomeDecisoes.jsx:124"
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:126"
     },
     {
       "path": "decisoes[].iniciativas",
@@ -78,7 +78,7 @@
       "path": "decisoes[].iniciativas[].titulo",
       "type": "string",
       "nullable": true,
-      "read_at": "frontend/src/components/HomeDecisoes.jsx:119"
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:121"
     },
     {
       "path": "decisoes[].iniciativas[].autoria",
@@ -168,25 +168,25 @@
       "path": "governo",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/HomeDecisoes.jsx:175"
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:177"
     },
     {
       "path": "governo.votadas",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/HomeDecisoes.jsx:189"
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:191"
     },
     {
       "path": "governo.aprovadas",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/HomeDecisoes.jsx:191"
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:193"
     },
     {
       "path": "governo.rejeitadas",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/HomeDecisoes.jsx:178"
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:180"
     }
   ],
   "dropped": []
