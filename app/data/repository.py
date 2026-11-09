@@ -1342,13 +1342,22 @@ def plenary_decisions(con, day):
                 select 1 from links f
                 where f.is_final and f.initiative_id = l.initiative_id and f.legislature = l.legislature
             )
+        ),
+        per_initiative as (
+            -- one row per vote and initiative, even when the AR links them under two phases
+            select vote_id, legislature, initiative_id, number, type_code, type, title, author_kind,
+                   min(phase) filter (where is_final) as final_phase, min(phase) as any_phase,
+                   bool_or(is_final) as is_final
+            from kept
+            group by all
         )
-        select v.vote_id, v.legislature, v.date, v.result, v.unanimous, min(k.phase) as phase,
+        select v.vote_id, v.legislature, v.date, v.result, v.unanimous,
+               coalesce(min(k.final_phase), min(k.any_phase)) as phase,
                bool_or(k.is_final) as is_final,
                list({'initiative_id': k.initiative_id, 'legislature': k.legislature, 'number': k.number,
                      'type_code': k.type_code, 'type': k.type, 'title': k.title, 'author_kind': k.author_kind}
                     order by k.initiative_id) as initiatives
-        from kept k
+        from per_initiative k
         join votes v on v.vote_id = k.vote_id and v.body = 'plenary'
         group by all
         order by v.vote_id

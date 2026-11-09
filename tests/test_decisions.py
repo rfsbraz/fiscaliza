@@ -54,6 +54,7 @@ def con():
         (32, 3, "Votação final global"),  # the same link listed twice
         (40, 4, "Votação na generalidade"),
         (50, 5, "Votação final"),
+        (50, 5, "Votação final global"),  # the same initiative under a second final phase
         (60, 6, "Votação Deliberação"),
         (70, 7, "Requerimento dispensa redação final"),
         (80, 8, "Votação global"),
@@ -83,6 +84,7 @@ def test_finals_and_the_generality_of_propostas_de_lei(con):
 def test_one_decision_per_initiative_and_no_duplicate_links(con):
     rows = {r["vote_id"]: r for r in repository.plenary_decisions(con, DAY)}
     assert [i["initiative_id"] for i in rows[32]["initiatives"]] == [3]
+    assert [i["initiative_id"] for i in rows[50]["initiatives"]] == [5]
     assert 20 not in rows  # the final vote 21 decided initiative 2 the same day
 
 
