@@ -25,8 +25,11 @@ def write(path, data):
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
 
-def build(root, deputy_name="José Luís Carneiro", activity=1, party_deputies=2, asset="index-abc123.js"):
-    """A prepared dist/ with one deputy, one party and one legislature of questions."""
+def build(
+    root, deputy_name="José Luís Carneiro", activity=1, party_deputies=2, asset="index-abc123.js", against=("PS",)
+):
+    """A prepared dist/ with one deputy, one party, one legislature of questions and two vote pages
+    that share a group file."""
     dist = root / "dist"
     dist.mkdir(parents=True)
     (dist / "index.html").write_text(TEMPLATE.replace("</head>", f'<script src="/assets/{asset}"></script></head>'))
@@ -37,6 +40,13 @@ def build(root, deputy_name="José Luís Carneiro", activity=1, party_deputies=2
     write(api / "partidos" / "ps" / "deputados.json", {"total": party_deputies})
     write(api / "perguntas.json", {"legislaturas": [{"legislatura": "XVII"}]})
     write(api / "perguntas" / "xvii.json", {"perguntas": []})
+    heads = [{"id": i, "titulo": f"Votação {i}", "descricao": "Votação no Plenário."} for i in (193164, 193246)]
+    write(api / "votacoes" / "paginas.json", {"legislaturas": ["XVII"], "votacoes": heads})
+    votes = {
+        193164: {"id": 193164, "posicoes": {"contra": []}},
+        193246: {"id": 193246, "posicoes": {"contra": [{"grupo": g, "deputados": None} for g in against]}},
+    }
+    write(api / "votacoes" / "grupo" / "193.json", {"votacoes": votes})
     pages.prepare(dist)
     return dist, json.loads((dist / pages.INDEXNOW_MANIFEST).read_text())
 
@@ -65,6 +75,19 @@ def test_a_data_change_submits_only_that_page(tmp_path):
     assert pages.indexnow_changed(before, deputy) == [f"{S}/deputados/2105"]
     _, party = build(tmp_path / "c", party_deputies=3)
     assert pages.indexnow_changed(before, party) == [f"{S}/partidos/PS"]
+
+
+def test_a_vote_correction_submits_only_that_vote_page(tmp_path):
+    # Vote pages read their vote from a group file shared with up to 999 others (#191).
+    _, before = build(tmp_path / "a")
+    _, after = build(tmp_path / "b", against=("PS", "CH"))
+    assert pages.indexnow_changed(before, after) == [f"{S}/votacoes/193246"]
+
+
+def test_the_vote_group_size_is_the_exports():
+    from app.services import votes
+
+    assert pages.VOTE_GROUP == votes.VOTE_GROUP
 
 
 def test_a_new_head_submits_that_page(tmp_path):

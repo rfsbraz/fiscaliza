@@ -1,7 +1,7 @@
 // Browser-side answers from the static export (#90). Run with `npm test` (node --test).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createStaticApi, legislatureName, slug } from './staticApi.js';
+import { createStaticApi, legislatureName, slug, voteGroup } from './staticApi.js';
 
 const person = (id, nome, nomeCompleto, active = true, inCurrent = active, parties = []) => ({
   id_cadastro: id,
@@ -182,4 +182,50 @@ test('requests the export does not render are not found', async () => {
   const a = api();
   assert.equal((await a.get('estatisticas?legislatura=XVI')).status, 404);
   assert.equal((await a.get('nao/existe')).status, 404);
+});
+
+// #191: the votes are grouped by id range, one file per thousand ids (export.py, votes.VOTE_GROUP).
+test('a vote goes in the file of its thousand, as in the export', () => {
+  assert.deepEqual([0, 999, 1000, 193246].map(voteGroup), [0, 0, 1, 193]);
+});
+
+test('a vote is read from its group file, fetched once per group', async () => {
+  const calls = [];
+  const files = {
+    'votacoes/grupo/193.json': { votacoes: { 193246: { id: 193246 }, 193164: { id: 193164 } } },
+  };
+  const a = api(files, calls);
+  assert.deepEqual((await a.get('votacoes/193246')).body, { id: 193246 });
+  assert.deepEqual((await a.get('votacoes/193164')).body, { id: 193164 });
+  assert.deepEqual(calls, ['votacoes/grupo/193.json']);
+});
+
+test('an unknown, missing or malformed vote id is not found', async () => {
+  const files = { 'votacoes/grupo/193.json': { votacoes: { 193246: { id: 193246 } } } };
+  const a = api(files);
+  for (const id of ['193247', '5', 'abc', '1.5', '', '193246?x=1']) {
+    assert.equal((await a.get(`votacoes/${id}`)).status, 404, id);
+  }
+  assert.equal((await a.get('votacoes/recentes?limite=5')).status, 404);
+});
+
+test('a vote group that fails to load is an error, not a missing vote, and is tried again', async () => {
+  const group = { votacoes: { 193246: { id: 193246 } } };
+  for (const failure of [async () => { throw new Error('rede'); }, async () => ({ ok: false, status: 503, text: '' })]) {
+    let fail = true;
+    const calls = [];
+    const a = createStaticApi({
+      load: async (path) => {
+        calls.push(path);
+        if (fail) return failure();
+        return { ok: true, status: 200, text: JSON.stringify(group) };
+      },
+    });
+    const first = await a.get('votacoes/193246');
+    assert.notEqual(first.status, 404);
+    assert.ok(first.status >= 500);
+    fail = false;
+    assert.deepEqual((await a.get('votacoes/193246')).body, { id: 193246 });
+    assert.equal(calls.length, 2);
+  }
 });

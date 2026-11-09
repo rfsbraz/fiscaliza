@@ -1405,6 +1405,83 @@ def group_positions(con, vote_ids):
     )
 
 
+# Vote pages (#191): every plenary vote, by id range, in three queries per range.
+
+# Not registered in a group: the AR lists their votes as named votes, but they are their own
+# vote, not a vote against a group (#187).
+UNGROUPED = ("Ninsc", "Indep")
+
+
+def plenary_vote_rows(con, lo=None, hi=None):
+    """Plenary votes with lo <= vote_id < hi (all when None), lowest id first, each with the
+    initiatives it decided: each initiative once, lowest id first, with its phase and authors."""
+    return _rows(
+        con,
+        """
+        with links as (
+            select iv.vote_id, iv.initiative_id, iv.initiative_legislature, min(iv.phase) as phase
+            from initiative_votes iv
+            where iv.body = 'plenary'
+            group by all
+        ),
+        authors as (
+            select legislature, initiative_id,
+                   list(distinct case when author_type = 'other' then name else group_code end)
+                       filter (where coalesce(case when author_type = 'other' then name else group_code end, '') <> '')
+                       as authors
+            from initiative_authors
+            group by all
+        )
+        select v.vote_id, v.legislature, v.date, v.result, v.unanimous, v.description,
+               list({'initiative_id': i.initiative_id, 'legislature': i.legislature, 'type': i.type,
+                     'number': i.number, 'title': i.title, 'phase': l.phase,
+                     'authors': coalesce(list_sort(a.authors), [])}
+                    order by i.initiative_id) filter (where i.initiative_id is not null) as initiatives
+        from votes v
+        left join links l on l.vote_id = v.vote_id
+        left join initiatives i on i.initiative_id = l.initiative_id and i.legislature = l.initiative_legislature
+        left join authors a on a.initiative_id = i.initiative_id and a.legislature = i.legislature
+        where v.body = 'plenary'
+          and ($lo is null or v.vote_id >= $lo) and ($hi is null or v.vote_id < $hi)
+        group by all
+        order by v.vote_id
+        """,
+        {"lo": lo, "hi": hi},
+    )
+
+
+def plenary_published_positions(con, lo=None, hi=None):
+    """The group positions the AR published for plenary votes with lo <= vote_id < hi: rows
+    inferred from a unanimous vote are left out. Whole groups before counts."""
+    return _rows(
+        con,
+        """
+        select vote_id, group_code, position, deputies
+        from vote_group_positions
+        where body = 'plenary' and not coalesce(inferred, false)
+          and ($lo is null or vote_id >= $lo) and ($hi is null or vote_id < $hi)
+        order by vote_id, group_code, deputies nulls first
+        """,
+        {"lo": lo, "hi": hi},
+    )
+
+
+def plenary_named_votes(con, lo=None, hi=None):
+    """Deputies the AR named on plenary votes with lo <= vote_id < hi, without the deputies of
+    no group (UNGROUPED)."""
+    return _rows(
+        con,
+        """
+        select vote_id, name, group_code, position, cadastro_id
+        from vote_deputy_dissents
+        where body = 'plenary' and not list_contains($ungrouped, coalesce(group_code, ''))
+          and ($lo is null or vote_id >= $lo) and ($hi is null or vote_id < $hi)
+        order by vote_id, name, cadastro_id
+        """,
+        {"lo": lo, "hi": hi, "ungrouped": list(UNGROUPED)},
+    )
+
+
 def published_group_positions(con, vote_ids):
     """The group positions the AR published for the given plenary votes: rows inferred from a
     unanimous vote are left out. By group, then whole groups before counts."""

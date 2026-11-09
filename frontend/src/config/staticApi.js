@@ -10,6 +10,8 @@
  */
 
 const MAX_PER_PAGE = 100;
+// One file per thousand vote ids (fiscaliza_data/export.py, app/services/votes.py VOTE_GROUP).
+const VOTE_GROUP = 1000;
 const ROMAN = [
   [10, 'X'],
   [9, 'IX'],
@@ -40,6 +42,9 @@ export const slug = (value) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+
+/** The id range file a plenary vote is in (#191): the thousand it is in, as in the export. */
+export const voteGroup = (id) => Math.floor(Number(id) / VOTE_GROUP);
 
 /** The legislature as the data names it; the party page sends a number ("17"). */
 export const legislatureName = (value) => {
@@ -207,29 +212,35 @@ export function createStaticApi({ load }) {
   const cache = new Map();
 
   // A host that answers a missing file with index.html (SPA fallback) gives HTML, not JSON.
-  const file = (path) => {
+  // loaded(path) resolves to { status, body }: 200 with the parsed file, 404 when the file is
+  // missing or not JSON, or the failure (503 for a network error). Failures other than a missing
+  // file are not cached, so the next request tries again.
+  const loaded = (path) => {
     if (!cache.has(path)) {
       cache.set(
         path,
         load(path).then(
           (r) => {
-            if (!r.ok) return null;
-            try {
-              return JSON.parse(r.text);
-            } catch {
-              return null;
+            if (r.ok) {
+              try {
+                return { status: 200, body: JSON.parse(r.text) };
+              } catch {
+                return { status: 404, body: null };
+              }
             }
+            if (r.status !== 404) cache.delete(path);
+            return { status: r.status === 404 ? 404 : r.status, body: null };
           },
-          // A network error is not cached, so the next request tries again.
           () => {
             cache.delete(path);
-            return null;
+            return { status: 503, body: null };
           },
         ),
       );
     }
     return cache.get(path);
   };
+  const file = async (path) => (await loaded(path)).body;
   const serve = async (path) => {
     const body = await file(path);
     return body === null ? notFound() : answer(200, body);
@@ -253,6 +264,15 @@ export function createStaticApi({ load }) {
     if (route === 'agenda/hoje' || route === 'agenda/semana') return pending('agenda');
     if (route === 'votacoes/recentes' && only(params, ['limite'])) {
       return serve(`votacoes/recentes/${intArg(params, 'limite', 10)}.json`);
+    }
+    const vote = route.match(/^votacoes\/(\d+)$/);
+    if (vote && none) {
+      const group = await loaded(`votacoes/grupo/${voteGroup(vote[1])}.json`);
+      if (group.status !== 200 && group.status !== 404) {
+        return answer(group.status, { error: 'Não foi possível carregar a votação' });
+      }
+      const found = group.body?.votacoes?.[String(Number(vote[1]))];
+      return found ? answer(200, found) : notFound();
     }
     if (route === 'coligacoes' && only(params, ['include_inactive'])) {
       return serve(flagArg(params, 'include_inactive', 'false') ? 'coligacoes-todas.json' : 'coligacoes.json');
