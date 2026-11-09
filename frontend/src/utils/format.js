@@ -67,3 +67,10 @@ export const coalitionScope = ({ ambito, eleicoes } = {}) => {
   if (years.length > 2) years = [`${years[0]} a ${years[years.length - 1]}`];
   return [ambito, years.join(' e ')].filter(Boolean).join(', ');
 };
+
+// A YYYY-MM-DD date as a local Date on that day, for toLocaleDateString with weekday or month
+// names. `new Date('2026-10-28')` is midnight UTC, the 27th west of UTC (#266). Null when not a date.
+export const localDay = (iso) => {
+  const m = ISO_DAY.exec(String(iso ?? ''));
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+};

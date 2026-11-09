@@ -2,7 +2,8 @@
 
 Groups' positions are shown as the release publishes them, by group with a count where a
 group split; the release has no per-deputy tallies. Attendance (F12) is the share of seats on
-the year's plenary lists that were attended (app.services.attendance). Figures with no source
+the year's plenary lists that were attended (app.services.attendance). Procedural votes
+(requerimentos, recursos, pareceres) are counted apart and left out of the recent votes (#266). Figures with no source
 yet (committee meetings and hearings, F32) are left out, not sent as zeros.
 """
 
@@ -58,7 +59,10 @@ def votacoes_recentes(con, limite=DEFAULT_LIMIT, legislatura=None):
         "resumo": {
             "aprovadas": sum(r.startswith("aprovad") for r in results),
             "rejeitadas": sum(r.startswith("rejeitad") for r in results),
-            "periodo": f"Legislatura {leg['legislature']}, últimas {len(out)} votações em plenário",
+            "periodo": (
+                f"Legislatura {leg['legislature']}, últimas {len(out)} votações em plenário, "
+                "sem as processuais e uma por iniciativa"
+            ),
         },
     }
 
@@ -78,7 +82,6 @@ def estatisticas_atividade(con):
     leg = _legislature(con)
     day = leg["ref_day"]
     counts = repository.activity_counts(con, date(day.year, 1, 1), day)
-    decided = counts["approved"] + counts["rejected"]
     meta = repository.meta(con)
     return {
         "periodo": str(day.year),
@@ -88,9 +91,8 @@ def estatisticas_atividade(con):
             "sessoes_plenarias": {"total_ano": counts["plenary_sittings"], "fonte": PLENARY_SITTINGS_SOURCE},
             "votacoes": {
                 "total_ano": counts["votes"],
-                "aprovadas": counts["approved"],
-                "rejeitadas": counts["rejected"],
-                "taxa_aprovacao": round(counts["approved"] / decided * 100, 1) if decided else None,
+                # No approval rate: it would mix requerimentos with decisions on initiatives (#266).
+                "processuais": counts["procedural_votes"],
             },
             "iniciativas": {"apresentadas": counts["initiatives"]},
             "intervencoes": {"total": counts["interventions"]},

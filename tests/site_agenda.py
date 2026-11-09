@@ -8,7 +8,11 @@ XVII plenary votes, newest first (the extract date is 2026-10-19, so "this year"
 - 303 (2026-03-20) rejected; initiatives 53 and 54 voted together. PSD, CDS-PP and 2 PS deputies
   in favour, PS and CH against, IL abstains.
 - 302 (2026-01-15) approved unanimously on initiative 52, every group an inferred favour row.
+- 307 (2026-06-11) approved, a procedural vote (a requerimento) on initiative 53: counted in the
+  year's votes as processual and never shown as a recent vote (#266).
 - 301 (2025-12-10) approved, initiative 51.
+- 300 (2025-11-20) approved on the generality of initiative 51; 301 is a later vote on the same
+  initiative, so the recent votes show 301 only (#266).
 
 Vote 305 (2026-05-05) is a committee vote and never counts. Vote 308 (2025-03-01) is in XVI.
 Initiatives 53, 54 and 55 were presented in 2026. Interventions: three in 2026 (two on
@@ -26,22 +30,28 @@ def agenda_tables():
     """{table: (columns, rows)} for the release."""
     votes = [
         # vote_id, legislature, date, body, result, unanimous, description
+        (300, "XVII", "2025-11-20", "plenary", "Aprovado", False, None),
         (301, "XVII", "2025-12-10", "plenary", "Aprovado", False, None),
         (302, "XVII", "2026-01-15", "plenary", "Aprovado", True, None),
         (303, "XVII", "2026-03-20", "plenary", "Rejeitado", False, None),
         (304, "XVII", "2026-05-05", "plenary", "Aprovado", True, "Voto de pesar 1"),
         (305, "XVII", "2026-05-05", "Comissão de Saúde", "Aprovado", False, None),
         (306, "XVII", "2026-06-10", "plenary", "Aprovado", False, None),
+        (307, "XVII", "2026-06-11", "plenary", "Aprovado", False, None),
         (308, "XVI", "2025-03-01", "plenary", "Rejeitado", False, None),
     ]
     initiative_votes = [
         # vote_id, initiative_id, initiative_legislature, body, phase
+        (300, 51, "XVII", "plenary", "Votação na generalidade"),
+        # The same link twice, as the release can publish it (tests/site_votes.py).
+        (300, 51, "XVII", "plenary", "Votação na generalidade"),
         (301, 51, "XVII", "plenary", "Votação final global"),
         (302, 52, "XVII", "plenary", "Votação final global"),
         (303, 53, "XVII", "plenary", "Votação na generalidade"),
         (303, 54, "XVII", "plenary", "Votação na generalidade"),
         (305, 55, "XVII", "Comissão de Saúde", "Votação na especialidade"),
         (306, 53, "XVII", "plenary", "Votação na generalidade"),
+        (307, 53, "XVII", "plenary", "Votação requerimento avocação plenário"),
         (308, 56, "XVI", "plenary", "Votação final global"),
     ]
     initiatives = [

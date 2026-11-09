@@ -63,6 +63,25 @@ def test_vote_lists_groups_by_position_as_published(con):
     assert votes[304]["favor"] == votes[304]["contra"] == []
 
 
+def test_procedural_votes_are_not_recent_votes(con):
+    # 307 is the newest XVII plenary vote, but a requerimento (#266).
+    ids = [v["id"] for v in activity.votacoes_recentes(con, limite=50)["votacoes"]]
+    assert 307 not in ids
+    assert ids[0] == 306
+
+
+def test_one_card_per_initiative_with_its_latest_vote(con):
+    # 300 and 301 both decided initiative 51; only the later one is shown (#266).
+    ids = [v["id"] for v in activity.votacoes_recentes(con, limite=50)["votacoes"]]
+    assert 301 in ids and 300 not in ids
+    # 303 decided 53 and 54 together, so it is not the same set as 306 on 53 alone.
+    assert 303 in ids and 306 in ids
+
+
+def test_every_recent_vote_has_a_day(con):
+    assert all(v["data"] for v in activity.votacoes_recentes(con, limite=50)["votacoes"])
+
+
 def test_no_per_deputy_counts_are_sent(con):
     vote = activity.votacoes_recentes(con)["votacoes"][0]
     assert not {"votos_favor", "votos_contra", "abstencoes", "ausencias"} & set(vote)
@@ -71,7 +90,9 @@ def test_no_per_deputy_counts_are_sent(con):
 def test_summary_counts_the_votes_shown(con):
     resumo = activity.votacoes_recentes(con, limite=5)["resumo"]
     assert (resumo["aprovadas"], resumo["rejeitadas"]) == (4, 1)
-    assert resumo["periodo"] == "Legislatura XVII, últimas 5 votações em plenário"
+    assert resumo["periodo"] == (
+        "Legislatura XVII, últimas 5 votações em plenário, sem as processuais e uma por iniciativa"
+    )
 
 
 def test_unknown_legislature_is_not_found(con):
@@ -94,7 +115,9 @@ def test_activity_counts_the_year_of_the_reference_day(con):
         "total_ano": 5,
         "fonte": "Sessões do Plenário nas listas de presenças, sem sessões solenes ou comemorativas",
     }
-    assert stats["votacoes"] == {"total_ano": 4, "aprovadas": 3, "rejeitadas": 1, "taxa_aprovacao": 75.0}
+    # 302, 303, 304, 306 and the procedural 307. No approval rate: it would mix requerimentos
+    # with decisions on initiatives (#266).
+    assert stats["votacoes"] == {"total_ano": 5, "processuais": 1}
     assert stats["iniciativas"] == {"apresentadas": 3}
     # 3 agenda interventions and 4 from the deputy activity.
     assert stats["intervencoes"] == {"total": 7}
