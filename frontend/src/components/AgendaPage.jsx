@@ -4,7 +4,7 @@ import { Calendar, Clock, MapPin, Users, FileText, Vote, Activity, AlertCircle }
 import { apiFetch } from '../config/api';
 import { tokens } from '../styles/tokens';
 import { LoadingSpinner, Section } from './common';
-import { formatNumber, formatPercent } from '../utils/format';
+import { formatDate, formatNumber, formatPercent, localDay } from '../utils/format';
 
 const PainelIndisponivel = ({ titulo, mensagem }) => (
   <div
@@ -34,6 +34,196 @@ const PainelIndisponivel = ({ titulo, mensagem }) => (
         {mensagem}
       </p>
     </div>
+  </div>
+);
+
+// The year's activity figures (F34).
+export const ActivityStats = ({ estatisticas, periodo }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.1 }}
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+      gap: '1rem',
+    }}
+  >
+    {[
+      { icon: Users, label: 'SESSÕES PLENÁRIAS', value: formatNumber(estatisticas.sessoes_plenarias?.total_ano), sublabel: `em ${periodo}`, note: estatisticas.sessoes_plenarias?.fonte, color: tokens.colors.primary },
+      // Requerimentos, recursos and pareceres are counted apart, and there is no approval rate:
+      // it would mix them with decisions on initiatives (#266).
+      { icon: Vote, label: 'VOTAÇÕES', value: formatNumber(estatisticas.votacoes?.total_ano), sublabel: estatisticas.votacoes?.processuais != null ? `em plenário em ${periodo}, ${formatNumber(estatisticas.votacoes.processuais)} processuais` : `em plenário em ${periodo}`, color: tokens.colors.primary },
+      { icon: FileText, label: 'INICIATIVAS', value: formatNumber(estatisticas.iniciativas?.apresentadas), sublabel: `apresentadas em ${periodo}`, color: '#7C3AED' },
+      ...(estatisticas.assiduidade?.media_presencas != null ? [{ icon: Activity, label: 'ASSIDUIDADE', value: formatPercent(estatisticas.assiduidade.media_presencas), sublabel: `média das listas de presenças de ${periodo}`, color: '#D97706' }] : []),
+    ].map((stat) => (
+      <div
+        key={stat.label}
+        style={{
+          backgroundColor: tokens.colors.bgSecondary,
+          border: `1px solid ${tokens.colors.border}`,
+          borderRadius: '4px',
+          padding: '1.25rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <stat.icon size={24} style={{ color: stat.color, flexShrink: 0 }} />
+          <div>
+            <p
+              style={{
+                fontFamily: tokens.fonts.body,
+                fontSize: '0.6875rem',
+                fontWeight: 600,
+                color: tokens.colors.textMuted,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '0.125rem',
+              }}
+            >
+              {stat.label}
+            </p>
+            <p
+              style={{
+                fontFamily: tokens.fonts.mono,
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                color: tokens.colors.textPrimary,
+              }}
+            >
+              {stat.value}
+            </p>
+            <p
+              style={{
+                fontFamily: tokens.fonts.body,
+                fontSize: '0.6875rem',
+                color: tokens.colors.textMuted,
+              }}
+            >
+              {stat.sublabel}
+            </p>
+            {stat.note && (
+              <p
+                style={{
+                  fontFamily: tokens.fonts.body,
+                  fontSize: '0.625rem',
+                  color: tokens.colors.textMuted,
+                  marginTop: '0.25rem',
+                }}
+              >
+                {stat.note}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    ))}
+  </motion.div>
+);
+
+const VOTE_POSITIONS = [
+  ['favor', 'A favor', tokens.colors.primary],
+  ['contra', 'Contra', tokens.colors.accent],
+  ['abstencao', 'Abstenção', '#D97706'],
+  ['ausentes', 'Ausentes', tokens.colors.textMuted],
+];
+
+// One recent plenary vote (F33).
+export const VoteCard = ({ votacao }) => (
+  <div
+      style={{
+      border: `1px solid ${tokens.colors.border}`,
+      borderRadius: '4px',
+      padding: '1rem',
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+      <div style={{ flex: 1 }}>
+        <h4
+          style={{
+            fontFamily: tokens.fonts.body,
+            fontSize: '1rem',
+            fontWeight: 600,
+            color: tokens.colors.textPrimary,
+            marginBottom: '0.25rem',
+          }}
+        >
+          {votacao.titulo}
+        </h4>
+        {votacao.descricao && (
+          <p
+            style={{
+              fontFamily: tokens.fonts.body,
+              fontSize: '0.8125rem',
+              color: tokens.colors.textSecondary,
+              marginBottom: '0.375rem',
+              whiteSpace: 'pre-line',
+              lineHeight: 1.5,
+              maxHeight: '3em',
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {votacao.descricao}
+          </p>
+        )}
+        <span
+          style={{
+            fontFamily: tokens.fonts.mono,
+            fontSize: '0.6875rem',
+            color: tokens.colors.textMuted,
+          }}
+        >
+          {formatDate(votacao.data)}
+          {votacao.unanime && ' · unanimidade'}
+        </span>
+      </div>
+      <span
+        style={{
+          padding: '0.25rem 0.625rem',
+          fontFamily: tokens.fonts.body,
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          borderRadius: '2px',
+          textTransform: 'uppercase',
+          color: votacao.resultado?.toLowerCase().startsWith('aprovad') ? tokens.colors.primary : tokens.colors.accent,
+          backgroundColor: votacao.resultado?.toLowerCase().startsWith('aprovad') ? '#F0F7F4' : '#FEF2F2',
+        }}
+      >
+        {votacao.resultado}
+      </span>
+    </div>
+
+    {/* Only the positions some group took: an empty one is left out, not shown as "-" (#266). */}
+    {VOTE_POSITIONS.some(([key]) => votacao[key]?.length > 0) && (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', textAlign: 'center' }}>
+        {VOTE_POSITIONS.filter(([key]) => votacao[key]?.length > 0).map(([key, label, color]) => (
+          <div key={key}>
+            <div
+              style={{
+                fontFamily: tokens.fonts.mono,
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                color,
+              }}
+            >
+              {votacao[key].join(', ')}
+            </div>
+            <div
+              style={{
+                fontFamily: tokens.fonts.body,
+                fontSize: '0.6875rem',
+                color: tokens.colors.textMuted,
+                textTransform: 'uppercase',
+              }}
+            >
+              {label}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
   </div>
 );
 
@@ -144,85 +334,7 @@ const AgendaPage = () => {
       </motion.div>
 
       {/* Estatísticas Rápidas */}
-      {estatisticas && estatisticas.estatisticas && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '1rem',
-          }}
-        >
-          {[
-            { icon: Users, label: 'SESSÕES PLENÁRIAS', value: formatNumber(estatisticas.estatisticas.sessoes_plenarias?.total_ano), sublabel: 'este ano', note: estatisticas.estatisticas.sessoes_plenarias?.fonte, color: tokens.colors.primary },
-            { icon: Vote, label: 'VOTAÇÕES', value: formatNumber(estatisticas.estatisticas.votacoes?.total_ano), sublabel: estatisticas.estatisticas.votacoes?.taxa_aprovacao != null ? `${formatPercent(estatisticas.estatisticas.votacoes.taxa_aprovacao)} aprovadas` : 'em plenário', color: tokens.colors.primary },
-            { icon: FileText, label: 'INICIATIVAS', value: formatNumber(estatisticas.estatisticas.iniciativas?.apresentadas), sublabel: 'apresentadas', color: '#7C3AED' },
-            ...(estatisticas.estatisticas.assiduidade?.media_presencas != null ? [{ icon: Activity, label: 'ASSIDUIDADE', value: formatPercent(estatisticas.estatisticas.assiduidade.media_presencas), sublabel: 'média', color: '#D97706' }] : []),
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              style={{
-                backgroundColor: tokens.colors.bgSecondary,
-                border: `1px solid ${tokens.colors.border}`,
-                borderRadius: '4px',
-                padding: '1.25rem',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <stat.icon size={24} style={{ color: stat.color, flexShrink: 0 }} />
-                <div>
-                  <p
-                    style={{
-                      fontFamily: tokens.fonts.body,
-                      fontSize: '0.6875rem',
-                      fontWeight: 600,
-                      color: tokens.colors.textMuted,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      marginBottom: '0.125rem',
-                    }}
-                  >
-                    {stat.label}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: tokens.fonts.mono,
-                      fontSize: '1.5rem',
-                      fontWeight: 700,
-                      color: tokens.colors.textPrimary,
-                    }}
-                  >
-                    {stat.value}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: tokens.fonts.body,
-                      fontSize: '0.6875rem',
-                      color: tokens.colors.textMuted,
-                    }}
-                  >
-                    {stat.sublabel}
-                  </p>
-                  {stat.note && (
-                    <p
-                      style={{
-                        fontFamily: tokens.fonts.body,
-                        fontSize: '0.625rem',
-                        color: tokens.colors.textMuted,
-                        marginTop: '0.25rem',
-                      }}
-                    >
-                      {stat.note}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </motion.div>
-      )}
+      {estatisticas && estatisticas.estatisticas && <ActivityStats estatisticas={estatisticas.estatisticas} periodo={estatisticas.periodo} />}
 
       {/* Tabs */}
       <motion.div
@@ -296,7 +408,7 @@ const AgendaPage = () => {
                     color: tokens.colors.textMuted,
                   }}
                 >
-                  {new Date(agendaHoje.data).toLocaleDateString('pt-PT', {
+                  {localDay(agendaHoje.data)?.toLocaleDateString('pt-PT', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -540,7 +652,7 @@ const AgendaPage = () => {
                     color: tokens.colors.textMuted,
                   }}
                 >
-                  {new Date(agendaSemana.periodo.inicio).toLocaleDateString('pt-PT')} – {new Date(agendaSemana.periodo.fim).toLocaleDateString('pt-PT')}
+                  {formatDate(agendaSemana.periodo.inicio)} – {formatDate(agendaSemana.periodo.fim)}
                 </span>
               </div>
 
@@ -570,7 +682,7 @@ const AgendaPage = () => {
                           textTransform: 'capitalize',
                         }}
                       >
-                        {new Date(dia.data).toLocaleDateString('pt-PT', { weekday: 'long' })}
+                        {localDay(dia.data)?.toLocaleDateString('pt-PT', { weekday: 'long' })}
                       </h4>
                       <span
                         style={{
@@ -579,7 +691,7 @@ const AgendaPage = () => {
                           color: tokens.colors.textMuted,
                         }}
                       >
-                        {new Date(dia.data).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}
+                        {localDay(dia.data)?.toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}
                       </span>
                     </div>
 
@@ -747,164 +859,7 @@ const AgendaPage = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {(votacoesRecentes.votacoes || []).map((votacao) => (
-                  <div
-                    key={votacao.id}
-                    style={{
-                      border: `1px solid ${tokens.colors.border}`,
-                      borderRadius: '4px',
-                      padding: '1rem',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <h4
-                          style={{
-                            fontFamily: tokens.fonts.body,
-                            fontSize: '1rem',
-                            fontWeight: 600,
-                            color: tokens.colors.textPrimary,
-                            marginBottom: '0.25rem',
-                          }}
-                        >
-                          {votacao.titulo}
-                        </h4>
-                        {votacao.descricao && (
-                          <p
-                            style={{
-                              fontFamily: tokens.fonts.body,
-                              fontSize: '0.8125rem',
-                              color: tokens.colors.textSecondary,
-                              marginBottom: '0.375rem',
-                              whiteSpace: 'pre-line',
-                              lineHeight: 1.5,
-                              maxHeight: '3em',
-                              overflow: 'hidden',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                            }}
-                          >
-                            {votacao.descricao}
-                          </p>
-                        )}
-                        <span
-                          style={{
-                            fontFamily: tokens.fonts.mono,
-                            fontSize: '0.6875rem',
-                            color: tokens.colors.textMuted,
-                          }}
-                        >
-                          {new Date(votacao.data).toLocaleDateString('pt-PT')}
-                          {votacao.unanime && ' · unanimidade'}
-                        </span>
-                      </div>
-                      <span
-                        style={{
-                          padding: '0.25rem 0.625rem',
-                          fontFamily: tokens.fonts.body,
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          borderRadius: '2px',
-                          textTransform: 'uppercase',
-                          color: votacao.resultado?.toLowerCase().startsWith('aprovad') ? tokens.colors.primary : tokens.colors.accent,
-                          backgroundColor: votacao.resultado?.toLowerCase().startsWith('aprovad') ? '#F0F7F4' : '#FEF2F2',
-                        }}
-                      >
-                        {votacao.resultado}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', textAlign: 'center' }}>
-                      <div>
-                        <div
-                          style={{
-                            fontFamily: tokens.fonts.mono,
-                            fontSize: '0.8125rem',
-                            fontWeight: 600,
-                            color: tokens.colors.primary,
-                          }}
-                        >
-                          {votacao.favor.join(', ') || '-'}
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: tokens.fonts.body,
-                            fontSize: '0.6875rem',
-                            color: tokens.colors.textMuted,
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          A favor
-                        </div>
-                      </div>
-                      <div>
-                        <div
-                          style={{
-                            fontFamily: tokens.fonts.mono,
-                            fontSize: '0.8125rem',
-                            fontWeight: 600,
-                            color: tokens.colors.accent,
-                          }}
-                        >
-                          {votacao.contra.join(', ') || '-'}
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: tokens.fonts.body,
-                            fontSize: '0.6875rem',
-                            color: tokens.colors.textMuted,
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          Contra
-                        </div>
-                      </div>
-                      <div>
-                        <div
-                          style={{
-                            fontFamily: tokens.fonts.mono,
-                            fontSize: '0.8125rem',
-                            fontWeight: 600,
-                            color: '#D97706',
-                          }}
-                        >
-                          {votacao.abstencao.join(', ') || '-'}
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: tokens.fonts.body,
-                            fontSize: '0.6875rem',
-                            color: tokens.colors.textMuted,
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          Abstenção
-                        </div>
-                      </div>
-                      <div>
-                        <div
-                          style={{
-                            fontFamily: tokens.fonts.mono,
-                            fontSize: '0.8125rem',
-                            fontWeight: 600,
-                            color: tokens.colors.textMuted,
-                          }}
-                        >
-                          {votacao.ausentes.join(', ') || '-'}
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: tokens.fonts.body,
-                            fontSize: '0.6875rem',
-                            color: tokens.colors.textMuted,
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          Ausentes
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <VoteCard key={votacao.id} votacao={votacao} />
                 ))}
               </div>
 

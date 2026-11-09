@@ -1277,29 +1277,46 @@ def seated_since(con, cadastro_id, legislature):
     ]
 
 
+# A plenary vote on a requerimento, a recurso or a parecer decides how an initiative proceeds,
+# not the initiative itself (the AR's phase names, e.g. "Votação requerimento avocação plenário").
+_PROCEDURAL_PHASE = "regexp_matches(lower(iv.phase), 'requerimento|recurso|parecer')"
+
+
 def recent_plenary_votes(con, legislature, limit):
     """The latest plenary votes of a legislature, newest first, with the initiatives they
-    decided (lowest id first) and the phase."""
+    decided (lowest id first) and the phase. Procedural votes are left out, and when several
+    votes decided the same initiatives only the latest is kept (#266)."""
     return _rows(
         con,
-        """
-        with latest as (
-            select vote_id, date, result, unanimous, description
-            from votes
-            where legislature = ? and body = 'plenary'
-            order by date desc, vote_id desc
-            limit ?
+        f"""
+        with plenary as (
+            select v.vote_id, v.date, v.result, v.unanimous, v.description,
+                   list(i.title order by i.initiative_id) filter (where i.title is not null) as titles,
+                   list(iv.initiative_id order by iv.initiative_id)
+                       filter (where iv.initiative_id is not null) as initiative_ids,
+                   min(iv.phase) as phase,
+                   coalesce(bool_or({_PROCEDURAL_PHASE}), false) as procedural
+            from votes v
+            left join initiative_votes iv on iv.vote_id = v.vote_id and iv.body = 'plenary'
+            left join initiatives i
+              on i.initiative_id = iv.initiative_id and i.legislature = iv.initiative_legislature
+            where v.legislature = ? and v.body = 'plenary'
+            group by all
+        ),
+        latest as (
+            select *, row_number() over (
+                partition by coalesce(initiative_ids::varchar, 'vote ' || vote_id)
+                order by date desc, vote_id desc
+            ) as nth
+            from plenary
+            where not procedural
         )
-        select l.*,
-               list(i.title order by i.initiative_id) filter (where i.title is not null) as titles,
-               min(iv.phase) as phase
-        from latest l
-        left join initiative_votes iv on iv.vote_id = l.vote_id and iv.body = 'plenary'
-        left join initiatives i
-          on i.initiative_id = iv.initiative_id and i.legislature = iv.initiative_legislature
-        group by all
-        order by l.date desc, l.vote_id desc
-        """,
+        select vote_id, date, result, unanimous, description, titles, phase
+        from latest
+        where nth = 1
+        order by date desc, vote_id desc
+        limit ?
+        """,  # noqa: S608 - a fixed SQL fragment, values are bound
         [legislature, limit],
     )
 
@@ -1322,24 +1339,25 @@ def group_positions(con, vote_ids):
 
 
 def activity_counts(con, start, end):
-    """Plenary sittings, plenary votes by result, initiatives presented and interventions
+    """Plenary sittings, plenary votes and how many were procedural, initiatives presented and interventions
     between two days, both included. Sittings come from the plenary attendance lists
     (plenary_attendance), without solemn or commemorative sittings (is_ceremonial), so the
     figure matches what the AR calls sessões plenárias (#98)."""
     return _one(
         con,
-        """
+        f"""
         select
             (select count(distinct meeting_id) from plenary_attendance
              where not is_ceremonial and meeting_date between $start and $end) as plenary_sittings,
             (select count(*) from votes where body = 'plenary' and date between $start and $end) as votes,
-            (select count(*) from votes
-             where body = 'plenary' and date between $start and $end and result ilike 'aprovad%') as approved,
-            (select count(*) from votes
-             where body = 'plenary' and date between $start and $end and result ilike 'rejeitad%') as rejected,
+            (select count(*) from votes v
+             where v.body = 'plenary' and v.date between $start and $end
+               and exists (select 1 from initiative_votes iv
+                           where iv.vote_id = v.vote_id and iv.body = 'plenary' and {_PROCEDURAL_PHASE}))
+                as procedural_votes,
             (select count(*) from initiatives where first_event_date between $start and $end) as initiatives,
             (select count(*) from interventions where meeting_date between $start and $end) as interventions
-        """,
+        """,  # noqa: S608 - a fixed SQL fragment, values are bound
         {"start": start, "end": end},
     )
 

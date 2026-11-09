@@ -6,68 +6,79 @@
       "path": "estatisticas",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:147"
+      "read_at": "frontend/src/components/AgendaPage.jsx:337"
     },
     {
       "path": "estatisticas.assiduidade",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:162"
+      "read_at": "frontend/src/components/AgendaPage.jsx:58"
     },
     {
       "path": "estatisticas.assiduidade.media_presencas",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:162"
+      "read_at": "frontend/src/components/AgendaPage.jsx:58"
     },
     {
       "path": "estatisticas.iniciativas",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:161"
+      "read_at": "frontend/src/components/AgendaPage.jsx:57"
     },
     {
       "path": "estatisticas.iniciativas.apresentadas",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:161"
+      "read_at": "frontend/src/components/AgendaPage.jsx:57"
     },
     {
       "path": "estatisticas.sessoes_plenarias",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:159"
+      "read_at": "frontend/src/components/AgendaPage.jsx:53"
     },
     {
       "path": "estatisticas.sessoes_plenarias.fonte",
       "type": "scalar",
       "nullable": false,
-      "read_at": "frontend/src/components/AgendaPage.jsx:159"
+      "read_at": "frontend/src/components/AgendaPage.jsx:53"
     },
     {
       "path": "estatisticas.sessoes_plenarias.total_ano",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:159"
+      "read_at": "frontend/src/components/AgendaPage.jsx:53"
     },
     {
       "path": "estatisticas.votacoes",
       "type": "object",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:160"
+      "read_at": "frontend/src/components/AgendaPage.jsx:56"
     },
     {
-      "path": "estatisticas.votacoes.taxa_aprovacao",
+      "path": "estatisticas.votacoes.processuais",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:160"
+      "read_at": "frontend/src/components/AgendaPage.jsx:56"
     },
     {
       "path": "estatisticas.votacoes.total_ano",
       "type": "scalar",
       "nullable": true,
-      "read_at": "frontend/src/components/AgendaPage.jsx:160"
+      "read_at": "frontend/src/components/AgendaPage.jsx:56"
+    },
+    {
+      "path": "periodo",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/AgendaPage.jsx:337"
     }
   ],
-  "dropped": []
+  "dropped": [
+    {
+      "path": "estatisticas.votacoes.taxa_aprovacao",
+      "reason": "It mixed procedural votes (requerimentos, recursos, pareceres) with decisions on initiatives (#266). Replaced by estatisticas.votacoes.processuais, the count of procedural votes."
+    }
+  ]
 }
