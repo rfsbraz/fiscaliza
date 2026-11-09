@@ -10,6 +10,8 @@
  */
 
 const MAX_PER_PAGE = 100;
+// One file per thousand vote ids (fiscaliza_data/export.py, app/services/votes.py VOTE_GROUP).
+const VOTE_GROUP = 1000;
 const ROMAN = [
   [10, 'X'],
   [9, 'IX'],
@@ -40,6 +42,9 @@ export const slug = (value) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+
+/** The id range file a plenary vote is in (#191): the thousand it is in, as in the export. */
+export const voteGroup = (id) => Math.floor(Number(id) / VOTE_GROUP);
 
 /** The legislature as the data names it; the party page sends a number ("17"). */
 export const legislatureName = (value) => {
@@ -252,6 +257,12 @@ export function createStaticApi({ load }) {
     if (route === 'agenda/hoje' || route === 'agenda/semana') return pending('agenda');
     if (route === 'votacoes/recentes' && only(params, ['limite'])) {
       return serve(`votacoes/recentes/${intArg(params, 'limite', 10)}.json`);
+    }
+    const vote = route.match(/^votacoes\/(\d+)$/);
+    if (vote && none) {
+      const group = await file(`votacoes/grupo/${voteGroup(vote[1])}.json`);
+      const found = group?.votacoes?.[String(Number(vote[1]))];
+      return found ? answer(200, found) : notFound();
     }
     if (route === 'coligacoes' && only(params, ['include_inactive'])) {
       return serve(flagArg(params, 'include_inactive', 'false') ? 'coligacoes-todas.json' : 'coligacoes.json');

@@ -17,6 +17,7 @@ from pathlib import Path
 
 import duckdb
 import pytest
+from werkzeug.exceptions import HTTPException
 
 from fiscaliza_data import export
 from tests.site_data import build_site_data
@@ -92,8 +93,13 @@ def _files(out):
 
 
 def _on_duckdb(flask_app, endpoint):
+    """Whether a DuckDB route answers the endpoint. A path no route takes (votacoes/abc) is not:
+    the static files must answer it 404 too."""
     path = "/api/" + endpoint.split("?")[0]
-    name, _ = flask_app.url_map.bind("localhost").match(path)
+    try:
+        name, _ = flask_app.url_map.bind("localhost").match(path)
+    except HTTPException:
+        return False
     return name.split(".")[0] not in NOT_ON_DUCKDB
 
 
@@ -277,6 +283,11 @@ def _requests(con, flask_app):
             f"partidos/{g}/voting-analytics?legislatura=17",
         ]
         reqs += [f"partidos/{g}/voting-analytics?legislatura={leg}" for leg in legs]
+    # #191: one vote each from the votes, deputies and agenda sets, XVI, a committee vote and ids
+    # that are not votes.
+    votes = [r[0] for r in con.execute("select vote_id from votes order by 1").fetchall()]
+    reqs += [f"votacoes/{v}" for v in votes]
+    reqs += ["votacoes/999999", "votacoes/abc", "votacoes/1.5", "votacoes/"]
     reqs += ["agenda/hoje", "agenda/semana"]
     reqs += ["perguntas/XV", "perguntas/NOPE"]
     return reqs
@@ -311,6 +322,18 @@ def test_static_answers_equal_the_flask_answers(out, con, client, flask_app):
         assert static["body"] == live.get_json(), endpoint
         checked += 1
     assert checked >= 25
+
+
+def test_votes_are_grouped_by_id_range_with_one_page_list(out, con):
+    groups = sorted(p.stem for p in (out / "votacoes" / "grupo").glob("*.json"))
+    plenary = [r[0] for r in con.execute("select vote_id from votes where body = 'plenary'").fetchall()]
+    assert groups == sorted({str(v // 1000) for v in plenary})
+    held = [
+        int(i) for g in groups for i in json.loads((out / "votacoes" / "grupo" / f"{g}.json").read_text())["votacoes"]
+    ]
+    assert sorted(held) == sorted(plenary)
+    pages = json.loads((out / "votacoes" / "paginas.json").read_text())
+    assert pages["legislaturas"] == ["XVII"]
 
 
 def test_agenda_says_not_available_until_s13(out):

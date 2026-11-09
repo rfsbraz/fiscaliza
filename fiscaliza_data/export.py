@@ -98,11 +98,12 @@ def _optional(name):
 
 
 def _services():
-    from app.services import activity, core
+    from app.services import activity, core, votes
 
     return {
         "core": core,
         "activity": activity,
+        "votes": votes,
         "voting": _optional("app.services.voting"),
         "parties": _optional("app.services.parties"),
         "questions": _optional("app.services.questions"),
@@ -172,6 +173,16 @@ def _site_files(con, svc, w):
     _deputy_index(con, core, w)
     _party_files(con, svc, w)
     _question_files(con, svc, w)
+    _vote_files(con, svc, w)
+
+
+def _vote_files(con, svc, w):
+    """Every plenary vote, one file per id range (votes.VOTE_GROUP), and the list of the votes
+    that get a page file in the Pages build (#191)."""
+    votes = svc["votes"]
+    for group, payload in votes.votacoes_por_grupo(con).items():
+        w.write(f"votacoes/grupo/{group}.json", payload)
+    w.write("votacoes/paginas.json", votes.paginas(con))
 
 
 def _question_files(con, svc, w):

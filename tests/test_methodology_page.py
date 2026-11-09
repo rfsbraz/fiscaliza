@@ -31,6 +31,7 @@ SECTIONS = [
     "Eleitos, em exercício e mandatos suspensos",
     "I Legislatura: I-A e I-B",
     "Sessões plenárias",
+    "Páginas de votação",
     "Lacunas conhecidas",
     "Reportar um erro nos dados",
 ]
@@ -103,3 +104,20 @@ def test_page_reads_the_data_date_tag_and_interventions_and_is_indexable():
     assert "cobertura_declaracoes" in page and "com_declaracao" in page
     assert "metodologia.md?raw" in page
     assert "noindex" not in page and "robots" not in page
+
+
+def test_vote_pages_publish_their_rules():
+    # #191: what the page of a vote shows and what it never infers.
+    text = CONTENT.read_text()
+    section = text.split("## Páginas de votação", 1)[1].split("\n## ", 1)[0]
+    for rule in (
+        "por unanimidade",
+        "PS (1 deputado)",
+        "se são a mesma pessoa",
+        "sem grupo",
+        "Não calculamos margens",
+        "secretas",
+        "página da iniciativa",
+        "XVII",
+    ):
+        assert rule in section, rule

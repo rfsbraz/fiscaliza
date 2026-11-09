@@ -187,6 +187,20 @@ def test_prepare_refuses_more_files_than_pages_allows(tmp_path, monkeypatch):
         pages.prepare(dist)
 
 
+def test_prepare_refuses_a_build_close_to_the_file_limit(tmp_path, monkeypatch):
+    # #191: the Pages deploy of each pull request builds the real data, so it goes red while
+    # there is still room, not at the limit itself.
+    dist = _dist(tmp_path)
+    monkeypatch.setattr(pages, "MAX_FILES", 20)
+    monkeypatch.setattr(pages, "FILE_HEADROOM", 15)
+    with pytest.raises(pages.DeployError, match="headroom"):
+        pages.prepare(dist)
+
+
+def test_the_headroom_is_a_tenth_of_the_limit():
+    assert pages.FILE_HEADROOM == pages.MAX_FILES // 10
+
+
 def test_prepare_refuses_a_file_over_the_pages_size_limit(tmp_path, monkeypatch):
     dist = _dist(tmp_path)
     monkeypatch.setattr(pages, "MAX_FILE_BYTES", 5)

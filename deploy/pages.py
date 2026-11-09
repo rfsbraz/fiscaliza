@@ -47,6 +47,9 @@ PRODUCTION_BRANCH = "master"
 PREVIEW_BRANCH = "preview"
 # Cloudflare Pages limits per deployment (free plan).
 MAX_FILES = 20_000
+# prepare fails while a tenth of the limit is still free, so a growing export (one page per
+# vote, #191) turns the pull request's Pages deploy red before a deploy is refused.
+FILE_HEADROOM = MAX_FILES // 10
 MAX_FILE_BYTES = 25 * 1024 * 1024
 MAX_STATIC_REDIRECTS = 2_000
 SITE = "https://fiscaliza.pt"
@@ -235,6 +238,13 @@ def route_heads(api):
             scope = coalition_scope(c.get("ambito"), c.get("eleicoes"))
             label = f"{name} ({scope})" if scope else name
             routes[path] = (label, f"Partidos, deputados e eleições da coligação {label} na Assembleia da República.")
+
+    # One page per vote the export lists (#191): the XVII votes. The rest load in the app.
+    for v in _items(_json(api / "votacoes" / "paginas.json"), "votacoes"):
+        vid, title = v.get("id"), (v.get("titulo") or "").strip()
+        path = _route("/votacoes", vid) if isinstance(vid, int) and not isinstance(vid, bool) else None
+        if path and title:
+            routes[path] = (title, v.get("descricao") or title)
 
     for leg in _items(_json(api / "perguntas.json"), "legislaturas"):
         path = _route("/perguntas", leg.get("legislatura"))
@@ -467,6 +477,11 @@ def prepare(dist):
     files = [p for p in dist.rglob("*") if p.is_file()]
     if len(files) >= MAX_FILES:
         raise DeployError(f"{dist} has {len(files)} files; Pages takes fewer than {MAX_FILES}")
+    if len(files) > MAX_FILES - FILE_HEADROOM:
+        raise DeployError(
+            f"{dist} has {len(files)} files, within the headroom of {FILE_HEADROOM} under the Pages limit of "
+            f"{MAX_FILES}; make room before it grows further"
+        )
     too_big = [p for p in files if p.stat().st_size >= MAX_FILE_BYTES]
     if too_big:
         names = ", ".join(str(p.relative_to(dist)) for p in too_big[:5])

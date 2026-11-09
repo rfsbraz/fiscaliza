@@ -127,6 +127,19 @@ A primeira assembleia eleita, em 1975, aparece como Assembleia Constituinte.
 
 Na agenda, "Sessões plenárias" conta as reuniões do Plenário no ano civil que constam das listas de presenças, sem as sessões solenes ou comemorativas. É o mesmo conjunto de reuniões usado nas taxas de presença. As reuniões extraordinárias contam.
 
+## Páginas de votação
+
+Cada votação em Plenário tem uma página em `/votacoes/` seguido do número que a AR lhe dá. Mostra o resultado, a fase, as iniciativas votadas, as posições dos grupos e os votos individuais nomeados, tal como a AR os publica.
+
+- Posições dos grupos: só as que a AR publicou. Numa votação unânime a AR não diz a posição de cada grupo, por isso mostramos "Aprovado por unanimidade" e nenhum grupo. Numa votação não unânime sem detalhe dizemos que a AR não publicou as posições.
+- Quando a AR dá uma contagem dentro de um grupo, como "1-PS", mostramos "PS (1 deputado)" nessa posição. Os deputados que a AR nomeia aparecem à parte, em "Votos individuais nomeados". Não juntamos a contagem ao nome, porque a fonte não diz se são a mesma pessoa.
+- Deputados não inscritos e independentes não aparecem como votos nomeados: votam sem grupo, por isso o seu voto não é diferente de um grupo.
+- Não calculamos margens a partir do tamanho das bancadas.
+- A fase aparece com o nome que a AR lhe dá e, nas fases mais comuns, com uma explicação curta.
+- Os dados abertos não identificam votações secretas. A página mostra só o que vier publicado e não atribui posições que a AR não deu.
+- Os dados não trazem uma ligação para cada votação no site da AR. Ligamos para a página da iniciativa votada, quando existe.
+- As votações da XVII têm uma página própria no site, com título e descrição para motores de pesquisa e pré-visualizações de ligações. As das legislaturas anteriores abrem a mesma página, carregada no browser.
+
 ## Lacunas conhecidas
 
 São lacunas na fonte. Não as corrigimos à mão.

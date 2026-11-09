@@ -190,7 +190,9 @@ Isto corre, por ordem:
 4. `npm ci` e `npm run build` em `frontend/`.
 5. O passo do Pages sobre `frontend/dist`: copia para lá `deploy/_headers` e `deploy/_redirects`,
    mantém o `404.html` do build (de novo a aplicação) e verifica os limites do Pages (menos de
-   20 000 ficheiros, cada um com menos de 25 MiB). Escreve também um HTML por cada rota da
+   20 000 ficheiros, cada um com menos de 25 MiB). Para antes de chegar ao limite: falha se o build
+   passar de 18 000 ficheiros (`FILE_HEADROOM`, um décimo do limite), e como o deploy de cada pull
+   request constrói os dados reais, o check "Pages Deploy" fica vermelho enquanto ainda há margem. Escreve também um HTML por cada rota da
    aplicação, com o título, a descrição, o canonical e o `og:url` dessa rota (ver "Ligações
    diretas"), e o `sitemap.xml` com essas mesmas rotas (ver "Sitemap"). Qualquer outro caminho sem ficheiro recebe o `404.html` e o estado 404, e a aplicação
    mostra a vista "Página não encontrada". Uma rota nova em `frontend/src/App.jsx` precisa de
@@ -245,9 +247,18 @@ próprio `/` é o `index.html`.
 O `deploy/_redirects` não tem regras para as rotas. O Pages aplica uma regra 200 antes de procurar
 o ficheiro, por isso uma regra `/deputados/* / 200` esconderia estas páginas. As únicas regras são
 301 de páginas que deixaram de existir: `/coligacoes/AD` e `/coligacoes/Madeira Primeiro` passaram a
-uma página por lista (#111) e levam à lista mais recente. Com cerca de 3 300 ficheiros da
-exportação, 3 070 páginas de rotas e o sitemap, o deploy fica perto dos 6 400 ficheiros, longe do
-limite de 20 000.
+uma página por lista (#111) e levam à lista mais recente.
+
+Cada votação da XVII tem também a sua página, `votacoes/193246.html` para `/votacoes/193246`
+(#191), listada pela exportação em `votacoes/paginas.json`. As votações das legislaturas
+anteriores não têm ficheiro: recebem o `404.html` (a aplicação, com o estado 404), que carrega a
+votação do ficheiro do seu milhar de ids, `api/votacoes/grupo/{id // 1000}.json`. Não há regra
+`/votacoes/* 200`, porque esconderia as páginas da XVII.
+
+Contagem do build real com a release data-2026-11-06: 3 328 ficheiros da exportação (82 deles
+são os grupos de votações), 3 025 páginas de deputados, 2 555 páginas de votações, 56 assets e o
+resto das rotas e do sitemap, 9 023 ficheiros ao todo. Ficam 10 977 abaixo do limite de 20 000 e
+8 977 abaixo do ponto em que o passo do Pages para (18 000).
 
 Qualquer outro caminho sem ficheiro, como `/sobre`, recebe o `404.html` de topo com o estado 404.
 Esse ficheiro é de novo a aplicação, escrito pelo build, e a aplicação mostra a vista "Página não

@@ -82,6 +82,10 @@ def dist(tmp_path):
         },
     )
     write(api / "perguntas.json", {"legislaturas": [{"legislatura": "XVII"}, {"legislatura": "XVI"}]})
+    write(
+        api / "votacoes" / "paginas.json",
+        {"legislaturas": ["XVII"], "votacoes": [{"id": 193164, "titulo": "Licença parental", "descricao": "Votação"}]},
+    )
     return dist
 
 
@@ -119,6 +123,7 @@ def test_routes_cover_every_page_family(dist):
         "/metodologia",
         "/privacidade",
         "/dados",
+        "/votacoes/193164",
     ):
         assert path in routes, path
     assert "/" not in routes
@@ -333,3 +338,41 @@ def test_a_sitemap_over_the_size_limit_stops_the_deploy(dist, monkeypatch):
     monkeypatch.setattr(pages, "SITEMAP_MAX_BYTES", 200)
     with pytest.raises(pages.DeployError, match="sitemap"):
         pages.prepare(dist)
+
+
+# Vote pages (#191): one file per vote the export lists in votacoes/paginas.json (the XVII
+# votes). Every other vote id has no file, so Pages answers it with 404.html, the app, which
+# loads the vote from its id-range file or shows "page not found".
+
+
+def test_vote_pages_are_the_votes_the_export_lists(dist):
+    write(
+        dist / "api" / "votacoes" / "paginas.json",
+        {
+            "legislaturas": ["XVII"],
+            "votacoes": [
+                {
+                    "id": 193246,
+                    "titulo": "Proposta de Lei n.º 110/XVII: Orçamento do Estado para 2027",
+                    "descricao": "Votação no Plenário a 28/10/2026: Aprovado. Votação na generalidade.",
+                },
+                {"id": "../x", "titulo": "fora", "descricao": "fora"},
+                {"id": 5, "titulo": "", "descricao": "sem título"},
+            ],
+        },
+    )
+    routes = pages.route_heads(dist / "api")
+    assert routes["/votacoes/193246"] == (
+        "Proposta de Lei n.º 110/XVII: Orçamento do Estado para 2027",
+        "Votação no Plenário a 28/10/2026: Aprovado. Votação na generalidade.",
+    )
+    assert not any(p.startswith("/votacoes/") and p != "/votacoes/193246" for p in routes)
+    pages.write_route_pages(dist, routes)
+    h = head((dist / "votacoes" / "193246.html").read_text(encoding="utf-8"))
+    assert h["canonical"] == "https://fiscaliza.pt/votacoes/193246"
+    assert h["title"].startswith("Proposta de Lei n.º 110/XVII")
+
+
+def test_no_vote_pages_without_the_list(dist):
+    (dist / "api" / "votacoes" / "paginas.json").unlink()
+    assert not any(p.startswith("/votacoes/") for p in pages.route_heads(dist / "api"))
