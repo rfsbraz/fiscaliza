@@ -26,6 +26,7 @@ SECTIONS = [
     "Presenças no Plenário",
     "Taxa de aprovação de iniciativas",
     "Sentido de voto",
+    "Decisões do Plenário",
     "Intervenções",
     "Declarações de interesses",
     "Eleitos, em exercício e mandatos suspensos",
@@ -103,3 +104,24 @@ def test_page_reads_the_data_date_tag_and_interventions_and_is_indexable():
     assert "cobertura_declaracoes" in page and "com_declaracao" in page
     assert "metodologia.md?raw" in page
     assert "noindex" not in page and "robots" not in page
+
+
+def test_decision_rule_is_published_as_the_code_applies_it():
+    # #263: the page states the same phases and types the selection uses.
+    from app.data import repository
+
+    section = CONTENT.read_text().split("## Decisões do Plenário\n", 1)[1].split("\n## ", 1)[0]
+    for phase in repository.DECISION_FINAL_PHASES + (repository.DECISION_GENERALITY_PHASE,):
+        assert f'"{phase}"' in section
+    assert "propostas de lei" in section and "Orçamento do Estado" in section
+    assert "escolha editorial" in section
+
+
+def test_home_decision_cards_are_described():
+    # #264: what the home page cards show and what the Government box counts.
+    section = CONTENT.read_text().split("## Decisões do Plenário\n", 1)[1].split("\n## ", 1)[0]
+    assert "página inicial" in section
+    assert "posições dos grupos tal como a AR as publica" in section
+    assert "não mostramos grupos" in section  # unanimous votes
+    assert "projetos de resolução" in section
+    assert "iniciativas do Governo" in section and "autoria" in section

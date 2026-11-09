@@ -78,6 +78,21 @@ Por isso, no separador Votações de cada deputado:
 
 Nas páginas dos partidos, mostramos "Votações sem votos diferentes registados": quantas votações em que o registo não nomeia nenhum deputado do grupo com outro sentido de voto. O registo só nomeia quem vota de forma diferente, e um grupo pequeno tem poucos deputados que possam ser nomeados, por isso este número não serve para comparar grupos.
 
+## Decisões do Plenário
+
+Num dia de Plenário vota-se muita coisa: requerimentos, deliberações, a especialidade e a votação final do mesmo diploma. Para mostrar o que o Plenário decidiu, contamos como decisões só estas votações, por uma regra fixa e sem escolha editorial:
+
+- as votações finais de qualquer iniciativa: "Votação final global", "Votação final", "Votação global" e "Votação final global decreto";
+- a "Votação na generalidade" das propostas de lei, que inclui o Orçamento do Estado.
+
+Ficam de fora as votações na especialidade, as deliberações e os requerimentos (por exemplo, baixa à comissão, avocação ou dispensa de redação final). Uma iniciativa votada na generalidade e na votação final no mesmo dia conta uma vez, como votação final. Uma votação que decide várias iniciativas conta uma vez.
+
+O dia mostrado é o último dia com votações em Plenário nos dados, não o dia de hoje.
+
+Na página inicial, cada decisão desse dia tem um cartão com a iniciativa, a autoria, o resultado, a fase e as posições dos grupos tal como a AR as publica, e liga para a página da votação. Quando a votação é unânime e a AR não publica a posição de cada grupo, escrevemos "Unanimidade" e não mostramos grupos: não deduzimos posições a partir da unanimidade. As votações finais de projetos de resolução, que costumam ser muitas no mesmo dia, ficam agrupadas por baixo dos outros cartões, e abrem-se com um clique.
+
+O quadro "Iniciativas do Governo rejeitadas" conta só as decisões desse dia sobre iniciativas do Governo, pela autoria que a AR regista, e só as rejeitadas numa votação final ou na generalidade. Não faz leituras políticas: não conta como derrota do Governo uma iniciativa de outro autor, nem a posição dos partidos que apoiam o Governo.
+
 ## Intervenções
 
 As intervenções vêm do ficheiro de intervenções que a AR publica para cada legislatura. A cobertura é desigual:

@@ -5,6 +5,7 @@ import { LoadingSpinner } from './common'
 import { formatDecimal, formatNumber, legislatureName } from '../utils/format'
 import { partyPath } from '../utils/party';
 import HomeComposicao from './HomeComposicao';
+import HomeDecisoes from './HomeDecisoes';
 
 /**
  * Dashboard - Data Observatory Style
@@ -69,6 +70,8 @@ const Dashboard = ({ stats }) => {
           dados, não a de hoje.
         </p>
       </header>
+
+      <HomeDecisoes />
 
       <HomeComposicao />
       <p style={{

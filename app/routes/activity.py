@@ -1,10 +1,11 @@
-"""Agenda page routes on the DuckDB data layer (S8): recent votes and activity stats."""
+"""Agenda page routes on the DuckDB data layer (S8): recent votes and activity stats, and the
+home page's plenary decisions (#264)."""
 
 from flask import Blueprint, request
 
 from app.data.connection import DataUnavailable
 from app.routes.core import _not_found, _serve, _unavailable
-from app.services import activity, home
+from app.services import activity, decisions, home
 from app.services.core import NotFound
 
 activity_bp = Blueprint("activity", __name__)
@@ -29,3 +30,8 @@ def get_estatisticas_atividade():
 @activity_bp.route("/estatisticas/inicio", methods=["GET"])
 def get_estatisticas_inicio():
     return _serve(home.inicio)
+
+
+@activity_bp.route("/estatisticas/decisoes", methods=["GET"])
+def get_estatisticas_decisoes():
+    return _serve(decisions.decisoes_plenario)

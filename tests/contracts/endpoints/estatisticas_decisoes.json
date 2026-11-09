@@ -1,0 +1,193 @@
+{
+  "endpoint": "estatisticas/decisoes",
+  "route": "/api/estatisticas/decisoes",
+  "keys": [
+    {
+      "path": "data",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:137"
+    },
+    {
+      "path": "decisoes",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:137"
+    },
+    {
+      "path": "decisoes[].vote_id",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:99"
+    },
+    {
+      "path": "decisoes[].tipo",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:55"
+    },
+    {
+      "path": "decisoes[].resultado",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:125"
+    },
+    {
+      "path": "decisoes[].unanimidade",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:77"
+    },
+    {
+      "path": "decisoes[].fase",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:126"
+    },
+    {
+      "path": "decisoes[].iniciativas",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:96"
+    },
+    {
+      "path": "decisoes[].iniciativas[].id",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:114"
+    },
+    {
+      "path": "decisoes[].iniciativas[].legislatura",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:49"
+    },
+    {
+      "path": "decisoes[].iniciativas[].tipo",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:49"
+    },
+    {
+      "path": "decisoes[].iniciativas[].numero",
+      "type": "scalar",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:49"
+    },
+    {
+      "path": "decisoes[].iniciativas[].titulo",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:121"
+    },
+    {
+      "path": "decisoes[].iniciativas[].autoria",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:116"
+    },
+    {
+      "path": "decisoes[].posicoes",
+      "type": "object",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:73"
+    },
+    {
+      "path": "decisoes[].posicoes.favor",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:38"
+    },
+    {
+      "path": "decisoes[].posicoes.favor[].grupo",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:50"
+    },
+    {
+      "path": "decisoes[].posicoes.favor[].deputados",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:50"
+    },
+    {
+      "path": "decisoes[].posicoes.contra",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:39"
+    },
+    {
+      "path": "decisoes[].posicoes.contra[].grupo",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:50"
+    },
+    {
+      "path": "decisoes[].posicoes.contra[].deputados",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:50"
+    },
+    {
+      "path": "decisoes[].posicoes.abstencao",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:40"
+    },
+    {
+      "path": "decisoes[].posicoes.abstencao[].grupo",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:50"
+    },
+    {
+      "path": "decisoes[].posicoes.abstencao[].deputados",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:50"
+    },
+    {
+      "path": "decisoes[].posicoes.ausentes",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:41"
+    },
+    {
+      "path": "decisoes[].posicoes.ausentes[].grupo",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:50"
+    },
+    {
+      "path": "decisoes[].posicoes.ausentes[].deputados",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:50"
+    },
+    {
+      "path": "governo",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:177"
+    },
+    {
+      "path": "governo.votadas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:191"
+    },
+    {
+      "path": "governo.aprovadas",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:193"
+    },
+    {
+      "path": "governo.rejeitadas",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeDecisoes.jsx:180"
+    }
+  ],
+  "dropped": []
+}
