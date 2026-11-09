@@ -117,6 +117,20 @@ def test_initiatives_voted_in_different_phases_keep_their_own(data_dir, tmp_path
         c.close()
 
 
+def test_a_missing_initiative_phase_is_not_a_shared_phase(data_dir, tmp_path):
+    # Vote 2 also decides projeto de lei 64 with no phase published: the vote has no shared phase.
+    db = tmp_path / "current.duckdb"
+    shutil.copy(data_dir / "current.duckdb", db)
+    c = duckdb.connect(str(db))
+    c.execute("insert into initiative_votes values (2, 64, 'XVII', 'plenary', null)")
+    try:
+        v = votes.votacao(c, 2)
+        assert v["fase"] is None
+        assert {i["id"]: i["fase"] for i in v["iniciativas"]} == {62: "Votação na generalidade", 64: None}
+    finally:
+        c.close()
+
+
 # Grouping by id range
 
 

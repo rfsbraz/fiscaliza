@@ -62,7 +62,8 @@ def _payloads(con, lo=None, hi=None):
     out = {}
     for v in repository.plenary_vote_rows(con, lo, hi):
         initiatives = [_initiative(i) for i in v["initiatives"] or []]
-        phases = {i["fase"] for i in initiatives if i["fase"]}
+        # A missing phase counts too: one initiative with none means there is no shared phase.
+        phases = {i["fase"] for i in initiatives}
         out[v["vote_id"]] = {
             "id": v["vote_id"],
             "legislatura": v["legislature"],
