@@ -73,7 +73,7 @@ export const ComposicaoView = ({ composicao }) => {
       {apoiam.length > 0 ? (
         <>
           <p style={small}>
-            <strong>Apoiam o Governo: {seats(apoiam)}</strong>{' '}
+            <strong>Partidos do Governo: {seats(apoiam)}</strong>{' '}
             {governo && (
               <>
                 (<a href={governo.fonte} target="_blank" rel="noopener noreferrer" style={link}>{governo.nome}</a>)

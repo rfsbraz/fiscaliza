@@ -57,7 +57,7 @@ const FONTES = {
 test('the strip gives the seats, the government groups first and the substitutes', () => {
   const text = render(React.createElement(ComposicaoView, { composicao: COMPOSICAO }));
   assert.match(text, /Em funções a 19\/10\/2026 · 12 lugares/);
-  assert.match(text, /Apoiam o Governo: PSD 5, CDS-PP 1/);
+  assert.match(text, /Partidos do Governo: PSD 5, CDS-PP 1/);
   assert.match(text, /Outros grupos: PS 4, L 2/);
   assert.match(text, /3 lugares ocupados por substitutos temporários/);
   assert.doesNotMatch(text, /maioria|Oposição|Fragmentação/i);
@@ -78,7 +78,7 @@ test('no changes says so', () => {
 test('without a government on record there is no government label', () => {
   const composicao = { ...COMPOSICAO, governo: null, grupos: COMPOSICAO.grupos.map((g) => ({ ...g, apoia_governo: false })) };
   const text = render(React.createElement(ComposicaoView, { composicao }));
-  assert.doesNotMatch(text, /Apoiam o Governo/);
+  assert.doesNotMatch(text, /Partidos do Governo/);
   assert.match(text, /Grupos: PSD 5, CDS-PP 1, PS 4, L 2/);
 });
 
