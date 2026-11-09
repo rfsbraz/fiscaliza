@@ -1465,6 +1465,23 @@ def plenary_named_votes(con, lo=None, hi=None):
     )
 
 
+def published_group_positions(con, vote_ids):
+    """The group positions the AR published for the given plenary votes: rows inferred from a
+    unanimous vote are left out. By group, then whole groups before counts."""
+    if not vote_ids:
+        return []
+    return _rows(
+        con,
+        """
+        select vote_id, group_code, position, deputies
+        from vote_group_positions
+        where body = 'plenary' and not coalesce(inferred, false) and list_contains(?, vote_id)
+        order by vote_id, group_code, deputies nulls first
+        """,
+        [list(vote_ids)],
+    )
+
+
 def activity_counts(con, start, end):
     """Plenary sittings, plenary votes by result, initiatives presented and interventions
     between two days, both included. Sittings come from the plenary attendance lists

@@ -89,6 +89,10 @@ Ficam de fora as votações na especialidade, as deliberações e os requeriment
 
 O dia mostrado é o último dia com votações em Plenário nos dados, não o dia de hoje.
 
+Na página inicial, cada decisão desse dia tem um cartão com a iniciativa, a autoria, o resultado, a fase e as posições dos grupos tal como a AR as publica, e liga para a página da votação. Quando a votação é unânime e a AR não publica a posição de cada grupo, escrevemos "Unanimidade" e não mostramos grupos: não deduzimos posições a partir da unanimidade. As votações finais de projetos de resolução, que costumam ser muitas no mesmo dia, ficam agrupadas por baixo dos outros cartões, e abrem-se com um clique.
+
+O quadro "Iniciativas do Governo rejeitadas" conta só as decisões desse dia sobre iniciativas do Governo, pela autoria que a AR regista, e só as rejeitadas numa votação final ou na generalidade. Não faz leituras políticas: não conta como derrota do Governo uma iniciativa de outro autor, nem a posição dos partidos que apoiam o Governo.
+
 ## Intervenções
 
 As intervenções vêm do ficheiro de intervenções que a AR publica para cada legislatura. A cobertura é desigual:

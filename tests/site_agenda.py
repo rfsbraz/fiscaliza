@@ -46,6 +46,7 @@ def agenda_tables():
     ]
     initiatives = [
         # legislature, initiative_id, number, type_code, type, title, first_event_date, text_url
+        # (author_kind is left empty)
         ("XVII", 51, 51, "J", "Projeto de Lei", "Iniciativa 51", "2025-10-01", None),
         ("XVII", 52, 52, "J", "Projeto de Lei", "Iniciativa 52", "2025-11-01", None),
         ("XVII", 53, 53, "J", "Projeto de Lei", "Iniciativa 53", "2026-02-01", None),
@@ -108,8 +109,8 @@ def agenda_tables():
         ),
         "initiatives": (
             "legislature varchar, initiative_id bigint, number integer, type_code varchar, type varchar, "
-            "title varchar, first_event_date date, text_url varchar",
-            initiatives,
+            "title varchar, first_event_date date, text_url varchar, author_kind varchar",
+            [(*row, None) for row in initiatives],
         ),
         "vote_group_positions": (
             "vote_id bigint, legislature varchar, body varchar, group_code varchar, position varchar, "

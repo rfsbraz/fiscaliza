@@ -89,7 +89,9 @@ def _initiatives():
 
     def initiative(leg, ini, type_code, day, authored_by):
         kind = {"J": "Projeto de Lei", "R": "Projeto de Resolução"}[type_code]
-        initiatives.append((leg, ini, ini, type_code, kind, f"Iniciativa {ini}", day, None))
+        groups = any(isinstance(a, str) for a in authored_by)
+        author_kind = "Grupos Parlamentares" if groups else ("Deputados" if authored_by else None)
+        initiatives.append((leg, ini, ini, type_code, kind, f"Iniciativa {ini}", day, None, author_kind))
         for author in authored_by:
             if isinstance(author, str):
                 authors.append((leg, ini, "group", None, author, author))
@@ -192,7 +194,7 @@ def voting_tables():
         ),
         "initiatives": (
             "legislature varchar, initiative_id bigint, number integer, type_code varchar, type varchar, "
-            "title varchar, first_event_date date, text_url varchar",
+            "title varchar, first_event_date date, text_url varchar, author_kind varchar",
             initiatives,
         ),
         "initiative_authors": (

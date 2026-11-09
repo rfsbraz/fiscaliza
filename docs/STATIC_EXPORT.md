@@ -33,7 +33,7 @@ aceita uma legislatura em numeração romana ou como número (`17`), como a API.
 
 | Endpoint | Ficheiro |
 |---|---|
-| `legislaturas`, `estatisticas`, `partidos`, `health`, `dados`, `estatisticas/atividade` | `legislaturas.json`, `estatisticas.json`, `partidos.json`, `health.json`, `dados.json`, `estatisticas/atividade.json` |
+| `legislaturas`, `estatisticas`, `partidos`, `health`, `dados`, `estatisticas/atividade`, `estatisticas/decisoes` | `legislaturas.json`, `estatisticas.json`, `partidos.json`, `health.json`, `dados.json`, `estatisticas/atividade.json`, `estatisticas/decisoes.json` |
 | `votacoes/recentes?limite=5` (e o valor por omissão, 10) | `votacoes/recentes/5.json`, `votacoes/recentes/10.json` |
 | `votacoes/{id}` (#191) | `votacoes/grupo/{id // 1000}.json`: todas as votações em Plenário desse milhar de ids, por id; o browser lê o ficheiro e escolhe a votação. Um id sem votação, ou de uma votação em comissão, responde 404 |
 | (sem endpoint: lido pelo `deploy/pages.py`) | `votacoes/paginas.json`: as votações que têm página própria no Pages (as da XVII), com título e descrição |

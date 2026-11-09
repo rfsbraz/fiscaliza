@@ -4,6 +4,7 @@ import { tokens, partidoCores } from '../styles/tokens'
 import { LoadingSpinner } from './common'
 import { formatDecimal, formatNumber, legislatureName, plural } from '../utils/format'
 import { partyPath } from '../utils/party';
+import HomeDecisoes from './HomeDecisoes';
 
 /**
  * Dashboard - Data Observatory Style
@@ -119,6 +120,8 @@ const Dashboard = ({ stats }) => {
           </span>
         </div>
       </header>
+
+      <HomeDecisoes />
 
       {/* Metrics Strip */}
       <section style={{

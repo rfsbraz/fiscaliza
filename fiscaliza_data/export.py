@@ -98,11 +98,12 @@ def _optional(name):
 
 
 def _services():
-    from app.services import activity, core, votes
+    from app.services import activity, core, decisions, votes
 
     return {
         "core": core,
         "activity": activity,
+        "decisions": decisions,
         "votes": votes,
         "voting": _optional("app.services.voting"),
         "parties": _optional("app.services.parties"),
@@ -156,6 +157,7 @@ def _site_files(con, svc, w):
     w.write("legislaturas.json", core.legislaturas(con))
     w.write("estatisticas.json", core.estatisticas(con))
     w.write("estatisticas/atividade.json", activity.estatisticas_atividade(con))
+    w.write("estatisticas/decisoes.json", svc["decisions"].decisoes_plenario(con))
     w.write("partidos.json", core.partidos(con))
     w.write("health.json", core.health(con))
     w.write("dados.json", core.dados(con))

@@ -255,6 +255,7 @@ export function createStaticApi({ load }) {
     if (route === 'legislaturas' && none) return serve('legislaturas.json');
     if (route === 'estatisticas' && none) return serve('estatisticas.json');
     if (route === 'estatisticas/atividade' && none) return serve('estatisticas/atividade.json');
+    if (route === 'estatisticas/decisoes' && none) return serve('estatisticas/decisoes.json');
     if (route === 'partidos' && none) return serve('partidos.json');
     if (route === 'health' && none) return serve('health.json');
     if (route === 'dados' && none) return serve('dados.json');

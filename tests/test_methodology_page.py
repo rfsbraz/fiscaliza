@@ -133,3 +133,13 @@ def test_decision_rule_is_published_as_the_code_applies_it():
         assert f'"{phase}"' in section
     assert "propostas de lei" in section and "Orçamento do Estado" in section
     assert "escolha editorial" in section
+
+
+def test_home_decision_cards_are_described():
+    # #264: what the home page cards show and what the Government box counts.
+    section = CONTENT.read_text().split("## Decisões do Plenário\n", 1)[1].split("\n## ", 1)[0]
+    assert "página inicial" in section
+    assert "posições dos grupos tal como a AR as publica" in section
+    assert "não mostramos grupos" in section  # unanimous votes
+    assert "projetos de resolução" in section
+    assert "iniciativas do Governo" in section and "autoria" in section
