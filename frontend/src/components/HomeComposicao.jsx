@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { apiFetch } from '../config/api';
 import { tokens, partidoCores } from '../styles/tokens';
 import { formatDate, formatNumber, plural } from '../utils/format';
+import { labelColor } from '../utils/contrast';
 
 /**
  * The home page composition strip and the state of the sources (#265). Every date is the date
@@ -52,7 +53,7 @@ export const ComposicaoView = ({ composicao }) => {
             style={{
               flex: g.deputados,
               backgroundColor: partidoCores[g.sigla] || '#78716C',
-              color: '#FFFFFF',
+              color: labelColor(partidoCores[g.sigla] || '#78716C'),
               fontFamily: fonts.mono,
               fontSize: '0.6875rem',
               fontWeight: 600,
