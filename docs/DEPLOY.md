@@ -286,7 +286,9 @@ o ficheiro `frontend/public/4400aea6a0cd479e278f0c5ef42087d7.txt`, servido na ra
 
 O sitemap não tem datas, por isso o passo do Pages escreve também `indexnow-manifest.json`: um hash
 por URL do sitemap, feito com o head da página (sem scripts nem tags `<link>`, que apontam para ficheiros com hash) e os
-ficheiros de `/api` dessa rota. Antes do upload o deploy lê o manifesto que está no ar e guarda os
+ficheiros de `/api` dessa rota. Uma página `/votacoes/<id>` lê a sua votação de um ficheiro de grupo
+partilhado com até mil votações, por isso entra no hash só essa votação, e uma correção numa delas
+envia só a sua página. Antes do upload o deploy lê o manifesto que está no ar e guarda os
 URLs cujo hash mudou, mais os que entraram ou saíram do sitemap. Depois do upload faz um POST para
 `https://api.indexnow.org/indexnow` com essa lista. Um nome novo de um asset não muda nenhum hash.
 
