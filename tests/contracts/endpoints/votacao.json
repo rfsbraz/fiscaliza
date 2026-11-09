@@ -45,10 +45,16 @@
       "read_at": "frontend/src/components/VotacaoPage.jsx:98"
     },
     {
+      "path": "iniciativas[].fase",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:159"
+    },
+    {
       "path": "iniciativas[].id",
       "type": "number",
       "nullable": false,
-      "read_at": "frontend/src/components/VotacaoPage.jsx:173"
+      "read_at": "frontend/src/components/VotacaoPage.jsx:183"
     },
     {
       "path": "iniciativas[].legislatura",
@@ -84,7 +90,7 @@
       "path": "iniciativas[].url",
       "type": "string",
       "nullable": false,
-      "read_at": "frontend/src/components/VotacaoPage.jsx:174"
+      "read_at": "frontend/src/components/VotacaoPage.jsx:184"
     },
     {
       "path": "posicoes",
@@ -132,7 +138,7 @@
       "path": "votos_nomeados",
       "type": "array",
       "nullable": false,
-      "read_at": "frontend/src/components/VotacaoPage.jsx:162"
+      "read_at": "frontend/src/components/VotacaoPage.jsx:172"
     },
     {
       "path": "votos_nomeados[].nome",

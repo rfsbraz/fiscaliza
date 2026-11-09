@@ -45,7 +45,7 @@ const VOTE = {
     abstencao: [g('PCP'), g('PS')],
     ausentes: [],
   },
-  votos_nomeados: [{ nome: 'Pedro Delgado Alves', grupo: 'PS', posicao: 'favor', id_cadastro: 4453 }],
+  votos_nomeados: [{ nome: 'Deputada Exemplo', grupo: 'PS', posicao: 'favor', id_cadastro: 9001 }],
 };
 
 const render = (vote) =>
@@ -69,8 +69,8 @@ test('a vote shows its initiative, result, phase and published positions', () =>
 
 test('named votes are listed as the AR names them, with a link to the deputy', () => {
   const html = render(VOTE);
-  assert.match(text(html), /Pedro Delgado Alves \(PS\) votou a favor/);
-  assert.match(html, /href="\/deputados\/4453"/);
+  assert.match(text(html), /Deputada Exemplo \(PS\) votou a favor/);
+  assert.match(html, /href="\/deputados\/9001"/);
 });
 
 test('the source links go to the initiative on the AR site and to the data', () => {
@@ -109,4 +109,12 @@ test('the AR description of the vote shows under an initiative title', () => {
   // Without an initiative the description is the title, said once.
   const own = text(render({ ...VOTE, iniciativas: [], descricao: 'Voto de pesar' }));
   assert.equal(own.match(/Voto de pesar/g).length, 1);
+});
+
+test('initiatives voted in different phases each show their own phase', () => {
+  const other = { ...VOTE.iniciativas[0], id: 1, numero: 7, titulo: 'Outra iniciativa', fase: 'Votação final global' };
+  const t = text(render({ ...VOTE, fase: null, iniciativas: [VOTE.iniciativas[0], other] }));
+  assert.match(t, /Projeto de Resolução n\.º 1269\/XVII: Votação na generalidade/);
+  assert.match(t, /Projeto de Resolução n\.º 7\/XVII: Votação final global/);
+  assert.match(t, /A votação final global aprova ou rejeita o texto inteiro/);
 });

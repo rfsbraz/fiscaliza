@@ -97,6 +97,26 @@ def test_non_inscritos_and_independents_are_never_named_dissent(data_dir, tmp_pa
         c.close()
 
 
+def test_initiatives_voted_in_different_phases_keep_their_own(data_dir, tmp_path):
+    # Vote 8 also decides projeto de lei 62 in the generality: no phase is shared, so the vote
+    # has none and each initiative keeps its own.
+    db = tmp_path / "current.duckdb"
+    shutil.copy(data_dir / "current.duckdb", db)
+    c = duckdb.connect(str(db))
+    c.execute("insert into initiative_votes values (8, 62, 'XVII', 'plenary', 'Votação na generalidade')")
+    try:
+        v = votes.votacao(c, 8)
+        assert v["fase"] is None
+        assert {i["id"]: i["fase"] for i in v["iniciativas"]} == {
+            62: "Votação na generalidade",
+            68: "Votação final global",
+            69: "Votação final global",
+            70: "Votação final global",
+        }
+    finally:
+        c.close()
+
+
 # Grouping by id range
 
 

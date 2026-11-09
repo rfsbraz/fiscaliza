@@ -152,6 +152,16 @@ export const VotacaoView = ({ vote }) => {
             {[resultado, vote.fase].filter(Boolean).join(' · ')}
           </p>
           {note && <p style={small}>{note}</p>}
+          {!vote.fase && iniciativas.some((i) => i.fase) && (
+            <ul style={{ ...small, paddingLeft: '1.25rem' }}>
+              {iniciativas.map((i) => (
+                <li key={`${i.legislatura}-${i.id}`}>
+                  {initiativeName(i)}: {i.fase || 'fase não publicada'}
+                  {phaseNote(i.fase) && <> {phaseNote(i.fase)}</>}
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
         <section style={box} aria-labelledby="votacao-posicoes">
           <h2 id="votacao-posicoes" style={h2}>
