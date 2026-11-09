@@ -49,7 +49,7 @@ const BODY = {
       posicoes: { ...none, favor: [g('PSD')], contra: [g('PCP')] },
     },
   ],
-  governo: { votadas: 2, rejeitadas: [401] },
+  governo: { votadas: 2, aprovadas: 1, rejeitadas: [401] },
 };
 
 test('the subtitle gives the day of the data and what the decisions are', () => {
@@ -108,7 +108,7 @@ test('a day with only projetos de resolução shows them as the cards', () => {
 });
 
 test('no plenary votes in the data says so', () => {
-  const t = text(React.createElement(DecisoesView, { body: { data: null, decisoes: [], governo: { votadas: 0, rejeitadas: [] } } }));
+  const t = text(React.createElement(DecisoesView, { body: { data: null, decisoes: [], governo: { votadas: 0, aprovadas: 0, rejeitadas: [] } } }));
   assert.match(t, /Ainda não há votações em Plenário nos dados\./);
 });
 
@@ -123,8 +123,27 @@ test('the Government box lists the rejected Government initiatives with their vo
 });
 
 test('with no rejection the Government box says how many passed', () => {
-  const body = { ...BODY, governo: { votadas: 2, rejeitadas: [] } };
+  const body = { ...BODY, governo: { votadas: 2, aprovadas: 2, rejeitadas: [] } };
   assert.match(text(React.createElement(GovernoView, { body })), /Nenhuma em 15\/10\/2026\. As 2 decisões sobre iniciativas do Governo neste dia foram aprovadas\./);
-  const zero = { ...BODY, governo: { votadas: 0, rejeitadas: [] } };
+  const zero = { ...BODY, governo: { votadas: 0, aprovadas: 0, rejeitadas: [] } };
   assert.match(text(React.createElement(GovernoView, { body: zero })), /Nenhuma em 15\/10\/2026\. Não houve decisões sobre iniciativas do Governo neste dia\./);
+});
+
+test('with no rejection but not every decision approved, the box claims no approval', () => {
+  // Prejudicado or Retirado are neither approved nor rejected.
+  const body = { ...BODY, governo: { votadas: 2, aprovadas: 1, rejeitadas: [] } };
+  const t = text(React.createElement(GovernoView, { body }));
+  assert.match(t, /Nenhuma em 15\/10\/2026\. 2 decisões sobre iniciativas do Governo neste dia, nenhuma rejeitada\./);
+  assert.doesNotMatch(t, /aprovad/);
+});
+
+test('a joint vote names only its Government initiatives as rejected', () => {
+  const joint = {
+    ...BODY.decisoes[0],
+    iniciativas: [ini(80, 'Projeto de Lei', 80, 'Iniciativa 80', 'Grupos Parlamentares'), ...BODY.decisoes[0].iniciativas],
+  };
+  const body = { ...BODY, decisoes: [joint], governo: { votadas: 1, aprovadas: 0, rejeitadas: [401] } };
+  const t = text(React.createElement(GovernoView, { body }));
+  assert.match(t, /Proposta de Lei n\.º 81\/XVII: Iniciativa 81/);
+  assert.doesNotMatch(t, /Iniciativa 80/);
 });

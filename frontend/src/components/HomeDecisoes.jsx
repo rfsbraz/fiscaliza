@@ -41,6 +41,10 @@ const ROWS = [
   ['ausentes', 'Ausentes'],
 ];
 const RESOLUCAO = 'Projeto de Resolução';
+const GOVERNO = 'Governo';
+
+// A joint vote can decide initiatives of other authors too: name only the Government's.
+const governmentOwn = (d) => d.iniciativas.filter((i) => i.autoria === GOVERNO);
 
 const initiativeName = (i) => `${i.tipo} n.º ${i.numero}/${i.legislatura}`;
 const group = (p) => (p.deputados == null ? p.grupo : `${p.grupo} (${plural(p.deputados, 'deputado', 'deputados')})`);
@@ -184,7 +188,9 @@ export const GovernoView = ({ body }) => {
             Nenhuma em {dia}.{' '}
             {governo.votadas === 0
               ? 'Não houve decisões sobre iniciativas do Governo neste dia.'
-              : `${governo.votadas === 1 ? 'A decisão' : `As ${governo.votadas} decisões`} sobre iniciativas do Governo neste dia ${governo.votadas === 1 ? 'foi aprovada' : 'foram aprovadas'}.`}
+              : governo.aprovadas === governo.votadas
+                ? `${governo.votadas === 1 ? 'A decisão' : `As ${governo.votadas} decisões`} sobre iniciativas do Governo neste dia ${governo.votadas === 1 ? 'foi aprovada' : 'foram aprovadas'}.`
+                : `${plural(governo.votadas, 'decisão', 'decisões')} sobre iniciativas do Governo neste dia, nenhuma rejeitada.`}
           </p>
         ) : (
           <>
@@ -192,7 +198,9 @@ export const GovernoView = ({ body }) => {
               {rejeitadas.map((d) => (
                 <li key={d.vote_id}>
                   <Link to={`/votacoes/${d.vote_id}`} style={{ color: 'inherit', textDecoration: 'underline' }}>
-                    {initiativeName(d.iniciativas[0])}: {d.iniciativas[0].titulo}
+                    {governmentOwn(d)
+                      .map((i) => `${initiativeName(i)}: ${i.titulo}`)
+                      .join('; ')}
                   </Link>{' '}
                   · {d.fase}
                 </li>

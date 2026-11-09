@@ -48,8 +48,13 @@ def _government(decisoes):
     """The decisions on an initiative the Government authored, and the rejected ones. Only the
     authorship the AR publishes counts: no reading of who supports the Government."""
     own = [d for d in decisoes if any(i["autoria"] == GOVERNMENT for i in d["iniciativas"])]
-    rejected = [d["vote_id"] for d in own if (d["resultado"] or "").lower().startswith("rejeitad")]
-    return {"votadas": len(own), "rejeitadas": rejected}
+
+    def result(d, prefix):
+        return (d["resultado"] or "").lower().startswith(prefix)
+
+    rejected = [d["vote_id"] for d in own if result(d, "rejeitad")]
+    # Prejudicado or Retirado count in votadas but are neither approved nor rejected.
+    return {"votadas": len(own), "aprovadas": sum(result(d, "aprovad") for d in own), "rejeitadas": rejected}
 
 
 def decisoes_plenario(con):

@@ -66,7 +66,7 @@ def test_titles_lose_the_sources_trailing_whitespace(body):
 
 
 def test_the_government_box_counts_only_government_initiatives(body):
-    assert body["governo"] == {"votadas": 2, "rejeitadas": [401]}
+    assert body["governo"] == {"votadas": 2, "aprovadas": 1, "rejeitadas": [401]}
 
 
 def test_no_plenary_votes_means_an_empty_box():
@@ -75,7 +75,7 @@ def test_no_plenary_votes_means_an_empty_box():
     assert decisions.decisoes_plenario(c) == {
         "data": None,
         "decisoes": [],
-        "governo": {"votadas": 0, "rejeitadas": []},
+        "governo": {"votadas": 0, "aprovadas": 0, "rejeitadas": []},
     }
 
 
