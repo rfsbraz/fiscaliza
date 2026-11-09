@@ -78,6 +78,17 @@ Por isso, no separador Votações de cada deputado:
 
 Nas páginas dos partidos, mostramos "Votações sem votos diferentes registados": quantas votações em que o registo não nomeia nenhum deputado do grupo com outro sentido de voto. O registo só nomeia quem vota de forma diferente, e um grupo pequeno tem poucos deputados que possam ser nomeados, por isso este número não serve para comparar grupos.
 
+## Decisões do Plenário
+
+Num dia de Plenário vota-se muita coisa: requerimentos, deliberações, a especialidade e a votação final do mesmo diploma. Para mostrar o que o Plenário decidiu, contamos como decisões só estas votações, por uma regra fixa e sem escolha editorial:
+
+- as votações finais de qualquer iniciativa: "Votação final global", "Votação final", "Votação global" e "Votação final global decreto";
+- a "Votação na generalidade" das propostas de lei, que inclui o Orçamento do Estado.
+
+Ficam de fora as votações na especialidade, as deliberações e os requerimentos (por exemplo, baixa à comissão, avocação ou dispensa de redação final). Uma iniciativa votada na generalidade e na votação final no mesmo dia conta uma vez, como votação final. Uma votação que decide várias iniciativas conta uma vez.
+
+O dia mostrado é o último dia com votações em Plenário nos dados, não o dia de hoje.
+
 ## Intervenções
 
 As intervenções vêm do ficheiro de intervenções que a AR publica para cada legislatura. A cobertura é desigual:
