@@ -83,6 +83,63 @@ def seats_by_group(con, legislature, day):
     )
 
 
+def temporary_seats(con, legislature, day):
+    """Seats held on a day by a temporary substitute (situation Efetivo Temporário)."""
+    return con.execute(
+        "select count(*) from seated_detail(?::date) where legislature = ? and situation = 'Efetivo Temporário'",
+        [day, legislature],
+    ).fetchone()[0]
+
+
+def mandate_changes(con, legislature, start, end):
+    """Starts and ends of effective mandate periods between two days, both included, newest
+    first: the day, the person, their group on that day (else their latest one in the
+    legislature), whether the period starts or ends, and its situation. Who replaced whom is
+    not paired, because the source does not say."""
+    return _rows(
+        con,
+        """
+        with events as (
+            select cadastro_id, start_date as day, 'inicio' as event, situation
+            from mandates
+            where legislature = $leg and is_effective and start_date between $start and $end
+            union all
+            select cadastro_id, end_date as day, 'fim' as event, situation
+            from mandates
+            where legislature = $leg and is_effective and end_date between $start and $end
+        )
+        select e.day, e.cadastro_id, d.parliamentary_name as name, e.event, e.situation,
+               (select g.group_acronym from group_memberships g
+                where g.legislature = $leg and g.cadastro_id = e.cadastro_id
+                order by (g.start_date <= e.day and (g.end_date is null or g.end_date >= e.day)) desc,
+                         g.start_date desc
+                limit 1) as group_acronym
+        from events e
+        left join deputies d on d.cadastro_id = e.cadastro_id
+        order by e.day desc, e.event desc, e.cadastro_id
+        """,
+        {"leg": legislature, "start": start, "end": end},
+    )
+
+
+def dataset_dates(con):
+    """The last day each dataset the home page cites has data for."""
+    return _one(
+        con,
+        """
+        select
+            (select max(date) from votes where body = 'plenary') as votes,
+            (select max(first_event_date) from initiatives) as initiatives,
+            (select max(meeting_date) from interventions) as interventions
+        """,
+    )
+
+
+def interest_declaration_legislatures(con):
+    """The legislatures with interest declarations in the data."""
+    return [r["legislature"] for r in _rows(con, "select distinct legislature from interest_declarations")]
+
+
 def seats_by_circle(con, legislature, day):
     """Seats per electoral circle on a day, largest first."""
     return _rows(

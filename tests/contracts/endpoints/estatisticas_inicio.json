@@ -1,0 +1,187 @@
+{
+  "endpoint": "estatisticas/inicio",
+  "route": "/api/estatisticas/inicio",
+  "keys": [
+    {
+      "path": "composicao",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:177"
+    },
+    {
+      "path": "composicao.data",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:32"
+    },
+    {
+      "path": "composicao.lugares",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:32"
+    },
+    {
+      "path": "composicao.substituicoes_temporarias",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:32"
+    },
+    {
+      "path": "composicao.governo",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:32"
+    },
+    {
+      "path": "composicao.governo.nome",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:78"
+    },
+    {
+      "path": "composicao.governo.fonte",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:78"
+    },
+    {
+      "path": "composicao.grupos",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:32"
+    },
+    {
+      "path": "composicao.grupos[].sigla",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:50"
+    },
+    {
+      "path": "composicao.grupos[].deputados",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:53"
+    },
+    {
+      "path": "composicao.grupos[].apoia_governo",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:33"
+    },
+    {
+      "path": "composicao.mudancas",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:32"
+    },
+    {
+      "path": "composicao.mudancas.desde",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:92"
+    },
+    {
+      "path": "composicao.mudancas.ate",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:92"
+    },
+    {
+      "path": "composicao.mudancas.itens",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:35"
+    },
+    {
+      "path": "composicao.mudancas.itens[].data",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:100"
+    },
+    {
+      "path": "composicao.mudancas.itens[].cadastro_id",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:101"
+    },
+    {
+      "path": "composicao.mudancas.itens[].nome",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:101"
+    },
+    {
+      "path": "composicao.mudancas.itens[].grupo",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:102"
+    },
+    {
+      "path": "composicao.mudancas.itens[].evento",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:102"
+    },
+    {
+      "path": "composicao.mudancas.itens[].situacao",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:102"
+    },
+    {
+      "path": "fontes",
+      "type": "object",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:176"
+    },
+    {
+      "path": "fontes.tag",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:115"
+    },
+    {
+      "path": "fontes.source_updated",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:115"
+    },
+    {
+      "path": "fontes.conjuntos",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:115"
+    },
+    {
+      "path": "fontes.conjuntos[].nome",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:126"
+    },
+    {
+      "path": "fontes.conjuntos[].dados_ate",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:129"
+    },
+    {
+      "path": "fontes.lacunas",
+      "type": "array",
+      "nullable": true,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:115"
+    },
+    {
+      "path": "fontes.lacunas[].conjunto",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:142"
+    },
+    {
+      "path": "fontes.lacunas[].texto",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/HomeComposicao.jsx:143"
+    }
+  ],
+  "dropped": []
+}
