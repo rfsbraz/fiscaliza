@@ -23,3 +23,10 @@ test('a phase with no explanation gets none, not a guess', () => {
   assert.equal(phaseNote(null), null);
   assert.equal(phaseNote(undefined), null);
 });
+
+test('procedural votes are described without assuming they passed', () => {
+  // The page shows the note whatever the result, so it says what was voted, not what followed.
+  for (const phase of ['Baixa comissão especialidade', 'Requerimento avocação plenário']) {
+    assert.match(phaseNote(phase), /^Votação sobre /, phase);
+  }
+});

@@ -208,3 +208,24 @@ test('an unknown, missing or malformed vote id is not found', async () => {
   }
   assert.equal((await a.get('votacoes/recentes?limite=5')).status, 404);
 });
+
+test('a vote group that fails to load is an error, not a missing vote, and is tried again', async () => {
+  const group = { votacoes: { 193246: { id: 193246 } } };
+  for (const failure of [async () => { throw new Error('rede'); }, async () => ({ ok: false, status: 503, text: '' })]) {
+    let fail = true;
+    const calls = [];
+    const a = createStaticApi({
+      load: async (path) => {
+        calls.push(path);
+        if (fail) return failure();
+        return { ok: true, status: 200, text: JSON.stringify(group) };
+      },
+    });
+    const first = await a.get('votacoes/193246');
+    assert.notEqual(first.status, 404);
+    assert.ok(first.status >= 500);
+    fail = false;
+    assert.deepEqual((await a.get('votacoes/193246')).body, { id: 193246 });
+    assert.equal(calls.length, 2);
+  }
+});

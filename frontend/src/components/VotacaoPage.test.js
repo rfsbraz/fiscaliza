@@ -90,7 +90,8 @@ test('a unanimous vote says so and shows no group chips', () => {
 test('a contested vote with no positions says the source has none', () => {
   const t = text(render({ ...VOTE, posicoes: none, votos_nomeados: [] }));
   assert.match(t, /A AR não publicou as posições dos grupos nesta votação/);
-  assert.match(t, /A AR não nomeou votos individuais nesta votação/);
+  // Deputies of no group are left out (#187), so the sentence says whose votes it means.
+  assert.match(t, /A AR não nomeou votos individuais de deputados de grupos parlamentares nesta votação/);
   assert.doesNotMatch(t, / - /);
 });
 
@@ -99,4 +100,13 @@ test('a vote with no initiative or description is titled by its day and says it 
   assert.match(t, /Votação 182922 no Plenário de 25\/09\/2026/);
   assert.match(t, /A AR não publicou o assunto desta votação/);
   assert.match(t, /não têm ligação para esta votação no site da AR/);
+});
+
+test('the AR description of the vote shows under an initiative title', () => {
+  const t = text(render({ ...VOTE, descricao: 'Requerimento de baixa à comissão sem votação' }));
+  assert.match(t, /Pela defesa do serviço público de televisão/);
+  assert.match(t, /Descrição da AR: Requerimento de baixa à comissão sem votação/);
+  // Without an initiative the description is the title, said once.
+  const own = text(render({ ...VOTE, iniciativas: [], descricao: 'Voto de pesar' }));
+  assert.equal(own.match(/Voto de pesar/g).length, 1);
 });

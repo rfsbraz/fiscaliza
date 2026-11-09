@@ -76,7 +76,7 @@ const Posicoes = ({ vote }) => {
 
 const Nomeados = ({ votos }) =>
   votos.length === 0 ? (
-    <p style={small}>A AR não nomeou votos individuais nesta votação.</p>
+    <p style={small}>A AR não nomeou votos individuais de deputados de grupos parlamentares nesta votação.</p>
   ) : (
     <ul style={{ ...small, paddingLeft: '1.25rem' }}>
       {votos.map((v) => (
@@ -130,6 +130,7 @@ export const VotacaoView = ({ vote }) => {
         {title}
       </h1>
       {iniciativas.length > 1 && <p style={small}>E mais {iniciativas.length - 1} iniciativas na mesma votação.</p>}
+      {first?.titulo && vote.descricao && <p style={small}>Descrição da AR: {vote.descricao}</p>}
       <p style={{ fontSize: '0.875rem', color: colors.textMuted, margin: '0 0 1.5rem' }}>
         Plenário de {formatDate(vote.data)} · votação {vote.id} da AR
       </p>

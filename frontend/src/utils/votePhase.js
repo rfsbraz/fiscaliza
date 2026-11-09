@@ -13,9 +13,9 @@ const NOTES = {
     'Votação que decide a iniciativa de uma só vez, sem generalidade e especialidade, como é habitual nos projetos de resolução.',
   'Votação global': 'Votação única do texto inteiro, como nas propostas de resolução que aprovam tratados.',
   'Baixa comissão especialidade':
-    'O Plenário votou enviar a iniciativa a uma comissão parlamentar, onde o texto é trabalhado na especialidade.',
+    'Votação sobre enviar a iniciativa a uma comissão parlamentar, para o texto ser trabalhado na especialidade.',
   'Requerimento avocação plenário':
-    'O Plenário votou chamar a si a votação na especialidade de partes do texto que estavam a ser votadas em comissão.',
+    'Votação sobre um pedido para o Plenário chamar a si a votação na especialidade de partes do texto que estavam a ser votadas em comissão.',
 };
 
 export const phaseNote = (phase) => (phase && NOTES[phase]) || null;
