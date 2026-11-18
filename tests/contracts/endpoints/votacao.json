@@ -1,0 +1,169 @@
+{
+  "endpoint": "votacoes/{id}",
+  "route": "/api/votacoes/<int:vote_id>",
+  "keys": [
+    {
+      "path": "id",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:112"
+    },
+    {
+      "path": "data",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:135"
+    },
+    {
+      "path": "resultado",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:101"
+    },
+    {
+      "path": "unanimidade",
+      "type": "boolean",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:101"
+    },
+    {
+      "path": "descricao",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:100"
+    },
+    {
+      "path": "fase",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:104"
+    },
+    {
+      "path": "iniciativas",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:98"
+    },
+    {
+      "path": "iniciativas[].fase",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:159"
+    },
+    {
+      "path": "iniciativas[].id",
+      "type": "number",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:183"
+    },
+    {
+      "path": "iniciativas[].legislatura",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:51"
+    },
+    {
+      "path": "iniciativas[].tipo",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:50"
+    },
+    {
+      "path": "iniciativas[].numero",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:51"
+    },
+    {
+      "path": "iniciativas[].titulo",
+      "type": "string",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:100"
+    },
+    {
+      "path": "iniciativas[].autoria",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:117"
+    },
+    {
+      "path": "iniciativas[].url",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:184"
+    },
+    {
+      "path": "posicoes",
+      "type": "object",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:55"
+    },
+    {
+      "path": "posicoes.favor",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:39"
+    },
+    {
+      "path": "posicoes.contra",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:40"
+    },
+    {
+      "path": "posicoes.abstencao",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:41"
+    },
+    {
+      "path": "posicoes.ausentes",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:42"
+    },
+    {
+      "path": "posicoes.favor[].grupo",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:46"
+    },
+    {
+      "path": "posicoes.favor[].deputados",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:46"
+    },
+    {
+      "path": "votos_nomeados",
+      "type": "array",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:172"
+    },
+    {
+      "path": "votos_nomeados[].nome",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:86"
+    },
+    {
+      "path": "votos_nomeados[].grupo",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:91"
+    },
+    {
+      "path": "votos_nomeados[].posicao",
+      "type": "string",
+      "nullable": false,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:91"
+    },
+    {
+      "path": "votos_nomeados[].id_cadastro",
+      "type": "number",
+      "nullable": true,
+      "read_at": "frontend/src/components/VotacaoPage.jsx:83"
+    }
+  ],
+  "dropped": []
+}
