@@ -14,6 +14,7 @@ const PartidoDetalhes = lazy(() => import('./components/PartidoDetalhes'))
 const ColigacaoDetalhes = lazy(() => import('./components/ColigacaoDetalhes'))
 const AgendaPage = lazy(() => import('./components/AgendaPage'))
 const PerguntasPage = lazy(() => import('./components/PerguntasPage'))
+const VotacaoPage = lazy(() => import('./components/VotacaoPage'))
 const NotFound = lazy(() => import('./components/NotFound'))
 const Metodologia = lazy(() => import('./components/Metodologia'))
 const Dados = lazy(() => import('./components/Dados'))
@@ -115,6 +116,7 @@ const AppContent = () => {
             <Route path={PARTY_ROUTE} element={<PartidoDetalhes />} />
             <Route path="/coligacoes/:coligacaoId" element={<ColigacaoDetalhes />} />
             <Route path="/agenda" element={<AgendaPage />} />
+            <Route path="/votacoes/:voteId" element={<VotacaoPage />} />
             <Route path="/perguntas" element={<PerguntasPage />} />
             <Route path="/perguntas/:legislatura" element={<PerguntasPage />} />
             <Route path="/dados" element={<Dados />} />

@@ -16,6 +16,7 @@ See docs/DEPLOY.md.
 """
 
 import argparse
+import functools
 import hashlib
 import html
 import json
@@ -47,6 +48,9 @@ PRODUCTION_BRANCH = "master"
 PREVIEW_BRANCH = "preview"
 # Cloudflare Pages limits per deployment (free plan).
 MAX_FILES = 20_000
+# prepare fails while a tenth of the limit is still free, so a growing export (one page per
+# vote, #191) turns the pull request's Pages deploy red before a deploy is refused.
+FILE_HEADROOM = MAX_FILES // 10
 MAX_FILE_BYTES = 25 * 1024 * 1024
 MAX_STATIC_REDIRECTS = 2_000
 SITE = "https://fiscaliza.pt"
@@ -236,6 +240,13 @@ def route_heads(api):
             label = f"{name} ({scope})" if scope else name
             routes[path] = (label, f"Partidos, deputados e eleições da coligação {label} na Assembleia da República.")
 
+    # One page per vote the export lists (#191): the XVII votes. The rest load in the app.
+    for v in _items(_json(api / "votacoes" / "paginas.json"), "votacoes"):
+        vid, title = v.get("id"), (v.get("titulo") or "").strip()
+        path = _route("/votacoes", vid) if isinstance(vid, int) and not isinstance(vid, bool) else None
+        if path and title:
+            routes[path] = (title, v.get("descricao") or title)
+
     for leg in _items(_json(api / "perguntas.json"), "legislaturas"):
         path = _route("/perguntas", leg.get("legislatura"))
         if path:
@@ -334,9 +345,31 @@ def api_slug(value):
     return re.sub(r"[^a-z0-9]+", "-", text).strip("-") or None
 
 
+# The export keeps each plenary vote in api/votacoes/grupo/<id // VOTE_GROUP>.json, as
+# app.services.votes.VOTE_GROUP (tests/test_indexnow.py checks they match).
+VOTE_GROUP = 1000
+
+
+@functools.lru_cache(maxsize=8)
+def _vote_group(path):
+    """The votes of one group file, read once: every vote page of the group hashes from it."""
+    group = _json(path)
+    return group.get("votacoes") if isinstance(group, dict) else None
+
+
+def _vote_payload(dist, value):
+    """The one vote a /votacoes/<id> page reads from its shared group file, as bytes, or b""."""
+    if not value.isdigit():
+        return b""
+    votes = _vote_group(str(Path(dist) / "api" / "votacoes" / "grupo" / f"{int(value) // VOTE_GROUP}.json"))
+    vote = votes.get(str(int(value))) if isinstance(votes, dict) else None
+    return json.dumps(vote, ensure_ascii=False, sort_keys=True).encode() if vote is not None else b""
+
+
 def page_hash(dist, path):
     """What a search engine would see change on a route: its HTML without scripts and links (their
-    names follow each build), plus the export files under api/<kind>/<id> that the page reads."""
+    names follow each build), plus the export files under api/<kind>/<id> that the page reads. A
+    vote page reads only its own vote from a shared group file, so only that vote counts."""
     dist = Path(dist)
     page = dist / ("index.html" if path == "/" else f"{path.lstrip('/')}.html")
     text = page.read_text(encoding="utf-8") if page.is_file() else ""
@@ -353,11 +386,14 @@ def page_hash(dist, path):
             for f in files:
                 if f.is_file():
                     digest.update(str(f.relative_to(dist)).encode() + b"\0" + f.read_bytes())
+        if kind == "votacoes":
+            digest.update(b"vote\0" + _vote_payload(dist, value))
     return digest.hexdigest()[:16]
 
 
 def indexnow_manifest(dist, routes):
     """{"version": 1, "pages": {sitemap URL: page_hash}} for / and every route."""
+    _vote_group.cache_clear()  # the group files of this build, not of an earlier one
     return {"version": 1, "pages": {route_url(path): page_hash(dist, path) for path in ["/", *routes]}}
 
 
@@ -467,6 +503,11 @@ def prepare(dist):
     files = [p for p in dist.rglob("*") if p.is_file()]
     if len(files) >= MAX_FILES:
         raise DeployError(f"{dist} has {len(files)} files; Pages takes fewer than {MAX_FILES}")
+    if len(files) > MAX_FILES - FILE_HEADROOM:
+        raise DeployError(
+            f"{dist} has {len(files)} files, within the headroom of {FILE_HEADROOM} under the Pages limit of "
+            f"{MAX_FILES}; make room before it grows further"
+        )
     too_big = [p for p in files if p.stat().st_size >= MAX_FILE_BYTES]
     if too_big:
         names = ", ".join(str(p.relative_to(dist)) for p in too_big[:5])

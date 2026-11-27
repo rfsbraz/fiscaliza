@@ -35,6 +35,8 @@ aceita uma legislatura em numeração romana ou como número (`17`), como a API.
 |---|---|
 | `legislaturas`, `estatisticas`, `partidos`, `health`, `dados`, `estatisticas/atividade`, `estatisticas/decisoes` | `legislaturas.json`, `estatisticas.json`, `partidos.json`, `health.json`, `dados.json`, `estatisticas/atividade.json`, `estatisticas/decisoes.json` |
 | `votacoes/recentes?limite=5` (e o valor por omissão, 10) | `votacoes/recentes/5.json`, `votacoes/recentes/10.json` |
+| `votacoes/{id}` (#191) | `votacoes/grupo/{id // 1000}.json`: todas as votações em Plenário desse milhar de ids, por id; o browser lê o ficheiro e escolhe a votação. Um id sem votação, ou de uma votação em comissão, responde 404 |
+| (sem endpoint: lido pelo `deploy/pages.py`) | `votacoes/paginas.json`: as votações que têm página própria no Pages (as da XVII), com título e descrição |
 | `coligacoes?include_inactive=false` / `true` | `coligacoes.json` / `coligacoes-todas.json` |
 | `coligacoes/{id}`, `/deputados`, `/partidos` (uma página por lista e sequência: `ad-2024`, `ad-acores-2025`, `CDU`) | `coligacoes/{slug}.json`, `coligacoes/{slug}/deputados.json`, `coligacoes/{slug}/partidos.json` |
 | `deputados?page&per_page&active_only&search` | `deputados.json`: todos, pela ordem da lista; a pesquisa, o filtro e a paginação correm no browser |
