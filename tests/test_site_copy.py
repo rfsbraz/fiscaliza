@@ -45,7 +45,7 @@ def test_no_pt_br_or_wrong_label_in_the_components(wrong):
 
 def test_seated_line_says_who_had_a_seat_not_who_was_elected():
     home = (COMPONENTS / "Dashboard.jsx").read_text()
-    assert "tiveram lugar nesta legislatura" in home
+    assert "pessoas tiveram lugar em algum momento da legislatura" in home
     deputados = (COMPONENTS / "DeputadosPage.jsx").read_text()
     assert "em exercício na data dos dados · " in deputados
     assert "tiveram lugar na legislatura atual" in deputados
@@ -54,8 +54,10 @@ def test_seated_line_says_who_had_a_seat_not_who_was_elected():
 def test_seated_count_is_dated_to_the_data_not_today():
     # The 230 is the seated count on the data date, not on the day the page is read.
     home = (COMPONENTS / "Dashboard.jsx").read_text()
-    assert 'label="Em exercício na data dos dados"' in home
-    for name in ("Dashboard.jsx", "DeputadosPage.jsx"):
+    assert "deputados em exercício na data dos dados" in home
+    # The composition strip dates its seats to the data too (#265).
+    assert "Em funções a {formatDate(data)}" in (COMPONENTS / "HomeComposicao.jsx").read_text()
+    for name in ("Dashboard.jsx", "DeputadosPage.jsx", "HomeComposicao.jsx"):
         assert "em exercício hoje" not in (COMPONENTS / name).read_text().lower()
 
 

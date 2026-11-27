@@ -5,7 +5,7 @@ from flask import Blueprint, request
 
 from app.data.connection import DataUnavailable
 from app.routes.core import _not_found, _serve, _unavailable
-from app.services import activity, decisions
+from app.services import activity, decisions, home
 from app.services.core import NotFound
 
 activity_bp = Blueprint("activity", __name__)
@@ -25,6 +25,11 @@ def get_votacoes_recentes():
 @activity_bp.route("/estatisticas/atividade", methods=["GET"])
 def get_estatisticas_atividade():
     return _serve(activity.estatisticas_atividade)
+
+
+@activity_bp.route("/estatisticas/inicio", methods=["GET"])
+def get_estatisticas_inicio():
+    return _serve(home.inicio)
 
 
 @activity_bp.route("/estatisticas/decisoes", methods=["GET"])
